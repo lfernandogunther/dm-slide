@@ -5,7 +5,7 @@ const watch = process.argv.includes('--watch');
 
 /** @type {esbuild.BuildOptions} */
 const options = {
-  entryPoints: { content: 'src/content/main.ts' },
+  entryPoints: { content: 'src/content/main.ts', page: 'src/instagram/page.ts' },
   outdir: 'dist',
   bundle: true,
   format: 'iife',

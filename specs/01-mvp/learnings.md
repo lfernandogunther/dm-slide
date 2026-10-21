@@ -115,8 +115,30 @@ typed without sending. End state verified clean: no reaction, empty composer, no
 ## #02 scaffold (2026-10-21)
 - The DevTools-controlled Chrome (chrome-devtools MCP) runs with extensions off: "Load unpacked"
   there fails silently. Load and test the extension in the everyday Chrome.
-- Instagram wipes the console after load, so the content script's `console.log` is gone by the
-  time you look. Check injection via the console's context menu ("top" → "Reel Queue"), or turn
-  on "Preserve log".
+- The content script's `console.log` did not show with the console on its default "top"
+  context; it showed once the context menu was switched to "Reel Queue". Look there first.
 - The everyday Chrome shows Instagram in **pt-BR** ("Mensagem...", "Pesquisar"); the spike's
   labels were English. #03 needs the pt-BR strings for every aria-label it matches.
+
+## #03 listReels from the page's own data (2026-10-21)
+- No scrolling is needed for what Instagram has already loaded. Above the message list
+  (`scroller > div > list`, ~3 fibers up, `IGDMessageListBoundaryScrollTriggers`) the props
+  `elements` (oldest → newest, one per row; DOM child i = `elements[i-1]` while the progressbar row
+  exists) and `hasMoreAbove` hold the loaded window: 20 messages per page.
+- Each `elements[i].currentMessage` has `id` (message id), `__id` (Relay id), `sender_fbid`,
+  `timestamp_ms`. The full record is in the Relay store: walk up to a hook whose
+  `memoizedState.environment.getStore` exists (`IGDMessageListOffMsys`, ~23 up) →
+  `getStore().getSource().get(__id)`.
+- Record → `content.__ref` → `xma.__ref` → `target_url` (`/reel/<code>/` or `/p/<code>/`);
+  `reactions.__refs` → `{reaction, sender_fbid}` (`msg_reactions` has no emoji).
+- My id: `client:root.xdt_viewer.__ref` → `.user.__ref` → `interop_messaging_user_fbid`.
+- Row fibers carry `memoizedProps.messageId` (= `fiber.key`) for mapping a message to its row.
+- Language-independent action buttons: the `[role=group]` holding exactly three `[role=button]`
+  with `aria-haspopup` dialog (React), none (Reply), menu (More). A row may have an outer group
+  with extra buttons around it, so don't take the first group.
+- Checked by injecting the built `page.js` into the spike's thread: 8 reels (4 from the other
+  person), ascending timestamps, unique ids, no reaction of mine — same as the spike's counts.
+- Checked through the real extension in my everyday Chrome (pt-BR UI): the isolated ↔ MAIN bridge
+  answers synchronously, `health()` ok, 12 reels from others with unique ids and no reaction of
+  mine, which matches the chat. The same reel sent twice is two items (one per message), by design.
+  A non-null `myReaction` is still unverified; #07 covers it once React exists.
