@@ -1,10 +1,11 @@
 // Runs in the page's MAIN world: reads the loaded messages from React and the Relay store, and
-// answers the isolated content script over the bridge. It reads only; it never clicks.
-import { REQUEST_EVENT, RESPONSE_EVENT, type RawReel, type ScanResult } from './bridge';
+// answers the isolated content script over the bridge. It never clicks; the one thing it changes
+// is the thread's scroll position, to follow the player.
+import { REQUEST_EVENT, RESPONSE_EVENT, type RawReel, type RevealResult, type Request, type ScanResult } from './bridge';
 import * as S from './selectors';
 
 // React and Relay internals are untyped, hence the `any`s.
-type Fiber = { return: Fiber | null; memoizedProps?: any; memoizedState?: any };
+type Fiber = { return: Fiber | null; key?: string | null; memoizedProps?: any; memoizedState?: any };
 type RecordSource = { get(id: string): any };
 
 function fiberOf(el: Element): Fiber | null {
@@ -12,21 +13,23 @@ function fiberOf(el: Element): Fiber | null {
   return key ? (el as any)[key] : null;
 }
 
-function findUp(from: Fiber | null, test: (f: Fiber) => boolean): Fiber | null {
-  for (let f = from, depth = 0; f && depth < S.MAX_FIBER_DEPTH; f = f.return, depth++) {
+function findUp(from: Fiber | null, test: (f: Fiber) => boolean, maxDepth = S.MAX_FIBER_DEPTH): Fiber | null {
+  for (let f = from, depth = 0; f && depth < maxDepth; f = f.return, depth++) {
     if (test(f)) return f;
   }
   return null;
 }
 
-/** The fiber holding the thread's loaded messages, found from its scroll container. */
-function findMessageList(): Fiber | null {
-  for (const el of document.querySelectorAll('main div')) {
-    if (el.scrollHeight <= el.clientHeight) continue;
-    if (!S.SCROLLABLE_OVERFLOW.includes(getComputedStyle(el).overflowY)) continue;
-    const list = el.firstElementChild?.firstElementChild;
-    const fiber = list && findUp(fiberOf(list), (f) => Array.isArray(f.memoizedProps?.[S.LOADED_MESSAGES_PROP]));
-    if (fiber) return fiber;
+type MessageList = { el: Element; fiber: Fiber };
+
+/** The thread's loaded messages and the DOM list of their rows, found from its scroll container. */
+function findMessageList(): MessageList | null {
+  for (const scroller of document.querySelectorAll('main div')) {
+    if (scroller.scrollHeight <= scroller.clientHeight) continue;
+    if (!S.SCROLLABLE_OVERFLOW.includes(getComputedStyle(scroller).overflowY)) continue;
+    const el = scroller.firstElementChild?.firstElementChild;
+    const fiber = el && findUp(fiberOf(el), (f) => Array.isArray(f.memoizedProps?.[S.LOADED_MESSAGES_PROP]));
+    if (el && fiber) return { el, fiber };
   }
   return null;
 }
@@ -80,21 +83,52 @@ function reelOf(src: RecordSource, item: any): RawReel | null {
 function scan(): ScanResult {
   const list = findMessageList();
   if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
-  const src = findRecordSource(list);
+  const src = findRecordSource(list.fiber);
   if (!src) return { ok: false, reason: 'no Relay store above the message list' };
   const viewerId = viewerIdOf(src);
   if (!viewerId) return { ok: false, reason: 'no viewer id in the Relay store' };
-  const items: unknown[] = list.memoizedProps[S.LOADED_MESSAGES_PROP];
+  const items: unknown[] = list.fiber.memoizedProps[S.LOADED_MESSAGES_PROP];
   const reels = items.map((item) => reelOf(src, item)).filter((r): r is RawReel => r !== null);
-  return { ok: true, viewerId, hasMoreAbove: Boolean(list.memoizedProps[S.HAS_MORE_ABOVE_PROP]), reels };
+  return { ok: true, viewerId, hasMoreAbove: Boolean(list.fiber.memoizedProps[S.HAS_MORE_ABOVE_PROP]), reels };
 }
 
-document.addEventListener(REQUEST_EVENT, () => {
-  let result: ScanResult;
+/** The row of a message: by the row's own fiber key, or by position when the counts line up. */
+function findRow(list: MessageList, messageId: string): Element | null {
+  const rows = [...list.el.children];
+  const byKey = rows.find((row) =>
+    findUp(fiberOf(row), (f) => f.key === messageId || f.memoizedProps?.messageId === messageId, S.MAX_ROW_FIBER_DEPTH),
+  );
+  if (byKey) return byKey;
+  const items: any[] = list.fiber.memoizedProps[S.LOADED_MESSAGES_PROP];
+  const index = items.findIndex((item) => String(item?.currentMessage?.id) === messageId);
+  // Rows above the messages (a progressbar while older pages exist) shift the DOM index.
+  const offset = rows.length - items.length;
+  if (index < 0 || offset < 0 || offset > S.MAX_LEADING_ROWS) return null;
+  return rows[index + offset] ?? null;
+}
+
+/** Scrolls the thread so the message's row sits in the middle, so closing the player lands there. */
+function reveal(messageId: string): RevealResult {
+  const list = findMessageList();
+  if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
+  const row = findRow(list, messageId);
+  if (!row) return { ok: false, reason: `no row for message ${messageId} among the loaded ones` };
+  row.scrollIntoView({ block: 'center' });
+  return { ok: true };
+}
+
+function handle(request: Request): ScanResult | RevealResult {
+  if (request.op === 'scan') return scan();
+  if (request.op === 'reveal') return reveal(request.messageId);
+  return { ok: false, reason: `unknown op ${(request as { op: string }).op}` };
+}
+
+document.addEventListener(REQUEST_EVENT, (e) => {
+  let result: ScanResult | RevealResult;
   try {
-    result = scan();
+    result = handle(JSON.parse(String((e as CustomEvent).detail)) as Request);
   } catch (err) {
-    result = { ok: false, reason: `scan threw: ${err instanceof Error ? err.message : String(err)}` };
+    result = { ok: false, reason: `page script threw: ${err instanceof Error ? err.message : String(err)}` };
   }
   document.dispatchEvent(new CustomEvent(RESPONSE_EVENT, { detail: JSON.stringify(result) }));
 });

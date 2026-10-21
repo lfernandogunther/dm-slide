@@ -1,4 +1,4 @@
-import { requestScan, type ScanResult } from './bridge';
+import { requestReveal, requestScan, type ScanResult } from './bridge';
 import { THREAD_PATH } from './selectors';
 
 export interface Reel {
@@ -17,6 +17,7 @@ export interface ThreadAdapter {
   unreact(id: string): Promise<void>;
   reply(id: string, text: string, quote: boolean): Promise<void>;
   loadOlder(): Promise<boolean>; // false = start of chat
+  reveal(id: string): void; // scrolls Instagram's thread to that message
   health(): Health;
 }
 
@@ -47,6 +48,10 @@ export function createThreadAdapter(): ThreadAdapter {
     health() {
       const scan = scanThread();
       return scan.ok ? { ok: true } : { ok: false, reason: scan.reason };
+    },
+    reveal(id) {
+      const result = requestReveal(id);
+      if (!result.ok) throw new Error(`reveal: ${result.reason}`);
     },
     react: () => notYet('#07'),
     unreact: () => notYet('#07'),

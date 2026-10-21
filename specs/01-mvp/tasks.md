@@ -6,7 +6,7 @@ One commit each. `feat [S01 #NN]: ...` (docs-only → `doc`).
 - [x] #02 — Scaffold: `package.json`, `tsconfig.json`, `manifest.json` (MV3, content script on `instagram.com/*`, acting only in `/direct/t/<id>/`), `scripts/build.mjs` (esbuild build + watch), a content script that logs on load. Loads unpacked. Declare the pre-commit `npm run typecheck`
 - [x] #03 — `src/instagram/selectors.ts` + `adapter.listReels()` + `health()`: others' reels in send order with sender, time, shortcode, `myReaction`
 - [x] #04 — `src/content/main.ts`: inject "▶ Reel Queue · N without ❤️" / disabled "No reels" into the thread header; re-inject on thread change (acceptance #1)
-- [ ] #05 — Player shell in Shadow DOM (`src/player/`): prototype layout, open/close, the start position rule, strip, ‹ ›, keys `A`/`D`/`←`/`→`/`Esc`, shortcuts off while typing, the thread following the current reel (acceptance #2, #3 nav, #8, #10)
+- [x] #05 — Player shell in Shadow DOM (`src/player/`): prototype layout, open/close, the start position rule, strip, ‹ ›, keys `A`/`D`/`←`/`→`/`Esc`, shortcuts off while typing, the thread following the current reel (acceptance #2, #3 nav, #8, #10)
 - [ ] #06 — Playback: the current reel inline with sound, loop, `Space`/click pauses, the next one preloaded, an "unavailable" card (acceptance #3)
 - [ ] #07 — React: `adapter.react`/`unreact` with the row re-check; `F` and the ❤️ button; "Next after ❤️"; strip and counter update; settings in `chrome.storage.local` (acceptance #4)
 - [ ] #08 — Reply: `adapter.reply` quoted or plain; `R`, `Enter`, the "Quote this reel" toggle; a sent toast (acceptance #5)

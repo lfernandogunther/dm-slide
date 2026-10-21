@@ -13,6 +13,11 @@ export const SCROLLABLE_OVERFLOW = ['auto', 'scroll'];
 export const LOADED_MESSAGES_PROP = 'elements';
 export const HAS_MORE_ABOVE_PROP = 'hasMoreAbove';
 
+// A message row's DOM child carries the message id as a fiber key a few levels up. Failing that,
+// DOM child i is message i-1 while a progressbar row sits above the messages.
+export const MAX_ROW_FIBER_DEPTH = 8;
+export const MAX_LEADING_ROWS = 1;
+
 // Relay store records.
 export const STORE_ROOT_ID = 'client:root';
 export const VIEWER_ROOT_FIELD = 'xdt_viewer';

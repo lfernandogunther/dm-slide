@@ -38,6 +38,7 @@ internal request for that single action, and the choice gets recorded in `learni
     unreact(id: string): Promise<void>;
     reply(id: string, text: string, quote: boolean): Promise<void>;
     loadOlder(): Promise<boolean>;     // false = start of chat
+    reveal(id: string): void;          // scrolls Instagram's thread to that message
     health(): { ok: true } | { ok: false; reason: string };
   }
   ```

@@ -21,15 +21,23 @@ export type ScanResult =
   | { ok: true; viewerId: string; hasMoreAbove: boolean; reels: RawReel[] }
   | { ok: false; reason: string };
 
-/** Isolated side: ask the page script for a scan. dispatchEvent runs its listener synchronously. */
-export function requestScan(): ScanResult {
+export type RevealResult = { ok: true } | { ok: false; reason: string };
+
+export type Request = { op: 'scan' } | { op: 'reveal'; messageId: string };
+
+/** Isolated side: ask the page script. dispatchEvent runs its listener synchronously. */
+function call<T extends { ok: boolean }>(request: Request): T | { ok: false; reason: string } {
   let response: string | null = null;
   const onResponse = (e: Event) => {
     response = String((e as CustomEvent).detail);
   };
   document.addEventListener(RESPONSE_EVENT, onResponse, { once: true });
-  document.dispatchEvent(new CustomEvent(REQUEST_EVENT, { detail: JSON.stringify({ op: 'scan' }) }));
+  document.dispatchEvent(new CustomEvent(REQUEST_EVENT, { detail: JSON.stringify(request) }));
   document.removeEventListener(RESPONSE_EVENT, onResponse);
   if (response === null) return { ok: false, reason: 'the page script did not answer (page.js not injected?)' };
-  return JSON.parse(response) as ScanResult;
+  return JSON.parse(response) as T;
 }
+
+export const requestScan = (): ScanResult => call<ScanResult>({ op: 'scan' });
+
+export const requestReveal = (messageId: string): RevealResult => call<RevealResult>({ op: 'reveal', messageId });

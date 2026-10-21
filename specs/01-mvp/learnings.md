@@ -157,3 +157,16 @@ typed without sending. End state verified clean: no reaction, empty composer, no
 - Checked in my own Chrome (pt-BR): the counts matched the chat in three threads, back and forth,
   including one at "0 without ❤️" where I had reacted to every reel — the first live proof of a
   non-null `myReaction`. Instagram's header spreads its items, so the button sits mid-header.
+
+## #05 player shell (2026-10-21)
+- Keys: one capture-phase listener on `window` for keydown/keyup/keypress stops every key while the
+  player is open (a document listener counted 0 keys through a whole session). Typing in the reply
+  box still works, since stopping propagation doesn't cancel the default action. ⌘/Ctrl/Alt
+  combos pass through to the browser. On open, the focused element (Instagram's composer) is
+  blurred, or typed keys would land in it.
+- "Typing" is `e.composedPath()[0] === replyInput`: `e.target` is retargeted to the shadow host.
+- Follow-in-chat (`reveal`): the page script finds the row by a fiber key / `messageId` prop within
+  8 levels above each DOM row, falling back to `rows[index + (rows − messages)]` only when that
+  offset is 0 or 1. Each move put the same row at the thread's center, with no warnings.
+  Confirmed by eye in my own Chrome: after a few D presses and Esc, the thread showed that reel.
+- The prototype's 95%-opaque backdrop let Instagram's nav show through the strip; it's opaque now.
