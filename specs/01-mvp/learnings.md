@@ -142,3 +142,18 @@ typed without sending. End state verified clean: no reaction, empty composer, no
   answers synchronously, `health()` ok, 12 reels from others with unique ids and no reaction of
   mine, which matches the chat. The same reel sent twice is two items (one per message), by design.
   A non-null `myReaction` is still unverified; #07 covers it once React exists.
+
+## #04 header button (2026-10-21)
+- The thread header is found from the message scroller, not from labels: walk up from the wide,
+  tall scroller (the inbox list is ~100px wide) to the first ancestor with a previous sibling; in it,
+  the icon row is the div whose 2–4 children are all `[role=button]` with an svg. `data-pagelet`
+  is useless as an anchor (four on the page, the first is the inbox list).
+- The button goes right before the icon row, in the same flex row as the avatar/name link.
+- A `MutationObserver` on `body` with a 400 ms debounce keeps it there: React dropping the button
+  puts it back within one sync, and an unchanged label writes nothing, so there is no observer loop
+  (the label lives in a shadow root, outside what the observer sees anyway).
+- Checked by injecting the build into the automated Chrome: one button, "4 without ❤️" for the
+  spike's thread, stable after 3 s, back after being removed.
+- Checked in my own Chrome (pt-BR): the counts matched the chat in three threads, back and forth,
+  including one at "0 without ❤️" where I had reacted to every reel — the first live proof of a
+  non-null `myReaction`. Instagram's header spreads its items, so the button sits mid-header.

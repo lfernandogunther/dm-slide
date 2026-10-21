@@ -20,3 +20,10 @@ export const VIEWER_ID_FIELD = 'interop_messaging_user_fbid';
 
 // A shared reel's XMA card points at its reel URL; posts (/p/) are not reels.
 export const REEL_URL = /instagram\.com\/reel\/([^/?#]+)/;
+
+// The thread header sits in the previous sibling of an ancestor of the message scroller (wide and
+// tall, unlike the inbox list's). Its call / video / info icons are a div whose children are all
+// `[role=button]` with an svg; the button goes right before that div. No aria-label: the UI is
+// localized.
+export const MESSAGE_SCROLLER_MIN = { width: 400, height: 300 };
+export const HEADER_ICON_COUNT = { min: 2, max: 4 };
