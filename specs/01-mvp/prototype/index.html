@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel Queue prototype</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b0b0c;
+  --panel: #141416;
+  --ig-bg: #000;
+  --ig-border: #262626;
+  --ig-text: #f5f5f5;
+  --ig-muted: #a8a8a8;
+  --ig-blue: #0095f6;
+  --bubble-me: #3797f0;
+  --bubble-them: #262626;
+  --tag-reuse: #8a8f98;
+  --tag-new: #f5a524;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ig-text); font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.hidden { display: none !important; }
+.muted { color: var(--ig-muted); }
+.small { font-size: 12px; }
+kbd { font: 11px ui-monospace, monospace; background: #262626; border: 1px solid #3a3a3a; border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--ig-text); }
+
+/* the whole prototype fits one screen: nothing important below the fold */
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; padding: 16px; height: 100vh; }
+@media (max-width: 1000px) { .app { grid-template-columns: 1fr; height: auto; } .browser { height: 100vh; } }
+
+/* fake browser */
+.browser { border: 1px solid var(--ig-border); border-radius: 10px; overflow: hidden; background: var(--ig-bg); display: flex; flex-direction: column; min-height: 0; }
+.chrome-bar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #1c1c1e; border-bottom: 1px solid var(--ig-border); }
+.dots { color: #555; letter-spacing: 2px; }
+.url { flex: 1; background: #2a2a2d; border-radius: 6px; padding: 4px 10px; color: var(--ig-muted); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ext-icon { width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af); display: grid; place-items: center; font-size: 10px; font-weight: 700; }
+.viewport { position: relative; flex: 1; display: flex; min-height: 0; }
+.screen-label { position: absolute; bottom: 8px; right: 8px; z-index: 30; font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,.8); border: 1px solid var(--ig-border); pointer-events: none; }
+.screen-label b { color: var(--tag-new); }
+.screen-label.reuse b { color: var(--tag-reuse); }
+
+/* S1: Instagram Direct as-is */
+.ig { display: flex; flex: 1; min-width: 0; }
+.ig-list { width: 240px; border-right: 1px solid var(--ig-border); overflow-y: auto; flex-shrink: 0; }
+.ig-list h4 { margin: 16px; font-size: 16px; }
+.conv { display: flex; gap: 10px; align-items: center; padding: 8px 16px; cursor: pointer; }
+.conv:hover, .conv.active { background: #1a1a1a; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; background: #333; display: grid; place-items: center; flex-shrink: 0; font-size: 18px; }
+.conv .meta { flex: 1; min-width: 0; }
+.conv .preview { color: var(--ig-muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ig-thread { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ig-thread-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--ig-border); }
+.ig-thread-head .avatar { width: 32px; height: 32px; font-size: 14px; }
+.ig-thread-head .name { flex: 1; font-weight: 600; }
+.rq-btn { border: 0; border-radius: 8px; padding: 7px 12px; font-weight: 600; background: linear-gradient(135deg, #f58529, #dd2a7b); box-shadow: 0 0 0 2px rgba(245,165,36,.35); }
+.rq-btn:disabled { background: #262626; box-shadow: none; color: var(--ig-muted); cursor: default; }
+.ig-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.msg { display: flex; flex-direction: column; align-items: flex-start; max-width: 70%; }
+.msg.me { align-self: flex-end; align-items: flex-end; }
+.msg .from { font-size: 11px; color: var(--ig-muted); margin: 0 0 2px 10px; }
+.bubble { background: var(--bubble-them); padding: 8px 12px; border-radius: 18px; white-space: pre-wrap; word-break: break-word; }
+.msg.me .bubble { background: var(--bubble-me); }
+.quote { font-size: 11px; color: var(--ig-muted); margin-bottom: 2px; display: flex; gap: 6px; align-items: center; }
+.quote .mini { width: 18px; height: 28px; border-radius: 3px; }
+.reel-card { width: 150px; height: 230px; border-radius: 12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 46px; cursor: pointer; }
+.reel-card .rc-author { position: absolute; left: 0; right: 0; top: 0; padding: 6px 8px; font-size: 11px; font-weight: 600; background: linear-gradient(rgba(0,0,0,.6), transparent); }
+.reel-card .rc-icon { position: absolute; right: 6px; bottom: 6px; font-size: 12px; }
+.reel-card::after { content: "▶"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 34px; background: rgba(0,0,0,.35); opacity: 0; transition: opacity .15s; }
+.reel-card:hover::after { opacity: 1; }
+.react-chip { font-size: 12px; background: #262626; border: 2px solid var(--ig-bg); border-radius: 999px; padding: 0 6px; margin-top: -8px; margin-left: 8px; position: relative; }
+.msg.me .react-chip { margin-left: 0; margin-right: 8px; }
+.time { align-self: center; font-size: 11px; color: var(--ig-muted); margin: 6px 0; }
+.ig-composer { padding: 12px 16px; border-top: 1px solid var(--ig-border); }
+.ig-composer input { width: 100%; background: transparent; border: 1px solid var(--ig-border); border-radius: 22px; padding: 10px 16px; color: var(--ig-muted); }
+
+/* S2: player overlay */
+.player { position: absolute; inset: 0; z-index: 20; background: rgba(0,0,0,.95); display: flex; flex-direction: column; }
+.p-head { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--ig-border); flex-wrap: wrap; }
+.p-title { flex: 1; min-width: 160px; }
+.p-keys { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--ig-muted); }
+.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ig-muted); cursor: pointer; user-select: none; }
+.icon-btn { background: transparent; border: 0; font-size: 18px; padding: 4px 8px; }
+.p-body { flex: 1; display: flex; gap: 16px; padding: 16px; min-height: 0; }
+.p-strip { list-style: none; margin: 0; padding: 4px 12px 8px 0; width: 84px; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.p-strip li { position: relative; width: 60px; height: 92px; border-radius: 8px; cursor: pointer; display: grid; place-items: center; font-size: 22px; opacity: .5; border: 2px solid transparent; flex-shrink: 0; }
+.p-strip li.current { opacity: 1; border-color: #fff; }
+.p-strip li.reacted::after { content: "❤️"; position: absolute; right: -6px; bottom: -6px; font-size: 14px; }
+.p-strip li.edge { height: auto; opacity: 1; cursor: default; font-size: 11px; color: var(--ig-muted); text-align: center; padding: 4px 0; }
+.p-strip li.skeleton { cursor: default; opacity: 1; background: linear-gradient(90deg, #1c1c1e 0%, #2c2c2f 50%, #1c1c1e 100%); background-size: 200% 100%; animation: shimmer 1s linear infinite; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* thin dark scrollbars, the strip's only shows on hover */
+.ig-list, .ig-messages, .side { scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; }
+.p-strip { scrollbar-width: thin; scrollbar-color: transparent transparent; transition: scrollbar-color .2s; }
+.p-strip:hover { scrollbar-color: #4a4a4a transparent; }
+.p-stage { flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
+.nav { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #262626; font-size: 24px; flex-shrink: 0; }
+.nav:disabled { opacity: .25; cursor: default; }
+.p-center { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+/* reel height leaves room for the reply box right under it */
+.reel { height: clamp(280px, calc(100vh - 270px), 600px); aspect-ratio: 9 / 16; border-radius: 14px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 90px; cursor: pointer; }
+.reel-top { position: absolute; left: 0; right: 0; top: 0; padding: 10px 12px 24px; font-size: 13px; background: linear-gradient(rgba(0,0,0,.65), transparent); }
+.reel-play { position: absolute; font-size: 40px; opacity: 0; transition: opacity .2s; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+.reel.paused .reel-play { opacity: 1; }
+.reel-meta { position: absolute; left: 0; right: 0; bottom: 4px; padding: 30px 12px 8px; font-size: 13px; background: linear-gradient(transparent, rgba(0,0,0,.7)); }
+.reel-meta .muted { color: #ddd; }
+.reel-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255,255,255,.25); }
+.reel-progress div { height: 100%; width: 0; background: #fff; }
+.p-reply { display: flex; gap: 8px; align-items: center; background: #121212; border: 1px solid #3a3a3a; border-radius: 22px; padding: 4px 6px 4px 14px; }
+.p-reply:focus-within { border-color: var(--ig-blue); }
+.p-reply input[type=text] { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; padding: 8px 0; color: var(--ig-text); }
+.p-reply button { border: 0; background: var(--ig-blue); border-radius: 16px; padding: 6px 12px; font-weight: 600; }
+.p-reply-opts { display: flex; justify-content: space-between; align-items: center; padding: 0 6px; }
+.p-actions { align-self: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.heart { width: 60px; height: 60px; border-radius: 50%; border: 0; background: #262626; font-size: 28px; transition: transform .15s; }
+.heart.on { background: rgba(255,48,64,.18); }
+.heart.pop { transform: scale(1.25); }
+.toast { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); background: #fff; color: #000; padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 5; }
+.toast.show { opacity: 1; }
+
+/* side panel: flow map */
+.side { background: var(--panel); border: 1px solid var(--ig-border); border-radius: 10px; padding: 16px; overflow-y: auto; min-height: 0; }
+.side h3 { margin: 0 0 12px; font-size: 15px; }
+.side h4 { margin: 18px 0 8px; font-size: 13px; color: var(--ig-muted); text-transform: uppercase; letter-spacing: .04em; }
+.flow { list-style: none; margin: 0; padding: 0; }
+.flow li { border: 1px solid var(--ig-border); border-radius: 8px; padding: 10px; }
+.flow li.current { border-color: #fff; background: #1d1d20; }
+.flow .arrow { border: 0; padding: 6px 0 6px 14px; color: var(--ig-muted); font-size: 12px; }
+.flow small { display: block; color: var(--ig-muted); margin-top: 4px; font-size: 12px; }
+.tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; }
+.tag.reuse { background: rgba(138,143,152,.2); color: var(--tag-reuse); }
+.tag.new { background: rgba(245,165,36,.18); color: var(--tag-new); }
+.side ul { margin: 0; padding-left: 18px; color: var(--ig-muted); font-size: 12px; }
+.side ul li { margin-bottom: 4px; }
+.side ul b { color: var(--ig-text); font-weight: 600; }
+.reset { margin-top: 16px; width: 100%; border: 1px solid var(--ig-border); background: #1c1c1e; border-radius: 8px; padding: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="browser">
+    <div class="chrome-bar">
+      <span class="dots">●●●</span>
+      <div class="url">instagram.com/direct/t/<span id="url-thread"></span></div>
+      <div class="ext-icon" title="Reel Queue extension (installed)">RQ</div>
+    </div>
+    <div class="viewport">
+      <div class="screen-label" id="screen-label"></div>
+
+      <!-- S1 -->
+      <div class="ig" id="s1">
+        <aside class="ig-list"><h4>Messages</h4><div id="conv-list"></div></aside>
+        <section class="ig-thread">
+          <header class="ig-thread-head">
+            <div class="avatar" id="thread-avatar"></div>
+            <div class="name" id="thread-name"></div>
+            <button class="rq-btn" id="open-queue"></button>
+          </header>
+          <div class="ig-messages" id="messages"></div>
+          <div class="ig-composer"><input placeholder="Message..." disabled></div>
+        </section>
+      </div>
+
+      <!-- S2 -->
+      <div class="player hidden" id="s2">
+        <header class="p-head">
+          <div class="p-title"><strong id="p-conv"></strong> <span class="muted" id="p-pos"></span></div>
+          <div class="p-keys"><span><kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> prev / next</span><span><kbd>F</kbd> ❤️</span><span><kbd>R</kbd> reply</span><span><kbd>Space</kbd> pause</span><span><kbd>Esc</kbd> close</span></div>
+          <label class="toggle"><input type="checkbox" id="auto-advance" checked> Next after ❤️</label>
+          <button class="icon-btn" id="p-close" title="Close (Esc)">✕</button>
+        </header>
+        <div class="p-body">
+          <ol class="p-strip" id="p-strip"></ol>
+          <div class="p-stage">
+            <button class="nav" id="p-prev" title="Previous (A / ←)">‹</button>
+            <div class="p-center">
+              <div class="reel" id="reel">
+                <div class="reel-top"><strong id="p-from"></strong> <span class="muted" id="p-time"></span></div>
+                <span id="reel-emoji"></span>
+                <div class="reel-play">▶</div>
+                <div class="reel-meta"><strong id="reel-author"></strong><div class="muted" id="reel-caption"></div></div>
+                <div class="reel-progress"><div id="reel-bar"></div></div>
+              </div>
+              <form class="p-reply" id="p-reply">
+                <input type="text" id="reply-input" autocomplete="off">
+                <button type="submit">Send</button>
+              </form>
+              <div class="p-reply-opts">
+                <label class="toggle"><input type="checkbox" id="quote" checked> Quote this reel</label>
+              </div>
+            </div>
+            <div class="p-actions">
+              <button class="heart" id="p-like" title="React ❤️ to the message (F)">♡</button>
+              <kbd>F</kbd>
+            </div>
+            <button class="nav" id="p-next" title="Next (D / →)">›</button>
+          </div>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <h3>Flow map</h3>
+    <ol class="flow">
+      <li data-screen="s1"><b>S1 · Conversation</b><span class="tag reuse">reuses: Instagram Direct</span>
+        <small>Instagram's own page, untouched. The extension only injects the "▶ Reel Queue" button in the thread header, with how many reels still lack your ❤️.</small></li>
+      <li class="arrow">↓ ▶ Reel Queue → starts at the oldest reel without your ❤️<br>↓ click a reel in the chat → starts at that reel<br>↑ Esc / ✕ → back to the chat, ❤️ and replies already in it</li>
+      <li data-screen="s2"><b>S2 · Player</b><span class="tag new">new: Player</span>
+        <small>Overlay on the thread. Every reel others sent, in the order sent. A / D (or ← / →) walk through them; F reacts ❤️ to the message; the reply box sits right under the video and goes to the chat. The strip on the left jumps anywhere and fetches older reels as you scroll up (lazy, one page at a time).</small></li>
+    </ol>
+
+    <h4>Rules shown here</h4>
+    <ul>
+      <li><b>No filter</b>: every reel, in the order sent. ❤️ only marks it (strip + counter).</li>
+      <li>Reels <b>you</b> sent are left out.</li>
+      <li>At the last reel, → stops; the counter says what's left without ❤️.</li>
+      <li>Groups work the same; the top of the video names the sender.</li>
+    </ul>
+
+    <h4>Decide while clicking</h4>
+    <ul>
+      <li><b>Next after ❤️</b>: on by default?</li>
+      <li><b>Quote this reel</b>: on by default?</li>
+      <li>Entry point: header button, or the toolbar icon?</li>
+    </ul>
+    <button class="reset" id="reset">Reset fake data</button>
+  </aside>
+</div>
+
+<script>
+const ME = "me";
+const REELS = [
+  { author: "@chef.marco", caption: "15-second pasta trick", emoji: "🍝", hue: 20, dur: 12 },
+  { author: "@doggo.daily", caption: "he heard the treat bag", emoji: "🐶", hue: 40, dur: 9 },
+  { author: "@travelwithlu", caption: "hidden beach in Bahia", emoji: "🏝️", hue: 190, dur: 15 },
+  { author: "@homehacks", caption: "fold a fitted sheet in 10s", emoji: "🛏️", hue: 260, dur: 10 },
+  { author: "@comedy.br", caption: "every couple on a road trip", emoji: "😂", hue: 330, dur: 14 },
+  { author: "@plantmom", caption: "this plant survives anything", emoji: "🪴", hue: 120, dur: 11 },
+  { author: "@babysteps", caption: "first time tasting lemon", emoji: "🍋", hue: 55, dur: 8 },
+  { author: "@fitwithana", caption: "5 min morning stretch", emoji: "🧘", hue: 170, dur: 13 },
+  { author: "@diy.wood", caption: "shelf from one plank", emoji: "🪵", hue: 30, dur: 16 },
+  { author: "@catsofinsta", caption: "the betrayal", emoji: "🐱", hue: 280, dur: 7 },
+  { author: "@musicclips", caption: "busker nails it", emoji: "🎸", hue: 0, dur: 15 },
+  { author: "@recipes.quick", caption: "airfryer churros", emoji: "🍩", hue: 15, dur: 12 },
+];
+
+let nextId = 1;
+const reel = (from, i, time, reacted = false) => ({ id: nextId++, type: "reel", from, reel: REELS[i], time, myReaction: reacted });
+const text = (from, body, time, quoteOf = null) => ({ id: nextId++, type: "text", from, text: body, time, quoteOf });
+
+function seed() {
+  nextId = 1;
+  return [
+    { id: "ana", name: "Ana", avatar: "🌸", group: false, messages: [
+      // long history, all already reacted: the player only fetches it when you scroll back
+      ...Array.from({ length: 30 }, (_, i) => reel("Ana", i % REELS.length, `Oct ${String(1 + Math.floor(i / 3)).padStart(2, "0")} 2${i % 3}:00`, true)),
+      reel("Ana", 0, "Mon 21:02", true),
+      reel("Ana", 1, "Mon 21:04", true),
+      text(ME, "hahaha", "Mon 21:10"),
+      reel("Ana", 2, "Tue 08:15"),
+      text("Ana", "we need to go here", "Tue 08:15"),
+      reel("Ana", 3, "Tue 12:40"),
+      reel("Ana", 4, "Tue 12:41"),
+      reel(ME, 5, "Tue 13:00"),
+      reel("Ana", 6, "Tue 19:22"),
+      reel("Ana", 7, "Wed 07:05"),
+      text("Ana", "did you see the ones I sent??", "Wed 09:30"),
+      reel("Ana", 8, "Wed 11:11"),
+    ]},
+    { id: "family", name: "Family 🏠", avatar: "👪", group: true, messages: [
+      reel("Mom", 9, "Mon 10:00", true),
+      reel("Lucas", 10, "Tue 18:20"),
+      text("Mom", "lol", "Tue 18:25"),
+      reel("Ana", 11, "Wed 09:00"),
+      reel("Mom", 1, "Wed 10:30"),
+      reel("Lucas", 4, "Wed 10:31"),
+    ]},
+    { id: "bruno", name: "Bruno", avatar: "🧢", group: false, messages: [
+      reel("Bruno", 3, "Sun 15:00", true),
+      text(ME, "classic", "Sun 15:02"),
+      reel("Bruno", 6, "Mon 22:00", true),
+    ]},
+  ];
+}
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const grad = (h) => `linear-gradient(160deg, hsl(${h} 70% 45%), hsl(${(h + 40) % 360} 65% 22%))`;
+
+const PAGE = 8; // reels per fetch, simulating Instagram's thread pagination
+let convs, convId, allReels, loadedFrom, loading, queue, idx, progress, paused, timer;
+
+function conv() { return convs.find((c) => c.id === convId); }
+function msg(id) { return conv().messages.find((m) => m.id === id); }
+function reelsFromOthers(c) { return c.messages.filter((m) => m.type === "reel" && m.from !== ME); }
+function unreacted(list) { return list.filter((m) => !m.myReaction); }
+
+const LABELS = {
+  s1: ["reuse", "S1 · <b>reuses: Instagram Direct</b> (page as-is + injected button)"],
+  s2: ["", "S2 · <b>new: Player</b> (overlay · fake video: emoji + progress bar)"],
+};
+function setScreen(s) {
+  // S1 stays rendered underneath; S2 is an overlay on top of it
+  $("s2").classList.toggle("hidden", s !== "s2");
+  $("screen-label").className = "screen-label " + LABELS[s][0];
+  $("screen-label").innerHTML = LABELS[s][1];
+  document.querySelectorAll(".flow li[data-screen]").forEach((li) => li.classList.toggle("current", li.dataset.screen === s));
+  if (s !== "s2") stopPlayback();
+}
+
+/* ---------- S1 ---------- */
+function renderS1() {
+  $("url-thread").textContent = convId;
+  $("conv-list").innerHTML = convs.map((c) => {
+    const last = c.messages[c.messages.length - 1];
+    const prev = last.type === "reel" ? `${last.from === ME ? "You" : last.from} sent a reel` : `${last.from === ME ? "You: " : ""}${esc(last.text)}`;
+    return `<div class="conv ${c.id === convId ? "active" : ""}" data-id="${c.id}">
+      <div class="avatar">${c.avatar}</div>
+      <div class="meta"><div>${c.name}</div><div class="preview">${prev}</div></div>
+    </div>`;
+  }).join("");
+
+  const c = conv();
+  const all = reelsFromOthers(c);
+  const left = unreacted(all).length;
+  $("thread-name").textContent = c.name;
+  $("thread-avatar").textContent = c.avatar;
+  $("open-queue").disabled = all.length === 0;
+  $("open-queue").textContent = !all.length ? "No reels" : left ? `▶ Reel Queue · ${left} without ❤️` : "▶ Reel Queue · all ❤️";
+
+  let lastDay = "";
+  $("messages").innerHTML = c.messages.map((m) => {
+    const day = m.time === "now" ? "Today" : m.time.split(" ").slice(0, -1).join(" ");
+    const sep = day !== lastDay ? `<div class="time">${day}</div>` : "";
+    lastDay = day;
+    const mine = m.from === ME;
+    const from = c.group && !mine ? `<div class="from">${m.from}</div>` : "";
+    if (m.type === "reel") {
+      return `${sep}<div class="msg ${mine ? "me" : ""}">${from}
+        <div class="reel-card" data-msg="${m.id}" title="${mine ? "" : "Open in Reel Queue"}" style="background:${grad(m.reel.hue)}${mine ? ";cursor:default" : ""}">${m.reel.emoji}
+          <div class="rc-author">${m.reel.author}</div><div class="rc-icon">🎬</div></div>
+        ${m.myReaction ? `<span class="react-chip">❤️</span>` : ""}</div>`;
+    }
+    const q = m.quoteOf ? msg(m.quoteOf) : null;
+    const quote = q ? `<div class="quote"><span class="mini" style="background:${grad(q.reel.hue)}"></span>You replied to ${q.from}'s reel</div>` : "";
+    return `${sep}<div class="msg ${mine ? "me" : ""}">${from}${quote}<div class="bubble">${esc(m.text)}</div></div>`;
+  }).join("");
+  $("messages").scrollTop = $("messages").scrollHeight;
+}
+
+/* ---------- S2 ---------- */
+function openPlayer(startId) {
+  const all = reelsFromOthers(conv());
+  allReels = all.map((m) => m.id);
+  const first = startId ?? (unreacted(all)[0] || all[all.length - 1]).id;
+  // fetched so far: newest back to the start reel, one reel of context, at least one page
+  const fi = allReels.indexOf(first);
+  loadedFrom = Math.max(0, Math.min(fi - 1, allReels.length - PAGE));
+  loading = false;
+  queue = allReels.slice(loadedFrom);
+  idx = queue.indexOf(first);
+  setScreen("s2");
+  renderPlayer();
+}
+
+function loadOlder() {
+  if (loading || loadedFrom === 0) return;
+  loading = true;
+  renderStrip(false);
+  setTimeout(() => {
+    const strip = $("p-strip");
+    const h = strip.scrollHeight, top = strip.scrollTop;
+    const from = Math.max(0, loadedFrom - PAGE);
+    idx += loadedFrom - from;
+    loadedFrom = from;
+    queue = allReels.slice(loadedFrom);
+    loading = false;
+    renderStrip(false);
+    strip.scrollTop = top + (strip.scrollHeight - h); // keep what you were looking at in place
+    renderPos();
+  }, 700);
+}
+
+function renderPos() {
+  const left = queue.filter((id) => !msg(id).myReaction).length;
+  $("p-pos").textContent = `· ${idx + 1} of ${queue.length} loaded · ${left} without ❤️${loadedFrom ? " · older load on scroll" : ""}`;
+}
+
+const stripObserver = new IntersectionObserver((entries) => {
+  if (entries.some((e) => e.isIntersecting)) loadOlder();
+}, { root: $("p-strip") });
+
+function renderStrip(scrollToCurrent) {
+  const top = loading
+    ? `<li class="skeleton"></li><li class="skeleton"></li><li class="skeleton"></li>`
+    : loadedFrom ? `<li class="edge" id="older-sentinel">↑ older</li>` : `<li class="edge">start of chat</li>`;
+  $("p-strip").innerHTML = top + queue.map((id, i) => {
+    const q = msg(id);
+    return `<li data-i="${i}" class="${i === idx ? "current" : ""} ${q.myReaction ? "reacted" : ""}" style="background:${grad(q.reel.hue)}">${q.reel.emoji}</li>`;
+  }).join("");
+  stripObserver.disconnect();
+  if ($("older-sentinel")) stripObserver.observe($("older-sentinel"));
+  if (scrollToCurrent) $("p-strip").querySelector(`[data-i="${idx}"]`).scrollIntoView({ block: "nearest" });
+}
+
+function renderPlayer() {
+  const c = conv();
+  const m = msg(queue[idx]);
+  $("p-conv").textContent = c.name;
+  renderPos();
+  $("reel").style.background = grad(m.reel.hue);
+  $("reel-emoji").textContent = m.reel.emoji;
+  $("reel-author").textContent = m.reel.author;
+  $("reel-caption").textContent = m.reel.caption;
+  $("p-from").textContent = m.from;
+  $("p-time").textContent = m.time;
+  $("p-like").textContent = m.myReaction ? "❤️" : "♡";
+  $("p-like").classList.toggle("on", m.myReaction);
+  $("p-prev").disabled = idx === 0;
+  $("p-next").disabled = idx === queue.length - 1;
+  $("reply-input").placeholder = `Reply to ${c.group ? m.from + " in " + c.name : c.name}…`;
+  renderStrip(true);
+  startPlayback(m.reel.dur);
+}
+
+function startPlayback(dur) {
+  stopPlayback();
+  progress = 0;
+  paused = false;
+  $("reel").classList.remove("paused");
+  timer = setInterval(() => {
+    if (paused) return;
+    progress = (progress + 100 / (dur * 10)) % 100; // reels loop, like on Instagram
+    $("reel-bar").style.width = progress + "%";
+  }, 100);
+}
+function stopPlayback() { clearInterval(timer); }
+function togglePause() { paused = !paused; $("reel").classList.toggle("paused", paused); }
+
+function like() {
+  const m = msg(queue[idx]);
+  m.myReaction = !m.myReaction;
+  $("p-like").classList.add("pop");
+  setTimeout(() => $("p-like").classList.remove("pop"), 150);
+  renderPlayer();
+  if (m.myReaction && $("auto-advance").checked) setTimeout(next, 350);
+}
+
+function next() { if (idx < queue.length - 1) { idx++; renderPlayer(); } }
+function prev() {
+  if (idx <= 1) loadOlder();
+  if (idx > 0) { idx--; renderPlayer(); }
+}
+
+function sendReply(e) {
+  e.preventDefault();
+  const body = $("reply-input").value.trim();
+  if (!body) return;
+  const m = msg(queue[idx]);
+  const quoted = $("quote").checked;
+  conv().messages.push(text(ME, body, "now", quoted ? m.id : null));
+  $("reply-input").value = "";
+  $("reply-input").blur();
+  toast(`Sent to ${conv().name}${quoted ? " · quoting the reel" : ""}`);
+}
+
+let toastTimer;
+function toast(t) {
+  $("toast").textContent = t;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 1600);
+}
+
+function closePlayer() { setScreen("s1"); renderS1(); }
+
+/* ---------- wiring ---------- */
+function reset() {
+  convs = seed();
+  convId = "ana";
+  setScreen("s1");
+  renderS1();
+}
+
+$("conv-list").addEventListener("click", (e) => {
+  const el = e.target.closest(".conv");
+  if (!el) return;
+  convId = el.dataset.id;
+  renderS1();
+});
+$("open-queue").addEventListener("click", () => openPlayer());
+$("messages").addEventListener("click", (e) => {
+  const card = e.target.closest(".reel-card");
+  if (!card) return;
+  const m = msg(+card.dataset.msg);
+  if (m.from !== ME) openPlayer(m.id);
+});
+$("p-strip").addEventListener("click", (e) => { const li = e.target.closest("li[data-i]"); if (li) { idx = +li.dataset.i; renderPlayer(); } });
+$("p-like").addEventListener("click", like);
+$("p-next").addEventListener("click", next);
+$("p-prev").addEventListener("click", prev);
+$("p-close").addEventListener("click", closePlayer);
+$("reel").addEventListener("click", togglePause);
+$("p-reply").addEventListener("submit", sendReply);
+$("reset").addEventListener("click", reset);
+
+document.addEventListener("keydown", (e) => {
+  if ($("s2").classList.contains("hidden")) return;
+  if (e.target === $("reply-input")) {
+    if (e.key === "Escape") $("reply-input").blur();
+    return;
+  }
+  const k = e.key.toLowerCase();
+  if (k === " ") { e.preventDefault(); togglePause(); }
+  else if (k === "f") like();
+  else if (k === "r") { e.preventDefault(); $("reply-input").focus(); }
+  else if (k === "d" || k === "arrowright" || k === "arrowdown") next();
+  else if (k === "a" || k === "arrowleft" || k === "arrowup") prev();
+  else if (k === "escape") closePlayer();
+});
+
+reset();
+</script>
+</body>
+</html>
