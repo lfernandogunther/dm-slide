@@ -29,6 +29,8 @@ See [constitution.md](../../constitution.md) for principles and non-goals.
   reel if every one has a reaction). A clicked reel card opens at that reel.
 - **Navigate:** `A`/`D` or `←`/`→`, the ‹ › buttons, or a click on any item in the strip. At the
   last reel, "next" stops.
+- **Follow in the chat:** every move scrolls Instagram's thread behind the player to the current
+  reel's message, so the chat always sits where the player is.
 - **Watch:** the current reel plays inline with sound and loops. `Space` and a click on the video
   pause it. Only the current reel loads, and the next one is preloaded.
 - **React:** `F` or the ❤️ button reacts ❤️ to that **DM message**, and pressing again removes it.
@@ -41,7 +43,8 @@ See [constitution.md](../../constitution.md) for principles and non-goals.
   "start of chat" when nothing older is left.
 - **Groups:** same behavior. The top of the video names the sender, and the reply placeholder
   names them too.
-- **Close:** `Esc` or ✕. The native thread already shows the reactions and replies made.
+- **Close:** `Esc` or ✕. The thread is left at the last reel viewed, and it already shows the
+  reactions and replies made.
 
 ## Acceptance criteria
 Checked by hand on the real Instagram, in one 1:1 and one group conversation:
@@ -61,6 +64,7 @@ Checked by hand on the real Instagram, in one 1:1 and one group conversation:
 8. `Esc` closes the player, and keys typed in the reply box never trigger shortcuts.
 9. With a selector deliberately broken, the player shows a clear "can't read this conversation"
    message and performs no action (constitution #4).
+10. After moving through a few reels and closing, Instagram's thread shows the last reel viewed.
 
 ## Edge cases
 - **Reels I sent:** never in the player.

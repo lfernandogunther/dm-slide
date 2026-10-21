@@ -21,10 +21,11 @@ internal request for that single action, and the choice gets recorded in `learni
 ## Pieces and how each one works
 | Piece | Plan A (DOM) | Proved in |
 |---|---|---|
-| List reels | Walk the thread's message rows: a reel card links to `/reel/<shortcode>/`, and we read the sender, the time and my reaction from the row | #01, #03 |
+| List reels | Scroll the virtualized message list and collect hydrated reel rows (`svg[aria-label="Clip"]`); the shortcode and my reaction come from React props, so this part runs as a MAIN-world script; the sender comes from the row's action labels. See `learnings.md` | #01, #03 |
 | Play | An iframe of `instagram.com/reel/<shortcode>/embed`, or the `<video>` Instagram renders when the reel opens, whichever #01 shows works with sound | #01, #06 |
-| React / unreact | Hover the message row → React → ❤️, or a double-click on the message if Instagram supports it there | #01, #07 |
+| React / unreact | Hover the message row → React → click ❤️ by its text (never Enter: focus starts on ❤️); unreact via my chip → "Select to remove" | #01, #07 |
 | Reply | Hover → Reply (quoted) or plain focus on the composer; type; send | #01, #08 |
+| Follow in the chat | `scrollIntoView` on the current reel's message row on every move (the same row react/reply need in view anyway) | #01, #05 |
 | Load older | Scroll Instagram's message list to the top so it fetches the next page; re-read the rows | #01, #09 |
 
 ## Modules
