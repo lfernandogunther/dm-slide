@@ -7,7 +7,7 @@ One commit each. `feat [S01 #NN]: ...` (docs-only → `doc`).
 - [x] #03 — `src/instagram/selectors.ts` + `adapter.listReels()` + `health()`: others' reels in send order with sender, time, shortcode, `myReaction`
 - [x] #04 — `src/content/main.ts`: inject "▶ Reel Queue · N without ❤️" / disabled "No reels" into the thread header; re-inject on thread change (acceptance #1)
 - [x] #05 — Player shell in Shadow DOM (`src/player/`): prototype layout, open/close, the start position rule, strip, ‹ ›, keys `A`/`D`/`←`/`→`/`Esc`, shortcuts off while typing, the thread following the current reel (acceptance #2, #3 nav, #8, #10)
-- [ ] #06 — Playback: the current reel inline with sound, loop, `Space`/click pauses, the next one preloaded, an "unavailable" card (acceptance #3)
+- [x] #06 — Playback: the current reel inline with sound, loop, `Space`/click pauses, the next one preloaded, an "unavailable" card (acceptance #3)
 - [ ] #07 — React: `adapter.react`/`unreact` with the row re-check; `F` and the ❤️ button; "Next after ❤️"; strip and counter update; settings in `chrome.storage.local` (acceptance #4)
 - [ ] #08 — Reply: `adapter.reply` quoted or plain; `R`, `Enter`, the "Quote this reel" toggle; a sent toast (acceptance #5)
 - [ ] #09 — Lazy loading: strip sentinel + `A` at the edge → `adapter.loadOlder()`; keep the current reel in place; "start of chat" (acceptance #6)

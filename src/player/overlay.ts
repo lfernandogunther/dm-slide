@@ -2,7 +2,7 @@
 // (specs/01-mvp/prototype/index.html). It talks only to the ThreadAdapter.
 import type { Reel, ThreadAdapter } from '../instagram/adapter';
 import { bindKeys } from './keys';
-import { renderStage } from './stage';
+import { createStage } from './stage';
 import { renderStrip } from './strip';
 
 const STYLE = `
@@ -41,9 +41,25 @@ const STYLE = `
   .nav:disabled { opacity: 0.25; cursor: default; }
   .p-center { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
   .reel {
+    position: relative; overflow: hidden; cursor: pointer;
     height: clamp(280px, calc(100vh - 220px), 640px); aspect-ratio: 9 / 16; border-radius: 14px;
-    background: #1c1c1e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    background: #1c1c1e; display: grid; place-items: center;
   }
+  .reel video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .reel [hidden] { display: none; }
+  .reel-status { text-align: center; color: #a8a8a8; padding: 16px; line-height: 1.8; }
+  .reel-status a { color: #0095f6; }
+  .reel-play {
+    position: absolute; font-size: 40px; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  }
+  .reel.paused .reel-play { opacity: 1; }
+  .reel-mute {
+    position: absolute; right: 12px; bottom: 16px; width: 28px; height: 28px; border-radius: 50%;
+    border: 0; padding: 0; background: rgba(38, 38, 38, 0.8); color: #fff; display: grid; place-items: center;
+  }
+  .reel-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, 0.25); }
+  .reel-progress div { height: 100%; width: 0; background: #fff; }
   .p-reply { display: flex; gap: 8px; align-items: center; background: #121212; border: 1px solid #3a3a3a; border-radius: 22px; padding: 4px 6px 4px 14px; }
   .p-reply:focus-within { border-color: #0095f6; }
   .p-reply input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; padding: 8px 0; color: inherit; font: inherit; }
@@ -60,7 +76,7 @@ const LAYOUT = `
       <div class="p-title"><strong>Reel Queue</strong> <span class="muted" data-pos></span></div>
       <div class="p-keys">
         <span><kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> prev / next</span>
-        <span><kbd>R</kbd> reply</span><span><kbd>Esc</kbd> close</span>
+        <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>R</kbd> reply</span><span><kbd>Esc</kbd> close</span>
       </div>
       <button class="icon-btn" data-close title="Close (Esc)">✕</button>
     </header>
@@ -102,6 +118,7 @@ export function openPlayer(adapter: ThreadAdapter, reels: Reel[], start: number,
   const $ = <T extends HTMLElement>(attr: string) => root.querySelector<T>(`[${attr}]`)!;
   const player = root.querySelector<HTMLElement>('.player')!;
   const reply = $<HTMLInputElement>('data-reply');
+  const stage = createStage($('data-reel'), adapter);
 
   let current = start;
 
@@ -112,7 +129,7 @@ export function openPlayer(adapter: ThreadAdapter, reels: Reel[], start: number,
     $<HTMLButtonElement>('data-prev').disabled = current === 0;
     $<HTMLButtonElement>('data-next').disabled = current === reels.length - 1;
     $('data-heart').textContent = reel.myReaction ?? '♡';
-    renderStage($('data-reel'), reel);
+    stage.show(reel, reels[current + 1]);
     renderStrip($('data-strip'), reels, current);
   }
 
@@ -132,12 +149,15 @@ export function openPlayer(adapter: ThreadAdapter, reels: Reel[], start: number,
     prev: () => go(current - 1),
     next: () => go(current + 1),
     close,
+    togglePause: () => stage.togglePause(),
+    toggleMute: () => stage.toggleMute(),
     focusReply: () => reply.focus(),
     blurReply: () => player.focus(),
   });
 
   function close(): void {
     unbindKeys();
+    stage.destroy();
     host.remove();
     onClose();
   }
@@ -148,6 +168,9 @@ export function openPlayer(adapter: ThreadAdapter, reels: Reel[], start: number,
   $('data-strip').addEventListener('click', (e) => {
     const tile = (e.target as Element).closest<HTMLElement>('li[data-i]');
     if (tile) go(Number(tile.dataset.i));
+  });
+  $('data-reel').addEventListener('click', (e) => {
+    if (!(e.target as Element).closest('a')) stage.togglePause();
   });
   $('data-reply-form').addEventListener('submit', (e) => e.preventDefault());
 

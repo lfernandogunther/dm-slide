@@ -1,5 +1,6 @@
 import { requestReveal, requestScan, type ScanResult } from './bridge';
 import { THREAD_PATH } from './selectors';
+import { videoUrl } from './video';
 
 export interface Reel {
   id: string; // the DM message id
@@ -18,6 +19,7 @@ export interface ThreadAdapter {
   reply(id: string, text: string, quote: boolean): Promise<void>;
   loadOlder(): Promise<boolean>; // false = start of chat
   reveal(id: string): void; // scrolls Instagram's thread to that message
+  videoUrl(shortcode: string): Promise<string | null>; // null = unavailable
   health(): Health;
 }
 
@@ -53,6 +55,7 @@ export function createThreadAdapter(): ThreadAdapter {
       const result = requestReveal(id);
       if (!result.ok) throw new Error(`reveal: ${result.reason}`);
     },
+    videoUrl,
     react: () => notYet('#07'),
     unreact: () => notYet('#07'),
     reply: () => notYet('#08'),

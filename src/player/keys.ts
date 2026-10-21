@@ -5,6 +5,8 @@ export interface KeyActions {
   prev(): void;
   next(): void;
   close(): void;
+  togglePause(): void;
+  toggleMute(): void;
   focusReply(): void;
   blurReply(): void;
 }
@@ -30,6 +32,8 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
       arrowleft: actions.prev,
       d: actions.next,
       arrowright: actions.next,
+      ' ': actions.togglePause,
+      m: actions.toggleMute,
       r: actions.focusReply,
       escape: actions.close,
     }[e.key.toLowerCase()];

@@ -22,7 +22,7 @@ internal request for that single action, and the choice gets recorded in `learni
 | Piece | Plan A (DOM) | Proved in |
 |---|---|---|
 | List reels | A MAIN-world script reads the loaded messages from React (`elements` above the message list) and the Relay store: shortcode, sender, reactions, my id. No scrolling; older pages load as the player goes back. See `learnings.md` | #01, #03 |
-| Play | An iframe of `instagram.com/reel/<shortcode>/embed`, or the `<video>` Instagram renders when the reel opens, whichever #01 shows works with sound | #01, #06 |
+| Play | Our own `<video>` playing the mp4 URL from the web app's media lookup (`/api/v1/media/<id>/info/`, the id decoded from the shortcode); fallback: the reel's embed page (`/reel/<shortcode>/embed/`, same-origin, loaded in a hidden iframe and dropped once read) | #01, #06 |
 | React / unreact | Hover the message row → React → click ❤️ by its text (never Enter: focus starts on ❤️); unreact via my chip → "Select to remove" | #01, #07 |
 | Reply | Hover → Reply (quoted) or plain focus on the composer; type; send | #01, #08 |
 | Follow in the chat | `scrollIntoView` on the current reel's message row on every move (the same row react/reply need in view anyway) | #01, #05 |
@@ -39,6 +39,7 @@ internal request for that single action, and the choice gets recorded in `learni
     reply(id: string, text: string, quote: boolean): Promise<void>;
     loadOlder(): Promise<boolean>;     // false = start of chat
     reveal(id: string): void;          // scrolls Instagram's thread to that message
+    videoUrl(shortcode: string): Promise<string | null>; // null = unavailable
     health(): { ok: true } | { ok: false; reason: string };
   }
   ```

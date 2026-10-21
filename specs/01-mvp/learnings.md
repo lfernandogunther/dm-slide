@@ -170,3 +170,28 @@ typed without sending. End state verified clean: no reaction, empty composer, no
   offset is 0 or 1. Each move put the same row at the thread's center, with no warnings.
   Confirmed by eye in my own Chrome: after a few D presses and Esc, the thread showed that reel.
 - The prototype's 95%-opaque backdrop let Instagram's nav show through the strip; it's opaque now.
+
+## #06 playback (2026-10-21)
+- The embed iframe is only a resolver: its `<video>` carries a plain fbcdn mp4 URL, which our own
+  `<video>` (in the shadow root) plays with sound, so loop, pause and progress are ours and none of
+  the embed's chrome shows. The iframe is dropped as soon as the URL is read; a miss (no video in
+  6 s) is not cached, so a slow network gets another try.
+- Two `<video>` elements, current and spare: the spare loads the next reel and is swapped in on
+  `D`, playing at readyState 4 straight away. Every shown reel restarts at 0, since a swapped-in
+  spare can be a reel watched earlier.
+- In the automated Chrome, playback with sound started right after opening from the button's
+  `.click()` — sticky activation from earlier interaction was enough. If the browser refuses
+  sound, the stage shows the paused ▶ and Space starts it.
+- **The embed is not enough:** in my own thread, 9 of 21 reels had no video in their embed page
+  (likely the author turned embedding off); they are still videos. The web app's own media lookup,
+  `/api/v1/media/<id>/info/` with the `X-IG-App-ID` header, returned an mp4 in
+  `items[0].video_versions` for all 21, in 0.4–0.9 s against ~2 s for the embed. It comes first now,
+  the embed second. The media id is the shortcode's first 11 characters read in base 64.
+- A swapped-out `<video>` kept the `onerror` of the reel it last played: an error while preloading
+  into it showed "Reel unavailable" on the reel actually playing. The handler now checks it is
+  still the current video.
+- A `pause` event from leaving a reel arrives after the next reel's reset, so the ▶ mark and the
+  old progress leaked onto the next card; a hidden video no longer drives the stage.
+- `console.warn` from a content script lands on the extension's Errors page in `chrome://extensions`;
+  diagnostics use `console.info`.
+- The stage has a mute button (bottom right, as on Instagram) and `M`; the setting holds across reels.
