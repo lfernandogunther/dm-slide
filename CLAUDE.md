@@ -9,7 +9,9 @@ read it before non-trivial calls.
 
 ## Stack & layout
 - **Chrome extension, Manifest V3, TypeScript.** A content script runs on
-  `https://www.instagram.com/direct/*`. There is no background logic beyond what MV3 requires.
+  `https://www.instagram.com/*` and acts only inside a DM thread (`/direct/t/<id>/`): Instagram is a
+  SPA, so a narrower match would miss reaching DMs from the home page. There is no background logic
+  beyond what MV3 requires.
 - **UI:** vanilla TS + DOM, rendered in a **Shadow DOM** overlay so Instagram's CSS and ours never
   touch. No UI framework (constitution #6).
 - **Build:** esbuild via `scripts/build.mjs` → `dist/` (loaded unpacked). Typecheck: `tsc --noEmit`.

@@ -111,3 +111,12 @@ typed without sending. End state verified clean: no reaction, empty composer, no
 | Load older | Plan A: `scrollTop` to the negative bound; start-of-chat detection still open (#09) |
 | Follow in the chat | Plan A: `scrollIntoView` |
 | Locale | UI labels are English; another language needs its own strings in `selectors.ts` |
+
+## #02 scaffold (2026-10-21)
+- The DevTools-controlled Chrome (chrome-devtools MCP) runs with extensions off: "Load unpacked"
+  there fails silently. Load and test the extension in the everyday Chrome.
+- Instagram wipes the console after load, so the content script's `console.log` is gone by the
+  time you look. Check injection via the console's context menu ("top" → "Reel Queue"), or turn
+  on "Preserve log".
+- The everyday Chrome shows Instagram in **pt-BR** ("Mensagem...", "Pesquisar"); the spike's
+  labels were English. #03 needs the pt-BR strings for every aria-label it matches.
