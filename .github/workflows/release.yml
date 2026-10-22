@@ -1,0 +1,103 @@
+name: release
+
+# A v* tag (from `npm run release <version>`) builds the extension, attaches the zip to a GitHub
+# Release and, once the store is configured, uploads it to the Chrome Web Store for review.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      zip: ${{ steps.zip.outputs.name }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Tag matches the manifest
+        run: |
+          manifest="v$(node -p "require('./manifest.json').version")"
+          package="v$(node -p "require('./package.json').version")"
+          if [ "$manifest" != "$GITHUB_REF_NAME" ] || [ "$package" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME, manifest $manifest, package $package: they must match"
+            exit 1
+          fi
+      - run: npm run typecheck
+      - run: npm run build
+      - id: zip
+        run: |
+          name="dm-slide-${GITHUB_REF_NAME}.zip"
+          (cd dist && zip -r -X "../$name" .)
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: extension
+          path: ${{ steps.zip.outputs.name }}
+          if-no-files-found: error
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ZIP: ${{ steps.zip.outputs.name }}
+        # A re-run finds the release already there and only replaces its zip.
+        run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$ZIP" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$ZIP" --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+          fi
+
+  store:
+    needs: build
+    # Only the owner's repo, and only once the store's ids are set as repository variables.
+    if: github.repository == 'lfernandogunther/dm-slide' && vars.CWS_EXTENSION_ID != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ITEM: publishers/${{ vars.CWS_PUBLISHER_ID }}/items/${{ vars.CWS_EXTENSION_ID }}
+      ZIP: ${{ needs.build.outputs.zip }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: extension
+      # Workload Identity Federation: a short-lived token as the publisher's service account, no stored key.
+      - id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+      - name: Upload to the Chrome Web Store
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          api=https://chromewebstore.googleapis.com
+          state=$(curl -sS --fail-with-body -X POST -H "Authorization: Bearer $TOKEN" -T "$ZIP" \
+            "$api/upload/v2/$ITEM:upload" | tee /dev/stderr | jq -r .uploadState)
+          for _ in $(seq 30); do
+            [ "$state" = IN_PROGRESS ] || break
+            sleep 10
+            state=$(curl -sS --fail-with-body -H "Authorization: Bearer $TOKEN" \
+              "$api/v2/$ITEM:fetchStatus" | tee /dev/stderr | jq -r .lastAsyncUploadState)
+          done
+          if [ "$state" != SUCCEEDED ]; then
+            echo "::error::the store's upload ended $state"
+            exit 1
+          fi
+      - name: Submit for review
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          curl -sS --fail-with-body -X POST -H "Authorization: Bearer $TOKEN" \
+            "https://chromewebstore.googleapis.com/v2/$ITEM:publish"
