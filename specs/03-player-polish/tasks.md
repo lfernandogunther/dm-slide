@@ -1,6 +1,6 @@
 # Tasks — S03
 
-**21 of 21 done · next: hand check of `I` and Back on the real Instagram**
+**22 of 22 done · next: close S03 (sort learnings, push)**
 
 - [x] **01 — thumbnails: `thumb` on `Item` (page, bridge, adapter), strip tiles show it, number fallback; counts-only snippet for the owner**
 - [x] **02 — layout C v2: CSS to `style.ts`, vertical thumbnail strip, video alone, content-sized panel, slim header; arrows on the video and 280px panel below 1200px**
@@ -23,5 +23,6 @@
 - [x] **19 — a quoted reply counts as answered: start item, filter, "N to react", caught-up card**
 - [x] **20 — react → next at once: reactions queued one at a time, never during a reply; one retry, then undone with a red tile and a pill**
 - [x] 21 — carousel shows only its first slide: look for the other slides in `/p/<code>/embed/` now the lookup answers 302
+- [x] 22 — the two arrows stack on the video's right, pointing up and down (owner's hand check)
 
 ---

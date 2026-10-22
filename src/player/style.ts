@@ -73,8 +73,10 @@ export const STYLE = `
     position: absolute; top: calc(50% - 16px); width: 32px; height: 32px;
     border-radius: 50%; border: 0; padding: 0; background: #1c1c1e; font-size: 18px; display: grid; place-items: center;
   }
-  .nav.prev { left: -46px; }
-  .nav.next { right: -46px; }
+  /* Stacked on the right, pointing up and down like the strip they move along. */
+  .nav.prev { right: -46px; top: calc(50% - 40px); }
+  .nav.next { right: -46px; top: calc(50% + 8px); }
+  .nav span { transform: rotate(90deg); }
   .nav:disabled { opacity: 0.25; cursor: default; }
   .p-video.caught .reel-media { filter: brightness(0.35); }
 
@@ -191,9 +193,9 @@ export const STYLE = `
   /* Narrow (half a Full HD): the arrows go onto the video and the panel slims. */
   @media (max-width: 1199px) {
     .player { --video-h: max(240px, min(calc(100vh - 64px), calc((100vw - 406px) * 16 / 9))); --side-w: 280px; }
-    .nav { top: calc(50% - 15px); width: 30px; height: 30px; font-size: 16px; background: rgba(0, 0, 0, 0.45); color: #fff; }
-    .nav.prev { left: 8px; }
-    .nav.next { right: 8px; }
+    .nav { width: 30px; height: 30px; font-size: 16px; background: rgba(0, 0, 0, 0.45); color: #fff; }
+    .nav.prev { right: 8px; top: calc(50% - 37px); }
+    .nav.next { right: 8px; top: calc(50% + 7px); }
   }
 
   /* States: a card or a pill on the video, with the keys acting on it. */

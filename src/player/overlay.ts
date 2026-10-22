@@ -96,8 +96,8 @@ const LAYOUT = `
         <div class="p-video">
           <div class="reel" data-reel data-kt="Space"></div>
           <div class="p-burst" data-burst></div>
-          <button class="nav prev" data-prev tabindex="-1" title="Previous (A / ←)" data-kt="A">‹</button>
-          <button class="nav next" data-next tabindex="-1" title="Next (D / →)" data-kt="D">›</button>
+          <button class="nav prev" data-prev tabindex="-1" title="Previous (A / ←)" data-kt="A"><span>‹</span></button>
+          <button class="nav next" data-next tabindex="-1" title="Next (D / →)" data-kt="D"><span>›</span></button>
           <div class="p-caught" data-caught hidden></div>
         </div>
       </div>

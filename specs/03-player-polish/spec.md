@@ -32,7 +32,8 @@ colour, F).
    - The video sits alone in the middle.
    - A content-sized panel on the right shows only what there is: who sent it and when, the
      reactions, the reply box, the notes and replies, and "Next after reacting".
-   - Below 1200px wide, the arrows float on the video and the panel narrows to 280px.
+   - The two arrows stack on the video's right, pointing up and down. Below 1200px wide they float
+     on the video and the panel narrows to 280px.
    - The header keeps the title, the position, the "Not reacted" filter, the Instagram view toggle
      and ✕. The key legend leaves the header.
 2. **Key tips.** Holding Option (Alt), or pressing `?`, shows each control's key next to it.
