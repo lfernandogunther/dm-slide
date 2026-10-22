@@ -52,7 +52,8 @@ upload and submit each new version.
 - [ ] A tag with a version different from the manifest fails before anything is published.
 - [ ] The item is submitted to the Web Store; after review its listing is public and the README
       links it.
-- [ ] One later tag reaches the store with no hand work beyond `npm run release`.
+- [ ] One later tag reaches the store with no hand work beyond `npm run release`. *Deferred
+      2026-10-22 with task 10: the owner uploads the zip by hand for now.*
 - [ ] `npm run typecheck` and `npm run build` pass.
 
 ## Approach

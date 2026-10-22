@@ -4,7 +4,8 @@
 
 ## Next
 v0.1.0 is in the store's review. When it is approved: the Web Store link goes in the README.
-Then 10 — store credentials for the workflow (GCP project, service account, federation, variables).
+Then 11 — self-review. Task 10 is deferred (2026-10-22): releases reach the store by hand, zip
+from the GitHub Release.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
