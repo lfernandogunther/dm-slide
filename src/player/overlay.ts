@@ -412,6 +412,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   function go(index: number): void {
     if (index < 0 || index >= items.length) return;
+    clearTimeout(reactNextTimer);
     // A click doesn't pass through the keys; the strip must be measured settled, not mid-glide.
     finishAll();
     const dir = Math.sign(index - current) as -1 | 0 | 1;
@@ -450,7 +451,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       for (let page = 0, beyond = 0; ; page++) {
         if (page > 0) await sleep(PAGE_PAUSE_MS.min + Math.random() * (PAGE_PAUSE_MS.max - PAGE_PAUSE_MS.min));
         // A page scrolls the thread to its top, which would pull the row away from a reaction or reply under way.
-        while ((reacting || sending) && !closed) await sleep(BUSY_POLL_MS);
+        while ((reacting || sending || away) && !closed) await sleep(BUSY_POLL_MS);
         if (closed) break;
         if (!(await adapter.loadOlder())) {
           edge = 'start';
@@ -501,7 +502,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       await olderShown();
       if (pill.text === LOADING_OLDER) pill.hide();
       // Only if the player is still on the item A was pressed on.
-      if (items[current].id !== from || closed) return;
+      if (items[current].id !== from || closed || away) return;
       const older = neighbour(current, -1);
       if (older >= 0) return go(older);
     }
@@ -554,7 +555,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (!nextAfterReact) return;
     // Only if the player is still on the item the reaction was for.
     reactNextTimer = window.setTimeout(() => {
-      if (!closed && items[current] === item && neighbour(current, 1) >= 0) next();
+      if (!closed && !away && items[current] === item && neighbour(current, 1) >= 0) next();
     }, REACT_NEXT_MS);
   }
 
@@ -671,8 +672,9 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       adapter.closeLayer();
       return;
     }
-    // The view could cover a picker or composer the extension is driving.
-    if (closed || reacting || sending) return;
+    // The view could cover a picker or composer the extension is driving, or a thread a load is scrolling.
+    if (closed || reacting || sending || loading) return;
+    clearTimeout(reactNextTimer);
     finishAll();
     stage.pause();
     setAway(true);

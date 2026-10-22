@@ -25,7 +25,6 @@ const ITEM_MS = 300;
 const SLIDE_MS = 260;
 const REVEAL_MS = 320;
 
-
 function createVideo(): HTMLVideoElement {
   const video = document.createElement('video');
   video.loop = true;
@@ -74,6 +73,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   // While the media loads: the item's thumbnail, blurred, with a running bar.
   const coverImg = document.createElement('img');
   coverImg.alt = '';
+  // An expired signed thumbnail: the cover goes blank rather than broken.
+  coverImg.onerror = () => (coverImg.hidden = true);
   const loadingBar = document.createElement('div');
   loadingBar.className = 'reel-bar';
   const cover = document.createElement('div');
