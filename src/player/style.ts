@@ -51,9 +51,9 @@ export const STYLE = `
   .p-strip li.edge { height: auto; background: none; opacity: 1; border: 0; cursor: default; font-size: 11px; color: #a8a8a8; text-align: center; }
   .p-strip li .kind { position: absolute; left: 3px; top: 2px; font-size: 10px; line-height: 1; }
   .p-strip li .note { position: absolute; right: 3px; top: 2px; font-size: 10px; line-height: 1; }
-  .p-strip li.reacted::after { content: attr(data-reaction); position: absolute; right: -6px; bottom: -6px; font-size: 13px; }
-  .p-strip li.replied::before { content: "💬"; position: absolute; right: -6px; bottom: -6px; font-size: 12px; }
-  .p-strip li.replied.reacted::before { right: 10px; }
+  .p-strip li.reacted::after { content: attr(data-reaction); position: absolute; right: 3px; bottom: 2px; font-size: 13px; line-height: 1; }
+  .p-strip li.replied::before { content: "💬"; position: absolute; right: 3px; bottom: 2px; font-size: 12px; line-height: 1; }
+  .p-strip li.replied.reacted::before { right: 19px; }
   /* A reaction bursts over the video, then a copy flies to its tile; both rest invisible. */
   .p-burst {
     position: absolute; left: 50%; top: 50%; z-index: 3; font-size: 120px; line-height: 1; pointer-events: none;

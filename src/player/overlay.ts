@@ -578,11 +578,11 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     flyer.className = 'p-flyer';
     flyer.textContent = emoji;
     player.append(flyer);
-    // The 26px flyer is centred on the video, then on the badge that sits over the tile's bottom-right corner.
+    // The 26px flyer is centred on the video, then on the badge inside the tile's bottom-right corner.
     const x0 = from.left - box.left + from.width / 2 - 13;
     const y0 = from.top - box.top + from.height / 2 - 13;
-    const x1 = to.right - box.left - 15;
-    const y1 = to.bottom - box.top - 16;
+    const x1 = to.right - box.left - 25;
+    const y1 = to.bottom - box.top - 24;
     const fly = animate(
       flyer,
       [
