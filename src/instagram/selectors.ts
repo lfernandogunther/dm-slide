@@ -50,11 +50,10 @@ export const VIDEO_ATTACHMENT_TYPE = 4;
 export const MESSAGE_SCROLLER_MIN = { width: 400, height: 300 };
 export const HEADER_ICON_COUNT = { min: 2, max: 4 };
 
-// Playback: a reel's embed page is same-origin and its <video> carries a plain fbcdn mp4 URL,
+// Playback: a share's embed page is same-origin and its <video> carries a plain fbcdn mp4 URL,
 // which our own <video> plays with sound. No video within the timeout = unavailable (the embed
-// shows "link may be broken" for some reels).
-export const embedUrl = (shortcode: string) => `https://www.instagram.com/reel/${shortcode}/embed/`;
-export const reelUrl = (shortcode: string) => `https://www.instagram.com/reel/${shortcode}/`;
+// shows "link may be broken" for some reels). `path` is the share's own, ending in a slash.
+export const embedUrl = (path: string) => `https://www.instagram.com${path}embed/`;
 export const EMBED_TIMEOUT_MS = 6000;
 // A page of older messages took ~2 s in the spike.
 export const LOAD_OLDER_TIMEOUT_MS = 8000;
@@ -62,6 +61,9 @@ export const LOAD_OLDER_POLL_MS = 250;
 // The web app's own media lookup; the app id header is the one instagram.com sends with it.
 export const mediaInfoUrl = (mediaId: string) => `https://www.instagram.com/api/v1/media/${mediaId}/info/`;
 export const WEB_APP_ID_HEADER = { 'X-IG-App-ID': '936619743392459' };
+// The lookup's media_type: 1 is a photo, 2 a video, 8 a carousel of either.
+export const VIDEO_MEDIA_TYPE = 2;
+export const CAROUSEL_MEDIA_TYPE = 8;
 // A shortcode is the media id in base 64; private accounts append extra characters after these.
 export const SHORTCODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 export const SHORTCODE_ID_LENGTH = 11;

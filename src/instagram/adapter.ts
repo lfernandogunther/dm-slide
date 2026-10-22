@@ -24,7 +24,7 @@ import {
   SEND_TIMEOUT_MS,
   THREAD_PATH,
 } from './selectors';
-import { videoUrl } from './video';
+import { mediaOf } from './media';
 
 export interface Item {
   id: string; // the DM message id
@@ -178,12 +178,7 @@ export function createThreadAdapter(): ThreadAdapter {
       const result = requestReveal(id);
       if (!result.ok) throw new Error(`reveal: ${result.reason}`);
     },
-    async media(item) {
-      const { shortcode, stored } = item.source;
-      if (item.kind !== 'reel') return stored.length > 1 ? { type: 'slides', slides: stored } : (stored[0] ?? null);
-      const url = shortcode && (await videoUrl(shortcode));
-      return url ? { type: 'video', url } : null;
-    },
+    media: mediaOf,
     // A gallery item has no page of its own: the thread is where Instagram shows it.
     link: (item) => (item.source.path ? `https://www.instagram.com${item.source.path}` : location.href),
     react: (id, emoji) => setReaction(id, emoji),
