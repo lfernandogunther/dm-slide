@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>DM Slide promo tile</title>
+    <!-- Source of promo-440x280.png: open at 440×280 and take a viewport screenshot. -->
+    <style>
+      html, body { margin: 0; width: 440px; height: 280px; overflow: hidden; }
+      body {
+        display: flex; align-items: center; gap: 22px; padding: 0 34px; box-sizing: border-box;
+        background: radial-gradient(circle at 15% 85%, #3a1a10 0, transparent 55%), #121212;
+        color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      svg { flex: none; width: 128px; height: 128px; }
+      h1 { margin: 0 0 8px; font-size: 40px; letter-spacing: -0.5px; }
+      p { margin: 0; font-size: 17px; line-height: 1.35; color: #d8d8d8; }
+      p b { color: #fff; }
+    </style>
+  </head>
+  <body>
+    <svg viewBox="0 0 128 128" aria-hidden="true">
+      <defs>
+        <linearGradient id="front" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" stop-color="#fa7e1e" />
+          <stop offset="1" stop-color="#d62976" />
+        </linearGradient>
+      </defs>
+      <rect x="44" y="6" width="40" height="30" rx="10" fill="#fa7e1e" opacity=".35" />
+      <rect x="35" y="17" width="58" height="30" rx="12" fill="#fa7e1e" opacity=".62" />
+      <rect x="26" y="30" width="76" height="92" rx="18" fill="url(#front)" />
+      <path d="M56 61 L56 91 L81 76Z" fill="#fff" stroke="#fff" stroke-width="8" stroke-linejoin="round" />
+    </svg>
+    <div>
+      <h1>DM Slide</h1>
+      <p>Every reel your friends sent, <b>one after another</b>. React and reply on one screen.</p>
+    </div>
+  </body>
+</html>
