@@ -61,6 +61,7 @@ const STYLE = `
   .p-strip li.edge { height: auto; background: none; opacity: 1; border: 0; cursor: default; font-size: 11px; color: #a8a8a8; text-align: center; }
   .p-strip li[hidden] { display: none; }
   .p-strip li .kind { position: absolute; left: 4px; top: 3px; font-size: 12px; line-height: 1; }
+  .p-strip li .note { position: absolute; right: 4px; top: 3px; font-size: 12px; line-height: 1; }
   .p-strip li.reacted::after { content: attr(data-reaction); position: absolute; right: -6px; bottom: -6px; font-size: 14px; }
   .p-strip li.replied::before { content: "💬"; position: absolute; right: -6px; bottom: -6px; font-size: 14px; }
   .p-strip li.replied.reacted::before { right: 12px; }

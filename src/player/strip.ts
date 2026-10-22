@@ -1,5 +1,5 @@
 // The strip of loaded items on the left, in chat order: one tile per item, the current one
-// outlined, a mark for every kind but reels, my reaction and a 💬 on the ones I reacted or replied to. Numbers count from the
+// outlined, a mark for every kind but reels, a 🗨 when the sender wrote with it, my reaction and a 💬 on the ones I reacted or replied to. Numbers count from the
 // newest (1, at the bottom) over every loaded item, so neither older items loading at the top nor
 // the filter hiding some ever renumber a tile.
 import type { Item, ItemKind } from '../instagram/adapter';
@@ -37,6 +37,13 @@ export function renderStrip(
         mark.className = 'kind';
         mark.textContent = KIND_ICON[item.kind];
         tile.append(mark);
+      }
+      if (item.notes.length) {
+        const note = document.createElement('span');
+        note.className = 'note';
+        note.textContent = '🗨';
+        note.title = 'They wrote with it';
+        tile.append(note);
       }
       tile.classList.toggle('current', i === current);
       tile.classList.toggle('reacted', item.myReaction !== null);
