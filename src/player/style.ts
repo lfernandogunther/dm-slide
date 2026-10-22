@@ -26,10 +26,6 @@ export const STYLE = `
     display: grid; place-items: center; background: #1c1c1e; font-size: 14px;
   }
   .circ[aria-pressed="true"] { background: #f5f5f5; color: #000; }
-  .p-alert {
-    position: absolute; z-index: 6; top: 48px; left: 0; right: 0;
-    padding: 8px 16px; background: #3a1d1d; color: #ffb4b4; text-align: center;
-  }
   .p-body { position: relative; flex: 1; display: flex; gap: 16px; padding: 0 16px 16px; min-height: 0; }
 
   .p-strip { width: 62px; flex-shrink: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
@@ -149,6 +145,13 @@ export const STYLE = `
   .emo:hover { background: #1c1c1e; }
   .emo.mine { background: #262626; box-shadow: 0 0 0 2px #fff inset; }
   .reacting .emo { opacity: 0.4; cursor: progress; }
+  .emo.bad, .emo.mine.bad { box-shadow: 0 0 0 2px #ff6b6b inset; }
+  .p-fail { font-size: 11px; color: #ff6b6b; text-align: center; }
+  .bub .st { font-size: 10px; margin-left: 6px; color: rgba(255, 255, 255, 0.7); }
+  .bub.sending { opacity: 0.5; }
+  .bub.bad { background: transparent; border: 1px solid #ff6b6b; color: #ffb3b3; }
+  .bub.bad .st { color: #ff6b6b; }
+  b.key { font: 700 10px ui-monospace, monospace; background: #2a2a2a; color: #f5f5f5; border-radius: 4px; padding: 0 4px; }
   .p-box {
     position: relative; margin: 0; background: #000; border: 1px solid #3a3a3a; border-radius: 12px; padding: 8px 10px;
     display: flex; flex-direction: column; gap: 10px;
@@ -157,7 +160,6 @@ export const STYLE = `
   .p-box input[type="text"] { min-width: 0; background: transparent; border: 0; outline: 0; padding: 0; color: inherit; font: inherit; }
   .p-box input[type="text"]:disabled { opacity: 0.5; }
   .p-row { display: flex; align-items: center; gap: 8px; }
-  .p-row [data-reply-status] { flex: 1; font-size: 11px; color: #a8a8a8; text-align: right; }
   .p-quote { position: relative; font-size: 11px; border-radius: 10px; padding: 1px 8px; white-space: nowrap; cursor: pointer; background: #262626; color: #a8a8a8; }
   .p-quote:has(input:checked) { background: #1d3a5a; color: #cfe6ff; }
   .p-quote input { position: absolute; opacity: 0; pointer-events: none; }

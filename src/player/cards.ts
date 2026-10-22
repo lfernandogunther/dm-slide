@@ -53,8 +53,8 @@ export function stateCard({ big, title, text, detail, keys }: CardContent): HTML
 }
 
 export interface Pill {
-  /** Shows `text`; with `ms`, it fades away after that long. */
-  show(text: string, ms?: number): void;
+  /** Shows `text`, red-edged when `bad`; with `ms`, it fades away after that long. */
+  show(text: string, ms?: number, bad?: boolean): void;
   hide(): void;
   readonly text: string | null;
 }
@@ -72,9 +72,10 @@ export function createPill(parent: HTMLElement): Pill {
     fading = null;
   };
   return {
-    show(text, ms) {
+    show(text, ms, bad = false) {
       stop();
       pill.textContent = text;
+      pill.classList.toggle('bad', bad);
       pill.hidden = false;
       if (ms) {
         timer = setTimeout(() => {

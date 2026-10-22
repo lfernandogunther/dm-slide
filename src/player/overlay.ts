@@ -21,7 +21,19 @@ const PREFETCH_ITEMS = 3;
 const BUSY_POLL_MS = 250;
 const STRIP_LOAD_MARGIN_PX = 40;
 // Long enough to read; the next action clears it sooner.
-const ALERT_MS = 6000;
+const FAIL_MS = 5000;
+// A control whose action failed shakes twice.
+const SHAKE = [
+  { transform: 'none' },
+  { transform: 'translateX(-5px)', offset: 0.2 },
+  { transform: 'translateX(5px)', offset: 0.4 },
+  { transform: 'translateX(-5px)', offset: 0.6 },
+  { transform: 'translateX(5px)', offset: 0.8 },
+  { transform: 'none' },
+];
+const SHAKE_MS = 450;
+const SENT_MS = 3000;
+const CANT_READ = "Can't read this conversation · nothing was done";
 // The sender and the reactions rise into place as a new item comes in.
 const PANEL_RISE = [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }];
 const PANEL_MS = 200;
@@ -75,7 +87,6 @@ const LAYOUT = `
       <button class="circ" data-tips tabindex="-1" aria-pressed="false" title="Key tips (?)">?</button>
       <button class="circ" data-close tabindex="-1" title="Close (Esc)" data-kt="Esc" data-kt-at="b">✕</button>
     </header>
-    <div class="p-alert" data-alert role="alert" hidden></div>
     <div class="p-body">
       <div class="p-strip" data-strip></div>
       <div class="p-theatre">
@@ -97,11 +108,12 @@ const LAYOUT = `
             <ul class="p-th" data-replies></ul>
           </div>
           <div class="p-emos" data-quick></div>
+          <div class="p-fail" data-fail role="alert" hidden></div>
           <form class="p-box" data-reply-form data-kt="R" data-kt-at="tl">
             <input type="text" data-reply autocomplete="off" placeholder="Reply…">
             <div class="p-row">
               <label class="p-quote" title="Quote the item in the reply"><input type="checkbox" data-quote tabindex="-1" checked>❝ Quote</label>
-              <span data-reply-status></span>
+              <span class="sp"></span>
               <button type="submit" class="send" data-send tabindex="-1" disabled title="Send (Enter)">Send</button>
             </div>
           </form>
@@ -116,6 +128,21 @@ const LAYOUT = `
 `;
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
+interface Pending {
+  id: string;
+  text: string;
+  quoted: boolean;
+  state: 'sending' | 'sent' | 'failed';
+}
+
+/** A key as the states write it: bold, in the key font. */
+function keyMark(key: string): HTMLElement {
+  const b = document.createElement('b');
+  b.className = 'key';
+  b.textContent = key;
+  return b;
+}
 
 // The browser's own language decides the date's format.
 const SENT_AT = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -219,6 +246,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let closed = false;
   let reacting = false;
   let sending = false;
+  // The reply being sent, or the last one sent or not, shown as a bubble on its item.
+  let pending: Pending | null = null;
   let nextAfterReact = true;
   let onlyNotReacted = false;
   let tipsHeld = false;
@@ -317,28 +346,43 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
           return li;
         }),
       );
+      return list;
     };
     section('data-notes', item.notes, 'theirs');
-    section('data-replies', item.myReplies, 'mine');
-    $('data-talk').hidden = item.notes.length === 0 && item.myReplies.length === 0;
+    const mine = pending?.id === item.id ? pending : null;
+    // A quoted reply that went through is already the last of my replies; any other gets its own bubble.
+    const own = mine && !(mine.state === 'sent' && mine.quoted);
+    const replies = section('data-replies', own ? [...item.myReplies, mine.text] : item.myReplies, 'mine');
+    $('data-talk').hidden = item.notes.length === 0 && replies.hidden;
+    const bubble = replies.lastElementChild;
+    if (!mine || !bubble) return;
+    bubble.classList.toggle('sending', mine.state === 'sending');
+    bubble.classList.toggle('bad', mine.state === 'failed');
+    const st = document.createElement('span');
+    st.className = 'st';
+    if (mine.state === 'failed') st.append('Not sent · ', keyMark('R'), ' to try again');
+    else st.textContent = mine.state === 'sent' ? '✓' : 'Sending…';
+    bubble.append(st);
   }
 
-  let alertTimer = 0;
-  /** Says an action did nothing: the thread can't be read at all, or that one action failed. */
-  function showFailure(what: string, e: unknown): void {
-    const reason = e instanceof Error ? e.message : String(e);
-    console.warn('[dm-slide]', reason);
-    const el = $('data-alert');
-    el.textContent = e instanceof CantRead ? "Can't read this conversation. Nothing was done." : `Couldn't ${what}.`;
-    el.title = reason;
+  let failTimer = 0;
+  /** Says on the control that its action didn't land: it shakes red-ringed, and a line says which key tries again. */
+  function showFailure(control: HTMLElement, line: (string | Node)[], e: unknown): void {
+    console.warn('[dm-slide]', e instanceof Error ? e.message : e);
+    clearFailure();
+    control.classList.add('bad');
+    if (!reduceMotion()) animate(control, SHAKE, { duration: SHAKE_MS, easing: 'ease-in-out' });
+    const el = $('data-fail');
+    if (e instanceof CantRead) el.textContent = CANT_READ;
+    else el.replaceChildren(...line);
     el.hidden = false;
-    clearTimeout(alertTimer);
-    alertTimer = window.setTimeout(clearFailure, ALERT_MS);
+    failTimer = window.setTimeout(clearFailure, FAIL_MS);
   }
 
   function clearFailure(): void {
-    clearTimeout(alertTimer);
-    $('data-alert').hidden = true;
+    clearTimeout(failTimer);
+    $('data-fail').hidden = true;
+    for (const el of quick) el.classList.remove('bad');
   }
 
   // Following the chat is a convenience: if the row can't be found, the player carries on.
@@ -407,7 +451,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
         if (found || ++beyond >= MAX_PAGES_PER_LOAD) break;
       }
     } catch (e) {
-      if (!closed) showFailure('load older messages', e);
+      console.warn('[dm-slide]', e instanceof Error ? e.message : e);
+      if (!closed) pill.show(e instanceof CantRead ? CANT_READ : "Couldn't load older · W to try again", FAIL_MS, true);
     }
     if (edge === 'loading') edge = null;
     wakeWaiters();
@@ -480,7 +525,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       item.myReaction = removing ? null : emoji;
       done = true;
     } catch (e) {
-      showFailure(removing ? 'remove the reaction' : 'react', e);
+      const key = keyMark(slot === 0 ? 'F' : String(slot + 1));
+      showFailure(quick[slot], [`Your ${emoji} ${removing ? 'is still there' : "didn't land"} · `, key, ' to try again'], e);
     }
     reacting = false;
     // Instagram's picker took the focus (onto its ❤️); keys never reach it, but the player wants it back.
@@ -533,37 +579,41 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     fly.addEventListener('cancel', drop);
   }
 
-  let statusTimer = 0;
-  /** Shows how the last send went; "Sent" fades, while "Sending…" and a failure stay. */
-  function replyStatus(text: string, fades = true): void {
-    clearTimeout(statusTimer);
-    $('data-reply-status').textContent = text;
-    if (text && fades) statusTimer = window.setTimeout(() => replyStatus(''), 3000);
-  }
-
+  let sentTimer = 0;
   function renderSend(): void {
     reply.disabled = sending;
     send.disabled = sending || reply.value.trim() === '';
   }
 
-  /** Sends the box's text about the current item; the text stays in the box when it fails. */
+  /** Sends the box's text about the current item as a bubble at once; a failed one puts the text back in the box. */
   async function sendReply(): Promise<void> {
     const text = reply.value.trim();
     if (!text || sending) return;
     const item = items[current];
     const quoted = quote.checked;
     clearFailure();
+    clearTimeout(sentTimer);
     sending = true;
+    const sent: Pending = { id: item.id, text, quoted, state: 'sending' };
+    pending = sent;
+    reply.value = '';
     renderSend();
-    replyStatus('Sending…', false);
+    renderChrome(false);
     try {
       await adapter.reply(item.id, text, quoted);
       if (quoted) item.myReplies.push(text);
-      reply.value = '';
-      replyStatus('Sent');
+      sent.state = 'sent';
+      const shown = sent;
+      sentTimer = window.setTimeout(() => {
+        if (pending !== shown) return;
+        pending = null;
+        if (!closed) renderChrome(false);
+      }, SENT_MS);
     } catch (e) {
-      showFailure('send the reply', e);
-      replyStatus('Not sent', false);
+      console.warn('[dm-slide]', e instanceof Error ? e.message : e);
+      sent.state = 'failed';
+      // Typing something else meanwhile wins over the text that failed.
+      if (!reply.value.trim()) reply.value = text;
     }
     sending = false;
     renderSend();
