@@ -80,6 +80,19 @@ export const STYLE = `
   .reel video, .reel img, .reel canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
   .reel-status { position: relative; text-align: center; color: #a8a8a8; padding: 16px; line-height: 1.8; }
   .reel-status a { color: #0095f6; }
+  .reel-cover { position: absolute; inset: 0; overflow: hidden; background: #1d1d20; }
+  .reel .reel-cover img { object-fit: cover; background: none; filter: blur(18px) brightness(0.7); transform: scale(1.15); }
+  .reel-bar {
+    position: absolute; left: 0; bottom: 0; height: 3px; width: 40%; background: rgba(255, 255, 255, 0.7);
+    animation: reel-bar 1s ease-in-out infinite;
+  }
+  @keyframes reel-bar { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+  @keyframes reel-pulse { from { opacity: 0.2; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .reel-bar { left: 30%; animation: reel-pulse 1s ease-in-out infinite alternate; }
+  }
+  /* The loading bar takes the progress bar's place until the media shows. */
+  .reel.loading .reel-progress { visibility: hidden; }
   .reel-play {
     position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%;
     background: rgba(0, 0, 0, 0.5); display: grid; place-items: center; font-size: 26px; pointer-events: none;

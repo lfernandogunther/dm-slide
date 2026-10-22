@@ -21,6 +21,7 @@ const SOUND_OFF = `${SPEAKER}<path d="M16 9l6 6M22 9l-6 6" stroke="currentColor"
 
 const ITEM_MS = 300;
 const SLIDE_MS = 260;
+const REVEAL_MS = 320;
 
 const UNAVAILABLE = { reel: 'Reel', post: 'Post', carousel: 'Post', story: 'Story', gallery: 'Media' };
 
@@ -69,6 +70,15 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   photo.alt = '';
   const dots = document.createElement('div');
   dots.className = 'reel-dots';
+  // While the media loads: the item's thumbnail, blurred, with a running bar.
+  const coverImg = document.createElement('img');
+  coverImg.alt = '';
+  const loadingBar = document.createElement('div');
+  loadingBar.className = 'reel-bar';
+  const cover = document.createElement('div');
+  cover.className = 'reel-cover';
+  cover.append(coverImg, loadingBar);
+  let reveal: Animation | null = null;
 
   let current = createVideo();
   let spare = createVideo();
@@ -128,11 +138,44 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     renderMute();
   });
 
+  function coverOn(thumb: string | null): void {
+    reveal?.cancel();
+    reveal = null;
+    cover.style.opacity = '';
+    if (thumb) coverImg.src = thumb;
+    else coverImg.removeAttribute('src');
+    coverImg.hidden = !thumb;
+    cover.hidden = false;
+    el.classList.add('loading');
+  }
+
+  function coverOff(): void {
+    reveal?.cancel();
+    reveal = null;
+    cover.hidden = true;
+    cover.style.opacity = '';
+    el.classList.remove('loading');
+  }
+
+  /** Fades the cover away once the media of the item it covers can show. */
+  function uncover(ticket: number): void {
+    if (ticket !== showing || cover.hidden || reveal) return;
+    el.classList.remove('loading');
+    // The end state is set up front, so a finish (by the next key) leaves no frame of cover behind.
+    cover.style.opacity = '0';
+    const a = animate(cover, [{ opacity: 1 }, { opacity: 0 }], { duration: REVEAL_MS, fade: 'out' });
+    reveal = a;
+    // A show() after this one owns the cover; a late finish must not hide it.
+    a.addEventListener('finish', () => reveal === a && coverOff());
+  }
+
   /** A still of what shows now, to leave the stage while the next one comes in. */
   function ghost(): HTMLElement | null {
     let still: HTMLElement;
     const shown = !current.hidden ? current : !photo.hidden ? photo : null;
-    if (shown) {
+    // A cover that is fading away is no longer what shows; the media under it is.
+    if (!cover.hidden && !reveal) still = cover.cloneNode(true) as HTMLElement;
+    else if (shown) {
       const w = shown === current ? current.videoWidth : photo.naturalWidth;
       const h = shown === current ? current.videoHeight : photo.naturalHeight;
       if (!w || !h) return null;
@@ -185,6 +228,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   function unavailable(shown: Item, reason: string): void {
     console.info('[dm-slide] item unavailable:', reason);
     blank();
+    coverOff();
     current.removeAttribute('src');
     setSlides([]);
     const link = document.createElement('a');
@@ -202,6 +246,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     // The spare already loaded this video: swap it in instead of loading again.
     if (spare.src === url && current.src !== url) [current, spare] = [spare, current];
     if (current.src !== url) current.src = url;
+    // Read before the seek below, which can drop a preloaded spare's readyState for a moment.
+    const ready = current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
     // A swapped-in spare may be a video watched earlier, paused midway: every video starts over.
     current.currentTime = 0;
     current.hidden = false;
@@ -209,8 +255,11 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     progress.hidden = false;
     setStatus(null);
     const video = current;
+    const ticket = showing;
     // Once swapped out, this element becomes the spare: its errors are no longer this item's.
     current.onerror = () => video === current && unavailable(shown, `video error ${video.error?.code} ${video.error?.message ?? ''}`);
+    if (ready) uncover(ticket);
+    else for (const type of ['loadeddata', 'canplay']) video.addEventListener(type, () => video === current && uncover(ticket), { once: true });
     // Without a recent click or key, the browser may refuse sound; the ▶ mark then shows paused.
     current.play().catch(() => el.classList.add('paused'));
   }
@@ -219,6 +268,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     blank();
     setStatus(null);
     const fallback = slide.fallbackUrl;
+    const ticket = showing;
+    photo.onload = () => uncover(ticket);
     photo.onerror = () => {
       // The store's photo may come in a format the browser can't show; its fallback is another copy.
       if (fallback && photo.src === slide.url) photo.src = fallback;
@@ -265,9 +316,10 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     } else new Image().src = first.url;
   }
 
-  media.append(current, spare, photo, status);
+  media.append(current, spare, photo, status, cover);
   el.replaceChildren(media, playMark, sound, progress, dots);
   blank();
+  coverOff();
   dots.hidden = true;
   renderMute();
 
@@ -280,7 +332,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       item = null;
       blank();
       setSlides([]);
-      setStatus('Loading…');
+      setStatus(null);
+      coverOn(shown.thumb);
       const media = await adapter.media(shown).catch(() => null);
       if (ticket !== showing) return;
       item = shown;
