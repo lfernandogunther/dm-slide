@@ -65,7 +65,7 @@ export type Request =
   | { op: 'startReply'; messageId: string }
   | { op: 'typeReply'; text: string; focus: boolean }
   | { op: 'sendReply'; text: string }
-  | { op: 'reelCard' };
+  | { op: 'mediaCard' };
 
 /** Isolated side: ask the page script. dispatchEvent runs its listener synchronously. */
 function call<T extends { ok: boolean }>(request: Request, on: EventTarget = document): T | { ok: false; reason: string } {
@@ -101,4 +101,4 @@ export const requestTypeReply = (text: string, focus: boolean): OpResult =>
 export const requestSendReply = (text: string): OpResult => call<OpResult>({ op: 'sendReply', text });
 
 /** The message whose media card holds `el`, asked of the page script about that very element. */
-export const requestReelCard = (el: Element): CardResult => call<CardResult>({ op: 'reelCard' }, el);
+export const requestMediaCard = (el: Element): CardResult => call<CardResult>({ op: 'mediaCard' }, el);

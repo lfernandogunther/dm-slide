@@ -307,17 +307,23 @@ function pickEmoji(emoji: string): OpResult {
   return { ok: false, reason: `no open picker offering ${emoji}` };
 }
 
-/** The message of the reel card holding `el`: the pressable flagged as a reel, then the message ref above it. */
-function reelCard(el: EventTarget | null): CardResult {
-  const card = el instanceof Element ? el.closest(S.REEL_CARD) : null;
+const showsMedia = (card: Element) =>
+  [...card.querySelectorAll('img, video')].some((m) => {
+    const box = m.getBoundingClientRect();
+    return Math.min(box.width, box.height) >= S.MEDIA_CARD_MIN_PHOTO_PX;
+  });
+
+/** The message of the media card holding `el`: a pressable showing a photo, then the message ref above it. */
+function mediaCard(el: EventTarget | null): CardResult {
+  const card = el instanceof Element ? el.closest(S.MEDIA_CARD) : null;
   if (!card) return { ok: false, reason: 'not inside a pressable' };
-  const flagged = findUp(fiberOf(card), (f) => f.memoizedProps?.[S.REEL_CARD_FLAG_PROP] === true, S.MAX_CARD_FIBER_DEPTH);
-  const holder = flagged && findUp(flagged, (f) => Boolean(f.memoizedProps?.[S.REEL_CARD_MESSAGE_PROP]), S.MAX_CARD_FIBER_DEPTH);
-  if (!holder) return { ok: false, reason: 'not a reel card' };
+  if (!showsMedia(card)) return { ok: false, reason: 'the pressable shows no photo' };
+  const holder = findUp(fiberOf(card), (f) => Boolean(f.memoizedProps?.[S.CARD_MESSAGE_PROP]?.__id), S.MAX_CARD_FIBER_DEPTH);
+  if (!holder) return { ok: false, reason: 'not a media card' };
   const list = findMessageList();
   const src = list && findRecordSource(list.fiber);
-  const record = src?.get(holder.memoizedProps[S.REEL_CARD_MESSAGE_PROP].__id);
-  return record?.id ? { ok: true, messageId: String(record.id) } : { ok: false, reason: 'the reel card has no message record' };
+  const record = src?.get(holder.memoizedProps[S.CARD_MESSAGE_PROP].__id);
+  return record?.id ? { ok: true, messageId: String(record.id) } : { ok: false, reason: 'the media card has no message record' };
 }
 
 function handle(request: Request, target: EventTarget | null): ScanResult | OpResult | CardResult {
@@ -330,7 +336,7 @@ function handle(request: Request, target: EventTarget | null): ScanResult | OpRe
   if (request.op === 'startReply') return clickToolbar(request.messageId, S.REPLY_BUTTON, 'Reply');
   if (request.op === 'typeReply') return typeReply(request.text, request.focus);
   if (request.op === 'sendReply') return sendReply(request.text);
-  if (request.op === 'reelCard') return reelCard(target);
+  if (request.op === 'mediaCard') return mediaCard(target);
   return { ok: false, reason: `unknown op ${(request as { op: string }).op}` };
 }
 

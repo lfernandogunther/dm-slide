@@ -30,7 +30,7 @@ function open(at?: string): boolean {
   } catch (e) {
     const reason = e instanceof Error ? e.message : String(e);
     console.error('[reel-queue]', reason);
-    // From a reel card the click goes on to Instagram; from the button, say why nothing opens.
+    // From a card the click goes on to Instagram; from the button, say why nothing opens.
     if (at === undefined) player = { instance: openNotice(reason, onClose), path: location.pathname };
     return false;
   }
@@ -42,8 +42,8 @@ function open(at?: string): boolean {
 
 const button = createButton(() => void open());
 
-// A plain click on someone else's reel card opens the player there instead of Instagram's viewer.
-// Anything else, including a ⌘-click or my own reels, stays Instagram's.
+// A plain click on a card of someone else's item opens the player there instead of Instagram's viewer.
+// Anything else, including a ⌘-click or my own shares, stays Instagram's.
 window.addEventListener(
   'click',
   (e) => {

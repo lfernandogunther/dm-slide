@@ -5,7 +5,7 @@ import {
   requestPickEmoji,
   requestReveal,
   requestScan,
-  requestReelCard,
+  requestMediaCard,
   requestSendReply,
   requestStartReply,
   requestTypeReply,
@@ -187,7 +187,7 @@ export function createThreadAdapter(): ThreadAdapter {
     loadOlder: loadOlderPage,
     oldestLoadedMs: () => readThread('oldestLoadedMs').oldestMs,
     itemAt(el) {
-      const card = requestReelCard(el);
+      const card = requestMediaCard(el);
       return card.ok ? card.messageId : null;
     },
   };

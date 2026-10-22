@@ -94,8 +94,10 @@ export const SENDER_RECORD_PREFIX = 'SlideUser:';
 export const SENDER_NAME_FIELD = 'name';
 export const SENDER_USER_FIELD = 'user_dict';
 export const USERNAME_FIELD = 'username';
-// A reel card in the chat: a pressable whose props say `isReel`, under one holding the message ref.
-export const REEL_CARD = '[role=button]';
-export const REEL_CARD_FLAG_PROP = 'isReel';
-export const REEL_CARD_MESSAGE_PROP = 'slideMessageRef';
-export const MAX_CARD_FIBER_DEPTH = 12;
+// A media card in the chat: a pressable (a link, for a story) showing a photo, under a component
+// holding the message ref: 5 levels up for a reel, 7 for a gallery video, 13 for a post, ~26 for a
+// story. The photo tells it from the row's toolbar buttons and reaction pills.
+export const MEDIA_CARD = '[role=button], a[href*="/stories/"]';
+export const MEDIA_CARD_MIN_PHOTO_PX = 100;
+export const CARD_MESSAGE_PROP = 'slideMessageRef';
+export const MAX_CARD_FIBER_DEPTH = 32;
