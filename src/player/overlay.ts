@@ -1,7 +1,7 @@
 // The player: a full-window overlay in its own shadow root, with the strip on the left, the video
 // alone in the middle and a panel on the right. It talks only to the ThreadAdapter.
 import { CantRead, QUICK_REACTIONS, type Box, type Item, type ThreadAdapter } from '../instagram/adapter';
-import { createPill, stateCard } from './cards';
+import { createPill, keyCard, stateCard } from './cards';
 import { bindKeys } from './keys';
 import { animate, finishAll, reduceMotion } from './motion';
 import { loadSettings, saveSettings } from './settings';
@@ -260,7 +260,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     quote.checked = s.quoteReply;
     onlyNotReacted = s.onlyNotReacted;
     renderChrome(true);
+    if (s.seenKeys || closed) return;
+    showKeyCard(true);
+    saveSettings({ seenKeys: true });
   });
+  const coach = keyCard();
+  coach.hidden = true;
+  player.append(coach);
 
   // Not focusable: Space must keep pausing instead of pressing a button.
   const quick = QUICK_REACTIONS.map((emoji, i) => {
@@ -644,11 +650,30 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       renderTips();
     },
     toggleTips,
+    dismissKeyCard,
   });
 
+  /** `?` shows the key card with the tips, or hides whichever is showing. */
   function toggleTips(): void {
-    tipsPinned = !tipsPinned;
+    const on = !tipsPinned && coach.hidden === true;
+    tipsPinned = on;
+    showKeyCard(on);
     renderTips();
+  }
+
+  function showKeyCard(on: boolean): void {
+    if (on && coach.hidden) animate(coach, [HIDE, SHOW], { duration: BACKDROP_IN_MS });
+    coach.hidden = !on;
+  }
+
+  function dismissKeyCard(): boolean {
+    if (coach.hidden) return false;
+    // `?` pinned the tips along with the card; they leave together.
+    tipsPinned = false;
+    showKeyCard(false);
+    renderTips();
+    player.focus();
+    return true;
   }
 
   /** The transform that lays the video, at rest, over `box`; its corners keep the message's radius. */
@@ -716,6 +741,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   $('data-next').addEventListener('click', () => step(1));
   $('data-filter').addEventListener('click', toggleFilter);
   tipsButton.addEventListener('click', toggleTips);
+  coach.addEventListener('click', dismissKeyCard);
   $('data-strip').addEventListener('click', (e) => {
     const tile = (e.target as Element).closest<HTMLElement>('li[data-i]');
     if (tile) go(Number(tile.dataset.i));

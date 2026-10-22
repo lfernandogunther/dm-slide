@@ -14,9 +14,12 @@ export interface KeyActions {
   blurReply(): void;
   holdTips(held: boolean): void; // Option (Alt) shows the key tips while held
   toggleTips(): void;
+  dismissKeyCard(): boolean; // true when the key card was showing
 }
 
 const KEY_EVENTS = ['keydown', 'keyup', 'keypress'] as const;
+// Pressed on the way to another key (Shift for ?), so they never count as the key that dismisses the card.
+const MODIFIERS = new Set(['Shift', 'CapsLock']);
 
 /** Binds the shortcuts; `isTyping` says whether an event comes from the reply box. Returns the unbind. */
 export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyActions): () => void {
@@ -41,6 +44,8 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
       }
       return;
     }
+    // The key that dismisses the key card does only that.
+    if (e.key !== '?' && !MODIFIERS.has(e.key) && actions.dismissKeyCard()) return e.preventDefault();
     // F is ❤️; 1–9 pick a quick reaction by its place in the set. A held key reacts once.
     const slot = e.key.toLowerCase() === 'f' ? 0 : /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : null;
     if (slot !== null && e.repeat) return e.preventDefault();

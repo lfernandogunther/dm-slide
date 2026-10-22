@@ -218,4 +218,13 @@ export const STYLE = `
     font-size: 12px; white-space: nowrap;
   }
   .c-pill.bad { border-color: #ff6b6b; }
+  .c-coach { position: absolute; inset: 0; z-index: 8; background: rgba(0, 0, 0, 0.72); display: grid; place-items: center; }
+  .c-coach .in { background: #151517; border: 1px solid #333; border-radius: 16px; padding: 22px 26px; width: min(560px, calc(100% - 32px)); }
+  .c-coach h3 { margin: 0 0 12px; font-size: 18px; }
+  .c-coach dl { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 8px 12px; margin: 0; align-items: center; }
+  .c-coach dt { text-align: right; white-space: nowrap; }
+  .c-coach dt b { font: 700 11px ui-monospace, monospace; background: #2a2a2a; border-radius: 4px; padding: 2px 6px; }
+  .c-coach dd { margin: 0; color: #cfcfcf; }
+  .c-coach .go { margin-top: 16px; color: #a8a8a8; text-align: center; }
+  .c-coach .go b { font: 700 11px ui-monospace, monospace; background: #2a2a2a; color: #f5f5f5; border-radius: 4px; padding: 1px 5px; }
 `;
