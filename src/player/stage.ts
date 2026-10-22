@@ -2,6 +2,7 @@
 // photo, or slides with dots. The next item's video loads in a second, hidden <video> and takes
 // over when the player moves to it.
 import type { Item, Slide, ThreadAdapter } from '../instagram/adapter';
+import { loadSettings, saveSettings } from './settings';
 
 export interface Stage {
   show(item: Item, next: Item | undefined): void;
@@ -43,6 +44,19 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   // Not focusable: Space must keep pausing instead of pressing this button.
   mute.tabIndex = -1;
   mute.dataset.kt = 'M';
+  const level = document.createElement('input');
+  level.type = 'range';
+  level.min = '0';
+  level.max = '1';
+  level.step = '0.05';
+  level.tabIndex = -1;
+  level.title = 'Volume';
+  const levelPanel = document.createElement('div');
+  levelPanel.className = 'vol-panel';
+  levelPanel.append(level);
+  const sound = document.createElement('div');
+  sound.className = 'vol';
+  sound.append(levelPanel, mute);
   const photo = document.createElement('img');
   photo.alt = '';
   const dots = document.createElement('div');
@@ -55,6 +69,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   let item: Item | null = null;
   let slides: Slide[] = [];
   let at = 0;
+  let volume = 1;
 
   const onTime = (e: Event) => {
     const v = e.target as HTMLVideoElement;
@@ -74,6 +89,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   function renderMute(): void {
     mute.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16">${current.muted ? SOUND_OFF : SOUND_ON}</svg>`;
     mute.title = current.muted ? 'Unmute (M)' : 'Mute (M)';
+    current.volume = spare.volume = volume;
+    level.value = String(current.muted ? 0 : volume);
   }
 
   function toggleMute(): void {
@@ -84,6 +101,23 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   mute.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleMute();
+  });
+  // Muting keeps the level, so M brings the sound back where it was; dragging to 0 is a mute.
+  level.addEventListener('input', () => {
+    const value = Number(level.value);
+    current.muted = spare.muted = value === 0;
+    if (value > 0) volume = value;
+    renderMute();
+  });
+  level.addEventListener('change', () => {
+    saveSettings({ volume });
+    level.blur();
+  });
+  // The stage toggles pause on a click; the slider is not part of that.
+  sound.addEventListener('click', (e) => e.stopPropagation());
+  void loadSettings().then((s) => {
+    volume = s.volume > 0 ? s.volume : 1;
+    renderMute();
   });
 
   function setStatus(content: Node | string | null): void {
@@ -98,7 +132,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     spare.hidden = true;
     photo.hidden = true;
     photo.removeAttribute('src');
-    mute.hidden = true;
+    sound.hidden = true;
     progress.hidden = true;
     bar.style.width = '0';
     el.classList.remove('paused');
@@ -127,7 +161,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     // A swapped-in spare may be a video watched earlier, paused midway: every video starts over.
     current.currentTime = 0;
     current.hidden = false;
-    mute.hidden = false;
+    sound.hidden = false;
     progress.hidden = false;
     setStatus(null);
     const video = current;
@@ -186,7 +220,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     } else new Image().src = first.url;
   }
 
-  el.replaceChildren(current, spare, photo, status, playMark, mute, progress, dots);
+  el.replaceChildren(current, spare, photo, status, playMark, sound, progress, dots);
   blank();
   dots.hidden = true;
   renderMute();

@@ -87,8 +87,16 @@ export const STYLE = `
     opacity: 0; transform: scale(0.8); transition: opacity 0.15s, transform 0.15s;
   }
   .reel.paused .reel-play { opacity: 1; transform: scale(1); }
+  .vol { position: absolute; right: 12px; bottom: 14px; }
+  /* Shown on hover; its bottom padding bridges the gap so the pointer can travel up to it. */
+  .vol-panel { position: absolute; left: 0; right: 0; bottom: 100%; padding-bottom: 6px; display: none; }
+  .vol:hover .vol-panel { display: block; }
+  .vol-panel input {
+    display: block; box-sizing: content-box; width: 28px; height: 84px; margin: 0; padding: 10px 0; cursor: pointer;
+    background: rgba(38, 38, 38, 0.8); border-radius: 14px; accent-color: #fff; writing-mode: vertical-lr; direction: rtl;
+  }
   .reel-mute {
-    position: absolute; right: 12px; bottom: 14px; width: 28px; height: 28px; border-radius: 50%;
+    position: relative; width: 28px; height: 28px; border-radius: 50%;
     border: 0; padding: 0; background: rgba(38, 38, 38, 0.8); color: #fff; display: grid; place-items: center;
   }
   .reel-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.25); }

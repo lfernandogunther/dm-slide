@@ -1,11 +1,11 @@
 # Tasks — S03
 
-**3 of 14 done · next: 04 — volume**
+**4 of 14 done · next: 05 — motion**
 
 - [x] **01 — thumbnails: `thumb` on `Item` (page, bridge, adapter), strip tiles show it, number fallback; counts-only snippet for the owner**
 - [x] **02 — layout C v2: CSS to `style.ts`, vertical thumbnail strip, video alone, content-sized panel, slim header; arrows on the video and 280px panel below 1200px**
 - [x] **03 — key tips: hold Option or `?` shows each control's key; the header legend goes**
-- [ ] **04 — volume: slider on hover of the sound button, wide hit target, level saved; `M` unchanged**
+- [x] **04 — volume: slider on hover of the sound button, wide hit target, level saved; `M` unchanged**
 - [ ] **05 — motion: `motion.ts` (finish on key, no queue, reduce-motion crossfade); items 300ms, slides 260ms, panel rise, strip follow**
 - [ ] **06 — loading: blurred thumbnail + thin bar, fades out when the media is ready**
 - [ ] **07 — react: pop, burst, flyer to the tile, badge pop; react → next at 850ms**
