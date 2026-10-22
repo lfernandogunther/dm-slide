@@ -1,9 +1,9 @@
 # Session — S03
 
-## Status: IN-PROGRESS · 2026-10-22 · go-ahead given, all 14 tasks in one run
+## Status: ON HOLD · 2026-10-22 · built and self-reviewed; waits on the owner's hand check on the real Instagram
 
 ## Next
-Task 01: thumbnails.
+Owner: the manual click-through in spec.md's Acceptance, `I` above all; then tasks 16 and 17.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo, local only)
@@ -12,12 +12,14 @@ Task 01: thumbnails.
 - None. Q1–2 answered yes (2026-10-22); task 13 goes ahead on faith, unverified by hand.
 
 ## Tasks status
-0 of 14 done; see tasks.md.
+15 of 17 done; 16 and 17 wait on the hand check. See tasks.md.
 
 ## What was done
 - 2026-10-22: lab 01 shaped the look, motion and states across three approved drawings; S03 drafted
   from it, with Instagram view kept in S03 as a late task (the owner's choice).
 - 2026-10-22: go-ahead for all tasks to the end; constitution principle 5 amended (`I`, `?`).
+- 2026-10-22: tasks 01–14 built, each checked in a scratch harness; task 13 (Instagram view) written
+  on faith. Self-review: 5 of 7 flags fixed, 2 deferred to tasks 16 and 17. Learnings sorted.
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->

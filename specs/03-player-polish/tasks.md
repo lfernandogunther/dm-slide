@@ -1,6 +1,6 @@
 # Tasks — S03
 
-**14 of 15 done · next: 15 — self-review**
+**15 of 17 done · next: 16 — after the owner's hand check**
 
 - [x] **01 — thumbnails: `thumb` on `Item` (page, bridge, adapter), strip tiles show it, number fallback; counts-only snippet for the owner**
 - [x] **02 — layout C v2: CSS to `style.ts`, vertical thumbnail strip, video alone, content-sized panel, slim header; arrows on the video and 280px panel below 1200px**
@@ -16,6 +16,8 @@
 - [x] **12 — first open: key card shown once (`seenKeys` setting), `?` brings it back**
 - [x] **13 — Instagram view `I`: `openLayer` + `layerOpen` in the adapter, player hides and comes back paused; gated on the owner's hand check**
 - [x] **14 — extension icon: SVG master (B, the queue, orange → pink), PNGs 16 / 32 / 48 / 128 in `icons/`, `icons` + `action.default_icon` in the manifest, copied by the build**
-- [ ] **15 — self-review, close learnings.md and promote**
+- [x] **15 — self-review, close learnings.md and promote**
+- [ ] 16 — on a page view (a story), `I` and Back call `history.back()` when `closeLayer()` finds no dialog, once a hand check shows how Instagram routes a story (self-review flag 3, MED)
+- [ ] 17 — hide the player only once `openLayer` resolves, or narrow `layerOpen()` to the dialog showing the item, once a hand check shows the layer's shape (self-review flag 5, LOW)
 
 ---

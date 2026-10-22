@@ -159,5 +159,19 @@ the order of the drawings.
 ## Outcome
 | # | Criterion | Result |
 |---|---|---|
+| 1 | Thumbnails on tiles, number fallback | harness ✓ · hand check pending (counts-only snippet in the report) |
+| 2 | Layout C v2 at 1280×720 and 960 wide | harness ✓ · hand check pending |
+| 3 | Option / `?` show and hide the key tips | harness ✓ · hand check pending |
+| 4 | Volume slider: hover, wide hit target, level kept, `M` | harness ✓ · hand check pending |
+| 5 | W/S and A/D slides; holding S has no catch-up | harness ✓ · hand check pending |
+| 6 | React `6`: pop, burst, flyer, badge; next after 850 ms | harness ✓ · hand check pending |
+| 7 | Esc shrinks into the message, open grows from the card | harness ✓ · hand check pending |
+| 8 | Slow item: blurred thumbnail and bar | harness ✓ · hand check pending |
+| 9 | Reduce motion: every motion a crossfade | harness ✓ (emulated) · hand check pending |
+| 10 | Eight states as in `states.html` | harness ✓ · hand check pending |
+| 11 | Key card on first open, `?` brings it back | harness ✓ · hand check pending |
+| 12 | `I`: Instagram's layer and back, same item, paused | harness ✓ on a fake layer · **unverified on Instagram** (tasks 16, 17) |
+| 13 | Icon at 128 and 16, light and dark theme | rendered ✓ · toolbar check pending |
+| 14 | `npm run typecheck` and `npm run build` | pass ✓ |
 
 ---

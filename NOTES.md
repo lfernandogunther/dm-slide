@@ -33,6 +33,8 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 - **Media card in the chat:** any `[role=button]` or `a[href*="/stories/"]` showing an img/video of
   100px or more; the nearest `slideMessageRef.__id` above it (5–26 fibers up depending on kind) is
   the message. `isReel` exists only on reels, so it can't be the rule.
+- **Thumbnails:** the XMA's `preview_image.url`, already in the record (a reel's is its cover, never
+  played). Signed URLs expire, so a tile whose `<img>` fails shows its number.
 - Loading older: `scrollTop` to the top loads a page of 20 messages in 450–625 ms plus ~600 ms to
   settle. Two months back is ~2 pages in a quiet thread, 30+ in a busy one.
 - Revealing a row near the top of the loaded list makes Instagram fetch older pages on its own, so
@@ -69,6 +71,8 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   listener misses them); ⌘/Ctrl/Alt combos pass through. On open, Instagram's focused composer is
   blurred, or typed keys land in it.
 - "Typing in the reply box" is `e.composedPath()[0]`: `e.target` is retargeted to the shadow host.
+- Keys with `isTrusted` false are ignored, so neither a page script nor a test can drive the player
+  with synthetic events: harness checks need real key presses.
 
 ## Playback
 - Video URL: the web app's `/api/v1/media/<id>/info/` (with `X-IG-App-ID`) first — the media id is
@@ -81,10 +85,21 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   when the browser can't decode the first (HEIC).
 - Two `<video>` elements (current and a spare preloading the next); a swapped-out video must not
   drive the stage or report errors for the reel on screen.
+- Seeking a preloaded spare can drop its `readyState` for a moment: read it before the seek.
+
+## Player motion
+- Grow and shrink read the message's media rect only when it is wholly inside the scroller's view;
+  reading never scrolls. Otherwise the player fades.
+- `close()` hands the chat back at once (`onClose`, `inert`, no pointer events) and only then
+  finishes leaving, so the header button works during the shrink.
+- React → next counts its 850 ms from Instagram's confirmation, not from the key, so the motion never
+  shows a reaction that didn't land. Any move, and `I`, cancel the pending move.
 
 ## Failure
 - `CantRead` (the scan failed, so nothing was attempted) vs any other error (one action failed).
   The header button stays clickable in the error state and opens a notice instead of the player.
+- A failed action shows on its own control (shake, red ring, one line with the key to retry), never
+  as a global alert; only can't-read takes the whole frame.
 - A step the page never answers is retried every ~100 ms until its timeout: safe (each try clicks at
   most once), just chatty.
 
