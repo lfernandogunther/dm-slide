@@ -37,6 +37,21 @@
 - 2026-10-22 — Instagram view (`I`) was written on faith: the layer is taken to be a media dialog or
   any non-thread path, closed with a synthetic Esc. Unconfirmed live; flags 3 and 5 of the
   self-review wait on that hand check (tasks 16, 17). -> NOTES.md (already there)
+- 2026-10-22 — `I` failing with "the row shows no media card" was timing, not markup: right after
+  `scrollIntoView` a placeholder row holds no media, and its cover draws ~12–14 ms later, while the
+  click ran once. The rows looked identical in every DOM diff; only polling the same row over time
+  showed it. -> NOTES.md
+- 2026-10-22 — A shared post's view moves the path to `/p/<code>/` and shows a dialog with no
+  img/video, so "a dialog showing media" never matched and the synthetic Esc was never reached.
+  Closing with our own `history.back()` landed on another thread in one run (`history.length` did
+  not grow; cause unconfirmed); a synthetic Esc on any dialog off the thread path lets Instagram go
+  back itself, and returned to the thread in 2 of 2 runs with a recorded push/pop. -> NOTES.md
+- 2026-10-22 — Reacting no longer waits on Instagram: the player moves on at once and a queue tells
+  Instagram one job at a time, two tries, then reverts the badge and says which item failed. A reply
+  waits for the queue to drain, since both drive Instagram's thread and its focus. -> NOTES.md
+- 2026-10-22 — With the media lookup answering 302, a carousel showed its first slide only. Its
+  `/p/<code>/embed/` HTML carries every slide as twice-encoded JSON; the rendered iframe does not
+  (two of N slides filled). -> NOTES.md
 
 ## Concepts learned
 - FLIP, the Web Animations API and `prefers-reduced-motion`, as in spec.md's glossary.

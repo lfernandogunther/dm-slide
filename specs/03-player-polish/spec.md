@@ -165,14 +165,15 @@ the order of the drawings.
 | 3 | Option / `?` show and hide the key tips | harness ✓ · hand check pending |
 | 4 | Volume slider: hover, wide hit target, level kept, `M` | harness ✓ · hand check pending |
 | 5 | W/S and A/D slides; holding S has no catch-up | harness ✓ · hand check pending |
-| 6 | React `6`: pop, burst, flyer, badge; next at once, reaction queued | harness ✓ (850 ms version) · queue: hand check pending |
+| 6 | React `6`: pop, burst, flyer, badge; next at once, reaction queued | harness ✓ (850 ms version) · next at once and queue: by hand ✓ 2026-10-22 |
 | 7 | Esc shrinks into the message, open grows from the card | harness ✓ · hand check pending |
 | 8 | Slow item: blurred thumbnail and bar | harness ✓ · hand check pending |
 | 9 | Reduce motion: every motion a crossfade | harness ✓ (emulated) · hand check pending |
 | 10 | Eight states as in `states.html` | harness ✓ · hand check pending |
 | 11 | Key card on first open, `?` brings it back | harness ✓ · hand check pending |
-| 12 | `I`: Instagram's layer and back, same item, paused | opens live after the click retry; closing by `history.back()` · hand check pending |
+| 12 | `I`: Instagram's layer and back, same item, paused | Playwright on the real thread ✓ (2 of 2: opens at `/p/`, Back returns to the same item) · by hand ✓ 2026-10-22 |
 | 13 | Icon at 128 and 16, light and dark theme | rendered ✓ · toolbar check pending |
 | 14 | `npm run typecheck` and `npm run build` | pass ✓ |
+| 15 | Carousel shows every slide | Playwright ✓ (7 of 7 carousels, 2–12 slides) · by hand ✓ 2026-10-22 |
 
 ---
