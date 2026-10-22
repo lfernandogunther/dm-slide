@@ -135,3 +135,26 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   --hide-scrollbars --force-device-scale-factor=1 --default-background-color=00000000
   --window-size=$n,$n --screenshot=icons/icon$n.png file://…/icon-$n.html`. The build copies the
   PNGs (not the SVG) into `dist/icons`.
+
+## Demo
+- `npm run demo` serves the real player over a fake adapter. esbuild's `serve` writes the bundle
+  into `demo/` on the first request even without `watch`, so `/demo/demo.js` is gitignored.
+- `?` shows the key card over the tips; a tips-only screenshot needs Option held down.
+- A browser subagent for the demo opens a new tab: the shared browser may be sitting on a real DM
+  thread.
+
+## Release and the store
+- `npm run release <v>` refuses unless `main` is clean and even with `origin/main` and the tag is
+  new; it typechecks before touching any file. The tag's workflow builds, attaches the zip to a
+  GitHub Release and uploads to the store only once all four store variables exist (deferred: for
+  now the zip goes up by hand in the Developer Dashboard).
+- Pushing `.github/workflows/` needs a `gh` token with the `workflow` scope; `gh auth refresh -s
+  workflow` takes only with the browser signed in to the same account.
+- The store counts data handled only on the device as handled: the sender's name, personal
+  communications and website content are declared although nothing leaves the page.
+- Media loads from Instagram's CDN, not only www.instagram.com; the privacy policy and the host
+  justification say "Instagram's own servers and content network".
+- The store's docs name only gcloud impersonation and a JSON key; `google-github-actions/auth` with
+  `service_account` + `token_format: access_token` reaches it through federation instead.
+- The dashboard checks the privacy tab only on submit, listing every missing field in one popup.
+  Screenshots upload one per drop.

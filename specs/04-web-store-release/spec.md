@@ -101,5 +101,15 @@ token with the store's scope, fall back to a service-account JSON key in a secre
 ## Outcome
 | # | Criterion | Result |
 |---|---|---|
+| 1 | Constitution amendment, dated | ✅ #01 |
+| 2 | `npm run demo` with fake data; nothing in `dist/` | ✅ checked in a subagent |
+| 3 | Four screenshots, no real data | ✅ read one by one |
+| 4 | README lists every key | ✅ against `keys.ts` |
+| 5 | `PRIVACY.md` matches the code | ✅ storage keys from the source; CDN wording fixed in review |
+| 6 | `v*` tag → GitHub Release with an installable zip | ✅ v0.1.0 (zip read; not yet loaded unpacked from it) |
+| 7 | Tag/manifest mismatch fails first | ⏳ read in the workflow, not run |
+| 8 | Submitted; public listing linked in README | ⏳ submitted 2026-10-22; in review |
+| 9 | A later tag reaches the store by itself | ⏸ deferred with task 10 |
+| 10 | typecheck and build pass | ✅ |
 
 ---

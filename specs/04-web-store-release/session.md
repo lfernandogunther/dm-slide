@@ -4,8 +4,8 @@
 
 ## Next
 v0.1.0 is in the store's review. When it is approved: the Web Store link goes in the README.
-Then 11 — self-review. Task 10 is deferred (2026-10-22): releases reach the store by hand, zip
-from the GitHub Release.
+At the next release: task 10 (store credentials), task 12 if the owner wants Dependabot, and paste
+the new host justification from `store/listing.md` into the dashboard (it now names the CDN).
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -14,7 +14,7 @@ from the GitHub Release.
 - None.
 
 ## Tasks status
-9 of 11. See tasks.md.
+10 of 12. See tasks.md.
 
 ## What was done
 - 2026-10-22: the owner asked for a full README with screenshots and a Web Store release with
@@ -25,6 +25,9 @@ from the GitHub Release.
 - 2026-10-22: pushed; v0.1.0 cut by the owner; the workflow built it (store job skipped, as meant)
   and the Release carries `dm-slide-v0.1.0.zip` (manifest at the root, 0.1.0). The owner registered
   as a developer, filled listing and privacy from `store/listing.md`, and submitted for review.
+- 2026-10-22: task 10 deferred to the next release. Self-review: 8 flags, 7 fixed (privacy policy
+  names the CDN, release job split from the read-only build, store job needs all four variables,
+  release script fetches and typechecks first), 1 to task 12. Learnings sorted into NOTES.md.
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
