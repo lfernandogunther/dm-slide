@@ -159,7 +159,7 @@ the order of the drawings.
 ## Outcome
 | # | Criterion | Result |
 |---|---|---|
-| 1 | Thumbnails on tiles, number fallback | harness ✓ · hand check pending (counts-only snippet in the report) |
+| 1 | Thumbnails on tiles, number fallback | harness ✓ · live data ✓ 2026-10-22 (10 of 10 items, 8 of 8 reels carry a thumb) · the tiles' look by hand pending |
 | 2 | Layout C v2 at 1280×720 and 960 wide | harness ✓ · hand check pending |
 | 3 | Option / `?` show and hide the key tips | harness ✓ · hand check pending |
 | 4 | Volume slider: hover, wide hit target, level kept, `M` | harness ✓ · hand check pending |

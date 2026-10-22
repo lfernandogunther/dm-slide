@@ -107,7 +107,9 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 - The DevTools-controlled Chrome runs with extensions off: test there by reloading the tab and
   injecting `dist/page.js`, then `dist/content.js`. The real extension is tested in my own Chrome.
 - Content-script logs show under the console's "DM Slide" context, not "top"; `__dms` is the
-  adapter there. `console.warn` from a content script lands on the extension's Errors page.
+  adapter there. Each extension reload leaves the old isolated world in the context list
+  (a SPA tab never swaps documents), and evaluating in one throws `__dms is not defined`: reload the
+  tab so one "DM Slide" remains. `console.warn` from a content script lands on the extension's Errors page.
 - The button syncs on page mutations only, so an idle page can lag in a test.
 - An unreadable thread can be simulated by blocking the `scan` request at window capture.
 
