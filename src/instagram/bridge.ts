@@ -31,6 +31,7 @@ export interface RawItem {
   timestampMs: number;
   reactions: RawReaction[];
   myReplies: string[]; // the texts of my loaded messages quoting this one, oldest first
+  notes: string[]; // the sender's own texts right after it, oldest first
 }
 
 export interface SentMessage {

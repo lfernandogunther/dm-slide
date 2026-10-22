@@ -87,6 +87,8 @@ export const REPLY_BUTTON = '[role=button]:not([aria-haspopup])';
 export const COMPOSER = 'div[role=textbox][contenteditable=true][data-lexical-editor]';
 export const REPLIED_TO_FIELD = 'replied_to_message_id';
 export const TEXT_FIELD = 'text_body';
+// A text the sender sends this soon after an item, before anything else, is read as about that item.
+export const NOTE_WINDOW_MS = 5 * 60 * 1000;
 // Sending waits on the server, unlike a reaction.
 export const SEND_TIMEOUT_MS = 10000;
 // A message's sender is a SlideUser record keyed by its fbid; its display name, else the username.

@@ -113,6 +113,8 @@ const STYLE = `
   .p-replies { list-style: none; margin: 0; padding: 0 14px; max-height: 96px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
   .p-replies li { background: #262626; border-radius: 12px; padding: 4px 10px; align-self: flex-end; max-width: 100%; overflow-wrap: anywhere; }
   .p-replies li::before { content: "You: "; color: #a8a8a8; }
+  .p-replies li.theirs { align-self: flex-start; background: #1c1c1e; }
+  .p-replies li.theirs::before { content: attr(data-who) ": "; }
   .p-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 76px; }
   .p-quick { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .quick { width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; background: transparent; font-size: 20px; padding: 0; }
@@ -296,12 +298,19 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     $('data-sent').textContent = `${item.senderName ? '· ' : ''}${SENT_AT.format(item.timestampMs)}`;
     reply.placeholder = item.senderName ? `Reply to ${item.senderName}…` : 'Reply…';
     player.classList.toggle('reacting', reacting);
+    // What the sender wrote with the item comes first, on their side; my replies follow, on mine.
+    const bubble = (text: string, who: string | null) => {
+      const li = document.createElement('li');
+      li.textContent = text;
+      if (who !== null) {
+        li.className = 'theirs';
+        li.dataset.who = who;
+      }
+      return li;
+    };
     $('data-replies').replaceChildren(
-      ...item.myReplies.map((text) => {
-        const li = document.createElement('li');
-        li.textContent = text;
-        return li;
-      }),
+      ...item.notes.map((text) => bubble(text, item.senderName ?? 'Them')),
+      ...item.myReplies.map((text) => bubble(text, null)),
     );
     renderStrip($('data-strip'), items, current, edge, follow, shown);
   }

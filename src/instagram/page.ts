@@ -133,8 +133,23 @@ function sourceOf(src: RecordSource, record: any): { kind: ItemKind; source: Ite
   return null;
 }
 
-function itemOf(src: RecordSource, element: any, myReplies: Map<string, string[]>): RawItem | null {
-  const message = element?.currentMessage;
+/** The sender's plain texts right after the item at `at`: none quoting anything, none after another message. */
+function notesAfter(src: RecordSource, loaded: any[], at: number, senderId: string, sentMs: number): string[] {
+  const notes: string[] = [];
+  for (const element of loaded.slice(at + 1)) {
+    const record = element?.currentMessage?.__id && src.get(element.currentMessage.__id);
+    const text = record?.[S.TEXT_FIELD];
+    if (typeof text !== 'string' || !text.trim() || String(record.sender_fbid) !== senderId) break;
+    // A link or any share carries its own text; only a plain message is a note.
+    if (record[S.REPLIED_TO_FIELD] || recordOf(src, record.content)?.xma || sourceOf(src, record)) break;
+    if (Number(record.timestamp_ms) - sentMs > S.NOTE_WINDOW_MS) break;
+    notes.push(text);
+  }
+  return notes;
+}
+
+function itemOf(src: RecordSource, loaded: any[], at: number, myReplies: Map<string, string[]>): RawItem | null {
+  const message = loaded[at]?.currentMessage;
   const record = message?.__id && src.get(message.__id);
   if (!record) return null;
   const found = sourceOf(src, record);
@@ -152,6 +167,7 @@ function itemOf(src: RecordSource, element: any, myReplies: Map<string, string[]
     timestampMs: Number(message.timestamp_ms),
     reactions,
     myReplies: myReplies.get(String(message.id)) ?? [],
+    notes: notesAfter(src, loaded, at, String(message.sender_fbid), Number(message.timestamp_ms)),
   };
 }
 
@@ -177,9 +193,9 @@ function scan(): ScanResult {
   if (!src) return { ok: false, reason: 'no Relay store above the message list' };
   const viewerId = viewerIdOf(src);
   if (!viewerId) return { ok: false, reason: 'no viewer id in the Relay store' };
-  const loaded: unknown[] = list.fiber.memoizedProps[S.LOADED_MESSAGES_PROP];
+  const loaded: any[] = list.fiber.memoizedProps[S.LOADED_MESSAGES_PROP];
   const mine = readMine(src, loaded, viewerId);
-  const items = loaded.map((element) => itemOf(src, element, mine.replies)).filter((r): r is RawItem => r !== null);
+  const items = loaded.map((_, at) => itemOf(src, loaded, at, mine.replies)).filter((r): r is RawItem => r !== null);
   const hasMoreAbove = Boolean(list.fiber.memoizedProps[S.HAS_MORE_ABOVE_PROP]);
   const sent = loaded.map((element: any) => Number(element?.currentMessage?.timestamp_ms)).filter(Number.isFinite);
   const oldestMs = sent.length ? Math.min(...sent) : null;

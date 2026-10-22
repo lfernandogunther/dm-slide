@@ -35,6 +35,7 @@ export interface Item {
   timestampMs: number;
   myReaction: string | null; // one of QUICK_REACTIONS when it is one of them
   myReplies: string[]; // my loaded replies quoting it
+  notes: string[]; // the sender's texts sent right after it
 }
 
 export type Media = Slide | { type: 'slides'; slides: Slide[] };
@@ -105,6 +106,7 @@ function listOthersItems(): Item[] {
         timestampMs: r.timestampMs,
         myReaction: mine ? canonical(mine.emoji) : null,
         myReplies: r.myReplies,
+        notes: r.notes,
       };
     });
 }
