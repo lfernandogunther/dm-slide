@@ -24,7 +24,8 @@ DM Slide you do all of it on one screen, from the keyboard, in any conversation,
    worse than not working.
 5. **Keyboard first.** Every core action is one key (W/S or ↑/↓ to move between items, A/D or ←/→
    through a carousel's slides and on to the next item, F to react, R to reply, U to show only what
-   I haven't reacted to, Space to pause, Esc to close). The mouse works too, but it is never required.
+   I haven't reacted to, Space to pause, I to see the item in Instagram's own view, ? for the
+   keys, Esc to close). The mouse works too, but it is never required.
 6. **Prove the idea before hardening it.** Vanilla TypeScript, no UI framework, no automated tests
    until the idea has proven itself in real use. For v0, the quality bar is a manual click-through
    on the real Instagram. A framework or a test suite earns its place when a real need shows up.
@@ -46,3 +47,5 @@ dated. Created 2026-10-21.
 - 2026-10-21: posts, photos and stories join reels (S02); the keys split into W/S for items and
   A/D for a carousel's slides; the "not reacted" filter is allowed; the non-goals are no longer
   scoped to the MVP.
+- 2026-10-22: principle 5 gains I (Instagram view: the item's own layer over the chat, and back)
+  and ? (the key tips), from S03.
