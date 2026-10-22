@@ -195,3 +195,18 @@ typed without sending. End state verified clean: no reaction, empty composer, no
 - `console.warn` from a content script lands on the extension's Errors page in `chrome://extensions`;
   diagnostics use `console.info`.
 - The stage has a mute button (bottom right, as on Instagram) and `M`; the setting holds across reels.
+
+## #09 lazy loading (2026-10-21, done before #07)
+- The message list's props also carry `hasMoreBelow`, `isLoadingAbove/Below` and
+  `onLoadMoreAbove/BelowExternal`: the loaded window can, in principle, miss the newest messages.
+  Scrolling up four pages (20 → 100 messages) kept `hasMoreBelow` false, so in normal use the
+  newest stay loaded and "1 = newest" holds. A jump into old history (search, a quoted message)
+  may break that; untested.
+- `loadOlder` scrolls the thread to its top (`scrollTop = -scrollHeight`, which the browser clamps
+  for the column-reverse list) and waits for the message count to grow: 1.8–3.7 s per page of 20.
+  The thread is then scrolled back to the current reel, so closing still lands there.
+- The strip numbers from the newest, so prepending older reels renumbers nothing; prepending keeps
+  the visible tiles in place (distance from the bottom), and the current reel keeps playing.
+- Checked by injecting the build in the automated Chrome: `A` at the top tile loaded 4 → 6 tiles
+  and moved one older; a wheel-up at the top of the strip loaded 6 → 9, current unchanged.
+  "Start of chat" not reached (long thread).

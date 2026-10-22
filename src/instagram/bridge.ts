@@ -18,12 +18,12 @@ export interface RawReel {
 }
 
 export type ScanResult =
-  | { ok: true; viewerId: string; hasMoreAbove: boolean; reels: RawReel[] }
+  | { ok: true; viewerId: string; hasMoreAbove: boolean; messageCount: number; reels: RawReel[] }
   | { ok: false; reason: string };
 
-export type RevealResult = { ok: true } | { ok: false; reason: string };
+export type ScrollResult = { ok: true } | { ok: false; reason: string };
 
-export type Request = { op: 'scan' } | { op: 'reveal'; messageId: string };
+export type Request = { op: 'scan' } | { op: 'reveal'; messageId: string } | { op: 'loadOlder' };
 
 /** Isolated side: ask the page script. dispatchEvent runs its listener synchronously. */
 function call<T extends { ok: boolean }>(request: Request): T | { ok: false; reason: string } {
@@ -40,4 +40,6 @@ function call<T extends { ok: boolean }>(request: Request): T | { ok: false; rea
 
 export const requestScan = (): ScanResult => call<ScanResult>({ op: 'scan' });
 
-export const requestReveal = (messageId: string): RevealResult => call<RevealResult>({ op: 'reveal', messageId });
+export const requestReveal = (messageId: string): ScrollResult => call<ScrollResult>({ op: 'reveal', messageId });
+
+export const requestLoadOlder = (): ScrollResult => call<ScrollResult>({ op: 'loadOlder' });

@@ -3,7 +3,11 @@
 import type { Reel, ThreadAdapter } from '../instagram/adapter';
 import { bindKeys } from './keys';
 import { createStage } from './stage';
-import { renderStrip } from './strip';
+import { renderStrip, type StripEdge } from './strip';
+
+// Pages fetched for one press of A at the oldest reel, when the pages fetched hold no reels.
+const MAX_PAGES_PER_LOAD = 5;
+const STRIP_LOAD_MARGIN_PX = 40;
 
 const STYLE = `
   * { box-sizing: border-box; }
@@ -35,6 +39,8 @@ const STYLE = `
     border: 2px solid transparent;
   }
   .p-strip li.current { opacity: 1; border-color: #fff; }
+  .p-strip li.edge { height: auto; background: none; opacity: 1; border: 0; cursor: default; font-size: 11px; color: #a8a8a8; text-align: center; }
+  .p-strip li[hidden] { display: none; }
   .p-strip li.reacted::after { content: attr(data-reaction); position: absolute; right: -6px; bottom: -6px; font-size: 14px; }
   .p-stage { flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
   .nav { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #262626; font-size: 24px; flex-shrink: 0; }
@@ -110,7 +116,7 @@ export function startIndex(reels: Reel[]): number {
   return unreacted >= 0 ? unreacted : reels.length - 1;
 }
 
-export function openPlayer(adapter: ThreadAdapter, reels: Reel[], start: number, onClose: () => void): Player {
+export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number, onClose: () => void): Player {
   const host = document.createElement('div');
   host.style.cssText = 'position: fixed; inset: 0; z-index: 2147483647;';
   const root = host.attachShadow({ mode: 'open' });
@@ -120,24 +126,23 @@ export function openPlayer(adapter: ThreadAdapter, reels: Reel[], start: number,
   const reply = $<HTMLInputElement>('data-reply');
   const stage = createStage($('data-reel'), adapter);
 
+  let reels = loaded;
   let current = start;
+  let edge: StripEdge = null;
+  let loading: Promise<number> | null = null;
 
-  function render(): void {
+  function renderChrome(follow: boolean): void {
     const reel = reels[current];
     const left = reels.filter((r) => r.myReaction === null).length;
-    $('data-pos').textContent = `· ${current + 1} of ${reels.length} loaded · ${left} without ❤️`;
-    $<HTMLButtonElement>('data-prev').disabled = current === 0;
+    $('data-pos').textContent = `· ${reels.length - current} of ${reels.length} loaded · ${left} without ❤️`;
+    $<HTMLButtonElement>('data-prev').disabled = current === 0 && edge === 'start';
     $<HTMLButtonElement>('data-next').disabled = current === reels.length - 1;
     $('data-heart').textContent = reel.myReaction ?? '♡';
-    stage.show(reel, reels[current + 1]);
-    renderStrip($('data-strip'), reels, current);
+    renderStrip($('data-strip'), reels, current, edge, follow);
   }
 
-  function go(index: number): void {
-    if (index < 0 || index >= reels.length) return;
-    current = index;
-    render();
-    // Following the chat is a convenience: if the row can't be found, the player carries on.
+  // Following the chat is a convenience: if the row can't be found, the player carries on.
+  function revealCurrent(): void {
     try {
       adapter.reveal(reels[current].id);
     } catch (e) {
@@ -145,8 +150,62 @@ export function openPlayer(adapter: ThreadAdapter, reels: Reel[], start: number,
     }
   }
 
+  function go(index: number): void {
+    if (index < 0 || index >= reels.length) return;
+    current = index;
+    renderChrome(true);
+    stage.show(reels[current], reels[current + 1]);
+    revealCurrent();
+  }
+
+  /** Puts the reels older than the first one in front; newer arrivals wait for the next open. */
+  function mergeOlder(found: Reel[]): number {
+    const known = new Set(reels.map((r) => r.id));
+    const older = found.filter((r) => !known.has(r.id) && r.timestampMs <= reels[0].timestampMs);
+    reels = [...older, ...reels];
+    current += older.length;
+    return older.length;
+  }
+
+  async function fetchOlder(): Promise<number> {
+    edge = 'loading';
+    renderChrome(false);
+    let added = 0;
+    try {
+      for (let page = 0; page < MAX_PAGES_PER_LOAD && added === 0; page++) {
+        if (!(await adapter.loadOlder())) {
+          edge = 'start';
+          break;
+        }
+        added = mergeOlder(adapter.listReels());
+      }
+    } catch (e) {
+      console.warn('[reel-queue]', e instanceof Error ? e.message : e);
+    }
+    if (edge === 'loading') edge = null;
+    renderChrome(false);
+    // Loading scrolled the thread to its top: bring it back to the reel on screen.
+    revealCurrent();
+    return added;
+  }
+
+  /** One load at a time; a press during a load waits for that one. */
+  function loadOlder(): Promise<number> {
+    if (edge === 'start') return Promise.resolve(0);
+    loading ??= fetchOlder().finally(() => (loading = null));
+    return loading;
+  }
+
+  async function prev(): Promise<void> {
+    if (current > 0) return go(current - 1);
+    const from = reels[current].id;
+    await loadOlder();
+    // Only if the player is still on the reel A was pressed on.
+    if (reels[current].id === from && current > 0) go(current - 1);
+  }
+
   const unbindKeys = bindKeys((e) => e.composedPath()[0] === reply, {
-    prev: () => go(current - 1),
+    prev: () => void prev(),
     next: () => go(current + 1),
     close,
     togglePause: () => stage.togglePause(),
@@ -163,12 +222,20 @@ export function openPlayer(adapter: ThreadAdapter, reels: Reel[], start: number,
   }
 
   $('data-close').addEventListener('click', close);
-  $('data-prev').addEventListener('click', () => go(current - 1));
+  $('data-prev').addEventListener('click', () => void prev());
   $('data-next').addEventListener('click', () => go(current + 1));
   $('data-strip').addEventListener('click', (e) => {
     const tile = (e.target as Element).closest<HTMLElement>('li[data-i]');
     if (tile) go(Number(tile.dataset.i));
   });
+  $('data-strip').addEventListener(
+    'wheel',
+    (e) => {
+      const strip = e.currentTarget as HTMLElement;
+      if (e.deltaY < 0 && strip.scrollTop < STRIP_LOAD_MARGIN_PX) void loadOlder();
+    },
+    { passive: true },
+  );
   $('data-reel').addEventListener('click', (e) => {
     if (!(e.target as Element).closest('a')) stage.togglePause();
   });

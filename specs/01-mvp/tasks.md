@@ -8,9 +8,9 @@ One commit each. `feat [S01 #NN]: ...` (docs-only → `doc`).
 - [x] #04 — `src/content/main.ts`: inject "▶ Reel Queue · N without ❤️" / disabled "No reels" into the thread header; re-inject on thread change (acceptance #1)
 - [x] #05 — Player shell in Shadow DOM (`src/player/`): prototype layout, open/close, the start position rule, strip, ‹ ›, keys `A`/`D`/`←`/`→`/`Esc`, shortcuts off while typing, the thread following the current reel (acceptance #2, #3 nav, #8, #10)
 - [x] #06 — Playback: the current reel inline with sound, loop, `Space`/click pauses, the next one preloaded, an "unavailable" card (acceptance #3)
+- [x] #09 — (done before #07, by choice) Strip numbered from the newest (1 at the bottom); lazy loading: strip sentinel + `A` at the edge → `adapter.loadOlder()`; keep the current reel in place; "start of chat" (acceptance #6)
 - [ ] #07 — React: `adapter.react`/`unreact` with the row re-check; `F` and the ❤️ button; "Next after ❤️"; strip and counter update; settings in `chrome.storage.local` (acceptance #4)
-- [ ] #08 — Reply: `adapter.reply` quoted or plain; `R`, `Enter`, the "Quote this reel" toggle; a sent toast (acceptance #5)
-- [ ] #09 — Lazy loading: strip sentinel + `A` at the edge → `adapter.loadOlder()`; keep the current reel in place; "start of chat" (acceptance #6)
-- [ ] #10 — Groups (the sender on the video and in the placeholder) and a click on a reel card in the chat opening at that reel (acceptance #2, #7)
+- [ ] #08 — Reply: `adapter.reply` quoted or plain; `R`, `Enter`, the "Quote this reel" toggle; a sent toast; my earlier quoted replies to the reel under the box (find first which Relay field links a reply to its message) (acceptance #5)
+- [ ] #10 — Groups (the sender on the video and in the placeholder), the send date on top of every reel, and a click on a reel card in the chat opening at that reel (acceptance #2, #7)
 - [ ] #11 — Fail visibly: `health()` on open and a row re-check failure → a clear message, no action (acceptance #9)
 - [ ] #12 — Manual click-through of every acceptance criterion on the real Instagram (1:1 + group); fix rough edges; fill `learnings.md`

@@ -1,7 +1,7 @@
 // Runs in the page's MAIN world: reads the loaded messages from React and the Relay store, and
 // answers the isolated content script over the bridge. It never clicks; the one thing it changes
-// is the thread's scroll position, to follow the player.
-import { REQUEST_EVENT, RESPONSE_EVENT, type RawReel, type RevealResult, type Request, type ScanResult } from './bridge';
+// is the thread's scroll position, to follow the player and to load older messages.
+import { REQUEST_EVENT, RESPONSE_EVENT, type RawReel, type Request, type ScanResult, type ScrollResult } from './bridge';
 import * as S from './selectors';
 
 // React and Relay internals are untyped, hence the `any`s.
@@ -20,7 +20,7 @@ function findUp(from: Fiber | null, test: (f: Fiber) => boolean, maxDepth = S.MA
   return null;
 }
 
-type MessageList = { el: Element; fiber: Fiber };
+type MessageList = { scroller: Element; el: Element; fiber: Fiber };
 
 /** The thread's loaded messages and the DOM list of their rows, found from its scroll container. */
 function findMessageList(): MessageList | null {
@@ -29,7 +29,7 @@ function findMessageList(): MessageList | null {
     if (!S.SCROLLABLE_OVERFLOW.includes(getComputedStyle(scroller).overflowY)) continue;
     const el = scroller.firstElementChild?.firstElementChild;
     const fiber = el && findUp(fiberOf(el), (f) => Array.isArray(f.memoizedProps?.[S.LOADED_MESSAGES_PROP]));
-    if (el && fiber) return { el, fiber };
+    if (el && fiber) return { scroller, el, fiber };
   }
   return null;
 }
@@ -89,7 +89,8 @@ function scan(): ScanResult {
   if (!viewerId) return { ok: false, reason: 'no viewer id in the Relay store' };
   const items: unknown[] = list.fiber.memoizedProps[S.LOADED_MESSAGES_PROP];
   const reels = items.map((item) => reelOf(src, item)).filter((r): r is RawReel => r !== null);
-  return { ok: true, viewerId, hasMoreAbove: Boolean(list.fiber.memoizedProps[S.HAS_MORE_ABOVE_PROP]), reels };
+  const hasMoreAbove = Boolean(list.fiber.memoizedProps[S.HAS_MORE_ABOVE_PROP]);
+  return { ok: true, viewerId, hasMoreAbove, messageCount: items.length, reels };
 }
 
 /** The row of a message: by the row's own fiber key, or by position when the counts line up. */
@@ -108,7 +109,7 @@ function findRow(list: MessageList, messageId: string): Element | null {
 }
 
 /** Scrolls the thread so the message's row sits in the middle, so closing the player lands there. */
-function reveal(messageId: string): RevealResult {
+function reveal(messageId: string): ScrollResult {
   const list = findMessageList();
   if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
   const row = findRow(list, messageId);
@@ -117,14 +118,24 @@ function reveal(messageId: string): RevealResult {
   return { ok: true };
 }
 
-function handle(request: Request): ScanResult | RevealResult {
+/** Scrolls the thread to its oldest loaded message, which is what makes Instagram fetch the page before. */
+function loadOlder(): ScrollResult {
+  const list = findMessageList();
+  if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
+  // The list is column-reverse (its top is a negative scrollTop); the browser clamps to the top either way.
+  list.scroller.scrollTop = -list.scroller.scrollHeight;
+  return { ok: true };
+}
+
+function handle(request: Request): ScanResult | ScrollResult {
   if (request.op === 'scan') return scan();
   if (request.op === 'reveal') return reveal(request.messageId);
+  if (request.op === 'loadOlder') return loadOlder();
   return { ok: false, reason: `unknown op ${(request as { op: string }).op}` };
 }
 
 document.addEventListener(REQUEST_EVENT, (e) => {
-  let result: ScanResult | RevealResult;
+  let result: ScanResult | ScrollResult;
   try {
     result = handle(JSON.parse(String((e as CustomEvent).detail)) as Request);
   } catch (err) {

@@ -28,16 +28,20 @@ See [constitution.md](../../constitution.md) for principles and non-goals.
 - **Start position:** the button opens at the oldest loaded reel without my reaction (the newest
   reel if every one has a reaction). A clicked reel card opens at that reel.
 - **Navigate:** `A`/`D` or `←`/`→`, the ‹ › buttons, or a click on any item in the strip. At the
-  last reel, "next" stops.
+  last reel, "next" stops. The strip follows the chat's order (oldest at the top, newest at the
+  bottom) and numbers reels from the newest: 1 is the bottom tile, counting up, so loading older
+  reels never renumbers the ones already there.
 - **Follow in the chat:** every move scrolls Instagram's thread behind the player to the current
   reel's message, so the chat always sits where the player is.
 - **Watch:** the current reel plays inline with sound and loops. `Space` and a click on the video
-  pause it. Only the current reel loads, and the next one is preloaded.
+  pause it. A speaker button (and `M`) mutes and unmutes. Only the current reel loads, and the next
+  one is preloaded. The top of the video shows when the reel was sent.
 - **React:** `F` or the ❤️ button reacts ❤️ to that **DM message**, and pressing again removes it.
   "Next after ❤️" (on by default) advances automatically.
 - **Reply:** `R` focuses the box under the video and `Enter` sends to the conversation. With
   "Quote this reel" on (the default), the message is a reply to that reel's message; off, it is a
-  plain message. Shortcuts are off while typing, and `Esc` leaves the box.
+  plain message. Shortcuts are off while typing, and `Esc` leaves the box. Under the box, the
+  replies I already sent quoting that reel show, so I see what I said about it.
 - **Lazy loading:** scrolling the strip up, or pressing `A` near the oldest loaded reel, fetches
   older messages, one page at a time. The current reel stays in place, and the strip shows
   "start of chat" when nothing older is left.
@@ -57,10 +61,11 @@ Checked by hand on the real Instagram, in one 1:1 and one group conversation:
 4. `F` reacts ❤️ to the message, which shows in Instagram's own thread after closing, and a second
    `F` removes it. With "Next after ❤️" on, the player advances.
 5. A reply sent with "Quote this reel" on appears in the thread as a reply to that reel; with it
-   off, it appears as a plain message.
+   off, it appears as a plain message. A reel I had replied to with a quote shows that reply under
+   the box.
 6. Going back past the oldest loaded reel loads older ones without moving off the current reel,
    until "start of chat".
-7. In a group, the sender shown on each reel is the right person.
+7. In a group, the sender shown on each reel is the right person. Every reel shows its send date.
 8. `Esc` closes the player, and keys typed in the reply box never trigger shortcuts.
 9. With a selector deliberately broken, the player shows a clear "can't read this conversation"
    message and performs no action (constitution #4).

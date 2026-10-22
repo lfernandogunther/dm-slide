@@ -39,6 +39,9 @@ export const HEADER_ICON_COUNT = { min: 2, max: 4 };
 export const embedUrl = (shortcode: string) => `https://www.instagram.com/reel/${shortcode}/embed/`;
 export const reelUrl = (shortcode: string) => `https://www.instagram.com/reel/${shortcode}/`;
 export const EMBED_TIMEOUT_MS = 6000;
+// A page of older messages took ~2 s in the spike.
+export const LOAD_OLDER_TIMEOUT_MS = 8000;
+export const LOAD_OLDER_POLL_MS = 250;
 // The web app's own media lookup; the app id header is the one instagram.com sends with it.
 export const mediaInfoUrl = (mediaId: string) => `https://www.instagram.com/api/v1/media/${mediaId}/info/`;
 export const WEB_APP_ID_HEADER = { 'X-IG-App-ID': '936619743392459' };

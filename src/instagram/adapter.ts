@@ -1,5 +1,5 @@
-import { requestReveal, requestScan, type ScanResult } from './bridge';
-import { THREAD_PATH } from './selectors';
+import { requestLoadOlder, requestReveal, requestScan, type ScanResult } from './bridge';
+import { LOAD_OLDER_POLL_MS, LOAD_OLDER_TIMEOUT_MS, THREAD_PATH } from './selectors';
 import { videoUrl } from './video';
 
 export interface Reel {
@@ -17,7 +17,7 @@ export interface ThreadAdapter {
   react(id: string): Promise<void>;
   unreact(id: string): Promise<void>;
   reply(id: string, text: string, quote: boolean): Promise<void>;
-  loadOlder(): Promise<boolean>; // false = start of chat
+  loadOlder(): Promise<boolean>; // one page; false = start of chat
   reveal(id: string): void; // scrolls Instagram's thread to that message
   videoUrl(shortcode: string): Promise<string | null>; // null = unavailable
   health(): Health;
@@ -26,6 +26,22 @@ export interface ThreadAdapter {
 function scanThread(): ScanResult {
   if (!THREAD_PATH.test(location.pathname)) return { ok: false, reason: `not in a DM thread (${location.pathname})` };
   return requestScan();
+}
+
+const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
+async function loadOlderPage(): Promise<boolean> {
+  const before = scanThread();
+  if (!before.ok) throw new Error(`loadOlder: ${before.reason}`);
+  if (!before.hasMoreAbove) return false;
+  const scrolled = requestLoadOlder();
+  if (!scrolled.ok) throw new Error(`loadOlder: ${scrolled.reason}`);
+  for (const deadline = Date.now() + LOAD_OLDER_TIMEOUT_MS; Date.now() < deadline; ) {
+    await sleep(LOAD_OLDER_POLL_MS);
+    const now = scanThread();
+    if (now.ok && now.messageCount > before.messageCount) return true;
+  }
+  throw new Error(`loadOlder: no older messages arrived within ${LOAD_OLDER_TIMEOUT_MS} ms`);
 }
 
 function notYet(task: string): Promise<never> {
@@ -59,6 +75,6 @@ export function createThreadAdapter(): ThreadAdapter {
     react: () => notYet('#07'),
     unreact: () => notYet('#07'),
     reply: () => notYet('#08'),
-    loadOlder: () => notYet('#09'),
+    loadOlder: loadOlderPage,
   };
 }
