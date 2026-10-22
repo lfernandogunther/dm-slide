@@ -49,6 +49,8 @@ const STYLE = `
   .nav { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #262626; font-size: 24px; flex-shrink: 0; }
   .nav:disabled { opacity: 0.25; cursor: default; }
   .p-center { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+  .p-meta { width: 0; min-width: 100%; display: flex; gap: 6px; font-size: 13px; color: #a8a8a8; padding: 0 4px; white-space: nowrap; }
+  .p-meta strong { color: #fff; overflow: hidden; text-overflow: ellipsis; }
   .reel {
     position: relative; overflow: hidden; cursor: pointer;
     height: clamp(280px, calc(100vh - 220px), 640px); aspect-ratio: 9 / 16; border-radius: 14px;
@@ -113,6 +115,7 @@ const LAYOUT = `
       <div class="p-stage">
         <button class="nav" data-prev title="Previous (A / W / ←)">‹</button>
         <div class="p-center">
+          <div class="p-meta"><strong data-sender></strong><span data-sent></span></div>
           <div class="reel" data-reel></div>
           <form class="p-reply" data-reply-form>
             <input type="text" data-reply autocomplete="off" placeholder="Reply…">
@@ -133,6 +136,9 @@ const LAYOUT = `
     </div>
   </div>
 `;
+
+// The browser's own language decides the date's format.
+const SENT_AT = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
 export interface Player {
   close(): void;
@@ -190,6 +196,9 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     $<HTMLButtonElement>('data-prev').disabled = current === 0 && edge === 'start';
     $<HTMLButtonElement>('data-next').disabled = current === reels.length - 1;
     quick.forEach((b) => b.classList.toggle('mine', b.textContent === reel.myReaction));
+    $('data-sender').textContent = reel.senderName ?? '';
+    $('data-sent').textContent = `${reel.senderName ? '· ' : ''}${SENT_AT.format(reel.timestampMs)}`;
+    reply.placeholder = reel.senderName ? `Reply to ${reel.senderName}…` : 'Reply…';
     player.classList.toggle('reacting', reacting);
     $('data-replies').replaceChildren(
       ...reel.myReplies.map((text) => {

@@ -13,6 +13,7 @@ export interface RawReel {
   messageId: string;
   shortcode: string;
   senderId: string;
+  senderName: string | null; // display name, else username
   timestampMs: number;
   reactions: RawReaction[];
   myReplies: string[]; // the texts of my loaded messages quoting this one, oldest first
@@ -37,6 +38,8 @@ export type ScanResult =
 
 export type OpResult = { ok: true } | { ok: false; reason: string };
 
+export type CardResult = { ok: true; messageId: string } | { ok: false; reason: string };
+
 export type Request =
   | { op: 'scan' }
   | { op: 'reveal'; messageId: string }
@@ -46,16 +49,18 @@ export type Request =
   | { op: 'composerEmpty' }
   | { op: 'startReply'; messageId: string }
   | { op: 'typeReply'; text: string; focus: boolean }
-  | { op: 'sendReply'; text: string };
+  | { op: 'sendReply'; text: string }
+  | { op: 'reelCard' };
 
 /** Isolated side: ask the page script. dispatchEvent runs its listener synchronously. */
-function call<T extends { ok: boolean }>(request: Request): T | { ok: false; reason: string } {
+function call<T extends { ok: boolean }>(request: Request, on: EventTarget = document): T | { ok: false; reason: string } {
   let response: string | null = null;
   const onResponse = (e: Event) => {
     response = String((e as CustomEvent).detail);
   };
   document.addEventListener(RESPONSE_EVENT, onResponse, { once: true });
-  document.dispatchEvent(new CustomEvent(REQUEST_EVENT, { detail: JSON.stringify(request) }));
+  // Dispatched on an element, the request bubbles up and the page script sees that element as its target.
+  on.dispatchEvent(new CustomEvent(REQUEST_EVENT, { detail: JSON.stringify(request), bubbles: true }));
   document.removeEventListener(RESPONSE_EVENT, onResponse);
   if (response === null) return { ok: false, reason: 'the page script did not answer (page.js not injected?)' };
   return JSON.parse(response) as T;
@@ -79,3 +84,6 @@ export const requestTypeReply = (text: string, focus: boolean): OpResult =>
   call<OpResult>({ op: 'typeReply', text, focus });
 
 export const requestSendReply = (text: string): OpResult => call<OpResult>({ op: 'sendReply', text });
+
+/** The message whose reel card holds `el`, asked of the page script about that very element. */
+export const requestReelCard = (el: Element): CardResult => call<CardResult>({ op: 'reelCard' }, el);

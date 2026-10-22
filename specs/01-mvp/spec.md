@@ -49,7 +49,7 @@ See [constitution.md](../../constitution.md) for principles and non-goals.
   older messages, one page at a time. The current reel stays in place, and the strip shows
   "start of chat" when nothing older is left.
 - **Groups:** same behavior. The top of the video names the sender, and the reply placeholder
-  names them too.
+  names them too (in 1:1 as well, one code path for both).
 - **Close:** `Esc` or ✕. The thread is left at the last reel viewed, and it already shows the
   reactions and replies made.
 

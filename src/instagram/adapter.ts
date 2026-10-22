@@ -5,6 +5,7 @@ import {
   requestPickEmoji,
   requestReveal,
   requestScan,
+  requestReelCard,
   requestSendReply,
   requestStartReply,
   requestTypeReply,
@@ -26,6 +27,7 @@ export interface Reel {
   id: string; // the DM message id
   shortcode: string;
   senderId: string;
+  senderName: string | null; // display name, else username
   timestampMs: number;
   myReaction: string | null; // one of QUICK_REACTIONS when it is one of them
   myReplies: string[]; // my loaded replies quoting it
@@ -44,6 +46,7 @@ export interface ThreadAdapter {
   reveal(id: string): void; // scrolls Instagram's thread to that message
   videoUrl(shortcode: string): Promise<string | null>; // null = unavailable
   health(): Health;
+  reelAt(el: Element): string | null; // the message of the chat's reel card holding el
 }
 
 function scanThread(): ScanResult {
@@ -82,6 +85,7 @@ function listOthersReels(): Reel[] {
         id: r.messageId,
         shortcode: r.shortcode,
         senderId: r.senderId,
+        senderName: r.senderName,
         timestampMs: r.timestampMs,
         myReaction: mine ? canonical(mine.emoji) : null,
         myReplies: r.myReplies,
@@ -164,5 +168,9 @@ export function createThreadAdapter(): ThreadAdapter {
     unreact: (id) => setReaction(id, null),
     reply: sendReply,
     loadOlder: loadOlderPage,
+    reelAt(el) {
+      const card = requestReelCard(el);
+      return card.ok ? card.messageId : null;
+    },
   };
 }

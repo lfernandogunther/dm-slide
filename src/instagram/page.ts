@@ -3,6 +3,7 @@
 // follow the player and load older messages), it only ever drives Instagram's own React picker,
 // Reply button and composer.
 import {
+  type CardResult,
   REQUEST_EVENT,
   RESPONSE_EVENT,
   type OpResult,
@@ -69,6 +70,12 @@ function viewerIdOf(src: RecordSource): string | null {
   return id ? String(id) : null;
 }
 
+function senderNameOf(src: RecordSource, senderId: string): string | null {
+  const user = src.get(S.SENDER_RECORD_PREFIX + senderId);
+  const name = user?.[S.SENDER_NAME_FIELD] || deref(src, user?.[S.SENDER_USER_FIELD])?.[S.USERNAME_FIELD];
+  return typeof name === 'string' && name ? name : null;
+}
+
 function reelOf(src: RecordSource, item: any, myReplies: Map<string, string[]>): RawReel | null {
   const message = item?.currentMessage;
   const record = message?.__id && src.get(message.__id);
@@ -84,6 +91,7 @@ function reelOf(src: RecordSource, item: any, myReplies: Map<string, string[]>):
     messageId: String(message.id),
     shortcode,
     senderId: String(message.sender_fbid),
+    senderName: senderNameOf(src, String(message.sender_fbid)),
     timestampMs: Number(message.timestamp_ms),
     reactions,
     myReplies: myReplies.get(String(message.id)) ?? [],
@@ -240,7 +248,20 @@ function pickEmoji(emoji: string): OpResult {
   return { ok: false, reason: `no open picker offering ${emoji}` };
 }
 
-function handle(request: Request): ScanResult | OpResult {
+/** The message of the reel card holding `el`: the pressable flagged as a reel, then the message ref above it. */
+function reelCard(el: EventTarget | null): CardResult {
+  const card = el instanceof Element ? el.closest(S.REEL_CARD) : null;
+  if (!card) return { ok: false, reason: 'not inside a pressable' };
+  const flagged = findUp(fiberOf(card), (f) => f.memoizedProps?.[S.REEL_CARD_FLAG_PROP] === true, S.MAX_CARD_FIBER_DEPTH);
+  const holder = flagged && findUp(flagged, (f) => Boolean(f.memoizedProps?.[S.REEL_CARD_MESSAGE_PROP]), S.MAX_CARD_FIBER_DEPTH);
+  if (!holder) return { ok: false, reason: 'not a reel card' };
+  const list = findMessageList();
+  const src = list && findRecordSource(list.fiber);
+  const record = src?.get(holder.memoizedProps[S.REEL_CARD_MESSAGE_PROP].__id);
+  return record?.id ? { ok: true, messageId: String(record.id) } : { ok: false, reason: 'the reel card has no message record' };
+}
+
+function handle(request: Request, target: EventTarget | null): ScanResult | OpResult | CardResult {
   if (request.op === 'scan') return scan();
   if (request.op === 'reveal') return reveal(request.messageId);
   if (request.op === 'loadOlder') return loadOlder();
@@ -250,13 +271,14 @@ function handle(request: Request): ScanResult | OpResult {
   if (request.op === 'startReply') return clickToolbar(request.messageId, S.REPLY_BUTTON, 'Reply');
   if (request.op === 'typeReply') return typeReply(request.text, request.focus);
   if (request.op === 'sendReply') return sendReply(request.text);
+  if (request.op === 'reelCard') return reelCard(target);
   return { ok: false, reason: `unknown op ${(request as { op: string }).op}` };
 }
 
 document.addEventListener(REQUEST_EVENT, (e) => {
-  let result: ScanResult | OpResult;
+  let result: ScanResult | OpResult | CardResult;
   try {
-    result = handle(JSON.parse(String((e as CustomEvent).detail)) as Request);
+    result = handle(JSON.parse(String((e as CustomEvent).detail)) as Request, e.target);
   } catch (err) {
     result = { ok: false, reason: `page script threw: ${err instanceof Error ? err.message : String(err)}` };
   }

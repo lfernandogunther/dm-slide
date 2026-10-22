@@ -70,3 +70,13 @@ export const REPLIED_TO_FIELD = 'replied_to_message_id';
 export const TEXT_FIELD = 'text_body';
 // Sending waits on the server, unlike a reaction.
 export const SEND_TIMEOUT_MS = 10000;
+// A message's sender is a SlideUser record keyed by its fbid; its display name, else the username.
+export const SENDER_RECORD_PREFIX = 'SlideUser:';
+export const SENDER_NAME_FIELD = 'name';
+export const SENDER_USER_FIELD = 'user_dict';
+export const USERNAME_FIELD = 'username';
+// A reel card in the chat: a pressable whose props say `isReel`, under one holding the message ref.
+export const REEL_CARD = '[role=button]';
+export const REEL_CARD_FLAG_PROP = 'isReel';
+export const REEL_CARD_MESSAGE_PROP = 'slideMessageRef';
+export const MAX_CARD_FIBER_DEPTH = 12;

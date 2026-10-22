@@ -16,25 +16,43 @@ const SYNC_DEBOUNCE_MS = 400;
 
 let player: { instance: Player; path: string } | null = null;
 
-function open(): void {
-  if (player) return;
+/** Opens at the reel with message id `at`, else by the start rule; false when nothing opened. */
+function open(at?: string): boolean {
+  if (player) return false;
   let reels;
   try {
     reels = adapter.listReels();
   } catch (e) {
     // S01 #11 turns this into a visible message.
     console.error('[reel-queue]', e instanceof Error ? e.message : e);
-    return;
+    return false;
   }
-  if (reels.length === 0) return;
-  const instance = openPlayer(adapter, reels, startIndex(reels), () => {
+  const start = at === undefined ? startIndex(reels) : reels.findIndex((r) => r.id === at);
+  if (start < 0) return false;
+  const instance = openPlayer(adapter, reels, start, () => {
     player = null;
     sync();
   });
   player = { instance, path: location.pathname };
+  return true;
 }
 
-const button = createButton(open);
+const button = createButton(() => void open());
+
+// A plain click on someone else's reel card opens the player there instead of Instagram's viewer.
+// Anything else, including a ⌘-click or my own reels, stays Instagram's.
+window.addEventListener(
+  'click',
+  (e) => {
+    if (player || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (!THREAD_PATH.test(location.pathname) || !(e.target instanceof Element)) return;
+    const id = adapter.reelAt(e.target);
+    if (id === null || !open(id)) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  },
+  true,
+);
 
 function readState(): ButtonState {
   try {

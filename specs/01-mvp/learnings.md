@@ -251,3 +251,22 @@ typed without sending. End state verified clean: no reaction, empty composer, no
   (by design). Clear it by hand.
 - Typing while "Sending…" shows lands in Instagram's composer (it has the focus) and aborts the
   send. Not guarded; the window is about a second.
+
+## #10 sender, date, reel card click (2026-10-21)
+- Sender: a message's `sender` refs a `SlideUser` record whose id is `SlideUser:<sender_fbid>`;
+  `name` is the display name, and `user_dict` refs an `XDTUserDict` with `username`.
+- Group vs 1:1, if ever needed: `client:root["get_slide_thread_nullable(thread_fbid:\"<URL id>\")"]`
+  → `SlideThread.as_ig_direct_thread` → `XFBIGDirectViewerThread` with `is_group` and
+  `thread_subtype` (`IGD_GROUP`, `IG_ONLY_ONE_TO_ONE`, `IG_BUSINESS_ACCOUNT_ONE_TO_ONE`). Unused:
+  the name shows in 1:1 too.
+- Reel card in the chat: a 200x356 `div[role=button]` whose thumbnail `img` is what a click hits.
+  A few fibers up, a pressable has `isReel: true`; above it `slideMessageRef.__id` is the message
+  record. A shared post uses the same pressable without `isReel`; toolbar buttons have neither.
+- A reply quoting a reel shows a small reel card whose `slideMessageRef` is the quoted reel, so a
+  click on it opens the player at that reel.
+- The bridge can ask about a specific element: dispatching the request event on it (bubbling) lets
+  the page script read `e.target`, a DOM node shared by both worlds.
+- Only ~5 rows near the viewport render their cards; the rest are placeholders. The message list
+  is `column-reverse`, so scrolling up is a negative `scrollTop`.
+- Confirmed by the user in their own Chrome, in a 1:1 and in a group thread: names, dates and a
+  click on someone else's reel card opening the player there.
