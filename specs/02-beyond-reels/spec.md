@@ -50,6 +50,9 @@ Open questions 1).
   - When it is on, items that carry my reaction leave the strip and the navigation.
   - The choice is saved and holds across openings.
   - Numbers stay those of the full list, so toggling the filter never renumbers an item.
+- **Loading older, faster:** one request loads several pages in a row, paced like a person
+  scrolling up (no burst), until about 2 months back or the start of chat. Today it is one page of
+  20 messages per request.
 - **Count:** "N to react" on the header button and in the player counts every loaded item, whatever
   its kind.
 
@@ -76,7 +79,9 @@ Manual click-through on the real Instagram, in my own Chrome, in a 1:1 and a gro
 - [ ] 10. An item that is no longer available (an expired story, a deleted post) does not appear
   when Instagram's record already says so. When the record does not say so and the item only fails
   on play, the stage shows "Unavailable" with "Open on Instagram", as reels do today.
-- [ ] 11. The S01 acceptance criteria still pass for reels, with the new keys.
+- [ ] 11. Going back loads pages one after another without a keypress each, at a human pace, and
+  stops around 2 months back (or at the start of chat). The strip and current item never jump.
+- [ ] 12. The S01 acceptance criteria still pass for reels, with the new keys.
 
 ## Approach
 A read-only spike first: what each kind looks like in Relay and on its chat card. Then the model
