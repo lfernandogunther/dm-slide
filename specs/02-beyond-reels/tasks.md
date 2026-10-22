@@ -1,6 +1,6 @@
 # Tasks — S02
 
-**2 of 12 done · next: 01 — spike, read only**
+**3 of 12 done · next: 01 — spike, read only**
 
 - [ ] **01 — spike, read only: each kind's Relay record, card flag, availability and media lookup**
 - [x] **02 — doc: amend the constitution (dated, with my ok) and move the roadmap to phase 04**
@@ -11,7 +11,7 @@
 - [ ] **07 — keys: `W`/`S` and `↑`/`↓` for items; `A`/`D` and `←`/`→` for slides, then items**
 - [ ] **08 — strip: kind icons beside the numbers**
 - [ ] **09 — chat cards: a click on any media card opens the player there**
-- [ ] **10 — filter "Not reacted": toggle and `U`, saved, numbers kept, empty state, loading older while filtered**
+- [x] **10 — filter "Not reacted": toggle and `U`, saved, numbers kept, empty state, loading older while filtered**
 - [ ] **11 — load older faster: several pages per request, paced like a person, up to ~2 months back**
 - [ ] **12 — self-review, close learnings.md and promote**
 

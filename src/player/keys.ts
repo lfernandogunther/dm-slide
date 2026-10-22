@@ -7,6 +7,7 @@ export interface KeyActions {
   close(): void;
   togglePause(): void;
   toggleMute(): void;
+  toggleFilter(): void;
   react(slot: number): void; // 0 is ❤️, then the rest of the quick set
   focusReply(): void;
   blurReply(): void;
@@ -42,6 +43,7 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
       arrowright: actions.next,
       ' ': actions.togglePause,
       m: actions.toggleMute,
+      u: actions.toggleFilter,
       r: actions.focusReply,
       escape: actions.close,
     }[e.key.toLowerCase()];

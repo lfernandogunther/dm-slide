@@ -29,6 +29,8 @@ const STYLE = `
   .p-title { flex: 1; min-width: 160px; }
   .p-keys { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #a8a8a8; }
   .icon-btn { background: transparent; border: 0; font-size: 18px; padding: 4px 8px; }
+  .p-filter { background: transparent; border: 1px solid #3a3a3a; border-radius: 999px; padding: 4px 12px; font-size: 12px; }
+  .p-filter[aria-pressed="true"] { background: #f5f5f5; border-color: #f5f5f5; color: #000; }
   .p-alert { padding: 8px 16px; background: #3a1d1d; color: #ffb4b4; font-size: 13px; text-align: center; }
   .p-alert[hidden] { display: none; }
   .p-notice { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; }
@@ -56,7 +58,13 @@ const STYLE = `
   .p-stage { flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
   .nav { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #262626; font-size: 24px; flex-shrink: 0; }
   .nav:disabled { opacity: 0.25; cursor: default; }
-  .p-center { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+  .p-center { position: relative; display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+  .p-empty {
+    position: absolute; z-index: 1; top: 48px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px;
+    align-items: center; padding: 12px; border-radius: 12px; background: rgba(38, 38, 38, 0.92); text-align: center;
+  }
+  .p-empty[hidden] { display: none; }
+  .p-empty button { border: 0; background: #0095f6; border-radius: 16px; padding: 6px 16px; font-weight: 600; }
   .p-meta { width: 0; min-width: 100%; display: flex; gap: 6px; font-size: 13px; color: #a8a8a8; padding: 0 4px; white-space: nowrap; }
   .p-meta strong { color: #fff; overflow: hidden; text-overflow: ellipsis; }
   .reel {
@@ -114,8 +122,9 @@ const LAYOUT = `
       <div class="p-title"><strong>Reel Queue</strong> <span class="muted" data-pos></span></div>
       <div class="p-keys">
         <span><kbd>A</kbd><kbd>D</kbd>, <kbd>W</kbd><kbd>S</kbd> or <kbd>←</kbd><kbd>→</kbd> prev / next</span>
-        <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>F</kbd> or <kbd>1</kbd>–<kbd>6</kbd> react</span><span><kbd>R</kbd> reply</span><span><kbd>Esc</kbd> close</span>
+        <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>F</kbd> or <kbd>1</kbd>–<kbd>6</kbd> react</span><span><kbd>R</kbd> reply</span><span><kbd>U</kbd> not reacted</span><span><kbd>Esc</kbd> close</span>
       </div>
+      <button class="p-filter" data-filter tabindex="-1" aria-pressed="false" title="Only the ones without my reaction (U)">Not reacted</button>
       <button class="icon-btn" data-close title="Close (Esc)">✕</button>
     </header>
     <div class="p-alert" data-alert role="alert" hidden></div>
@@ -125,6 +134,7 @@ const LAYOUT = `
         <button class="nav" data-prev title="Previous (A / W / ←)">‹</button>
         <div class="p-center">
           <div class="p-meta"><strong data-sender></strong><span data-sent></span></div>
+          <div class="p-empty" data-empty hidden><span data-empty-text></span><button type="button" data-show-all tabindex="-1">Show all (U)</button></div>
           <div class="reel" data-reel></div>
           <form class="p-reply" data-reply-form>
             <input type="text" data-reply autocomplete="off" placeholder="Reply…">
@@ -218,12 +228,15 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let reacting = false;
   let sending = false;
   let nextAfterReact = true;
+  let onlyNotReacted = false;
   const nextAfter = $<HTMLInputElement>('data-next-after');
   const quote = $<HTMLInputElement>('data-quote');
   const send = $<HTMLButtonElement>('data-send');
   void loadSettings().then((s) => {
     nextAfter.checked = nextAfterReact = s.nextAfterReact;
     quote.checked = s.quoteReply;
+    onlyNotReacted = s.onlyNotReacted;
+    renderChrome(true);
   });
 
   // Not focusable: Space must keep pausing instead of pressing a button.
@@ -240,12 +253,24 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   });
   $('data-quick').append(...quick);
 
+  // With the filter on, the current item stays shown: the one I just reacted to leaves once I move away.
+  const shown = (i: number) => !onlyNotReacted || i === current || items[i].myReaction === null;
+
+  /** The nearest shown item from `from` in direction `step`, or -1. */
+  function neighbour(from: number, step: 1 | -1): number {
+    for (let i = from + step; i >= 0 && i < items.length; i += step) if (shown(i)) return i;
+    return -1;
+  }
+
   function renderChrome(follow: boolean): void {
     const item = items[current];
     const left = items.filter((r) => r.myReaction === null).length;
     $('data-pos').textContent = `· ${items.length - current} of ${items.length} loaded · ${left} to react`;
-    $<HTMLButtonElement>('data-prev').disabled = current === 0 && edge === 'start';
-    $<HTMLButtonElement>('data-next').disabled = current === items.length - 1;
+    $<HTMLButtonElement>('data-prev').disabled = neighbour(current, -1) < 0 && edge === 'start';
+    $<HTMLButtonElement>('data-next').disabled = neighbour(current, 1) < 0;
+    $('data-filter').setAttribute('aria-pressed', String(onlyNotReacted));
+    $('data-empty').hidden = !onlyNotReacted || left > 0;
+    $('data-empty-text').textContent = `Nothing left to react to${edge === 'start' ? '' : ' in what is loaded'}.`;
     quick.forEach((b) => b.classList.toggle('mine', b.textContent === item.myReaction));
     $('data-sender').textContent = item.senderName ?? '';
     $('data-sent').textContent = `${item.senderName ? '· ' : ''}${SENT_AT.format(item.timestampMs)}`;
@@ -258,7 +283,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
         return li;
       }),
     );
-    renderStrip($('data-strip'), items, current, edge, follow);
+    renderStrip($('data-strip'), items, current, edge, follow, shown);
   }
 
   let alertTimer = 0;
@@ -296,13 +321,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     revealCurrent();
   }
 
-  /** Puts the items older than the first one in front; newer arrivals wait for the next open. */
+  /** Puts the items older than the first one in front, and counts those shown; newer arrivals wait for the next open. */
   function mergeOlder(found: Item[]): number {
     const known = new Set(items.map((r) => r.id));
     const older = found.filter((r) => !known.has(r.id) && r.timestampMs <= items[0].timestampMs);
     items = [...older, ...items];
     current += older.length;
-    return older.length;
+    return older.filter((r) => !onlyNotReacted || r.myReaction === null).length;
   }
 
   async function fetchOlder(): Promise<number> {
@@ -335,11 +360,21 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   }
 
   async function prev(): Promise<void> {
-    if (current > 0) return go(current - 1);
+    const before = neighbour(current, -1);
+    if (before >= 0) return go(before);
     const from = items[current].id;
     await loadOlder();
     // Only if the player is still on the item A was pressed on.
-    if (items[current].id === from && current > 0) go(current - 1);
+    if (items[current].id === from) go(neighbour(current, -1));
+  }
+
+  const next = () => go(neighbour(current, 1));
+
+  function toggleFilter(): void {
+    onlyNotReacted = !onlyNotReacted;
+    saveSettings({ onlyNotReacted });
+    renderChrome(true);
+    player.focus();
   }
 
   /** Reacts with the quick reaction in `slot`, or removes it when it is already mine. One at a time. */
@@ -363,7 +398,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     // Instagram's picker took the focus (onto its ❤️); keys never reach it, but the player wants it back.
     player.focus();
     // Only if the player is still on the item the reaction was for.
-    if (done && !removing && nextAfterReact && items[current] === item && current < items.length - 1) go(current + 1);
+    if (done && !removing && nextAfterReact && items[current] === item && neighbour(current, 1) >= 0) next();
     else renderChrome(false);
   }
 
@@ -408,10 +443,11 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   const unbindKeys = bindKeys((e) => e.composedPath()[0] === reply, {
     prev: () => void prev(),
-    next: () => go(current + 1),
+    next,
     close,
     togglePause: () => stage.togglePause(),
     toggleMute: () => stage.toggleMute(),
+    toggleFilter,
     react: (slot) => void react(slot),
     focusReply: () => reply.focus(),
     blurReply: () => player.focus(),
@@ -426,7 +462,9 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   $('data-close').addEventListener('click', close);
   $('data-prev').addEventListener('click', () => void prev());
-  $('data-next').addEventListener('click', () => go(current + 1));
+  $('data-next').addEventListener('click', next);
+  $('data-filter').addEventListener('click', toggleFilter);
+  $('data-show-all').addEventListener('click', toggleFilter);
   $('data-strip').addEventListener('click', (e) => {
     const tile = (e.target as Element).closest<HTMLElement>('li[data-i]');
     if (tile) go(Number(tile.dataset.i));
