@@ -35,8 +35,10 @@ upload and submit each new version.
    - `npm run release <version>` bumps `manifest.json` and `package.json`, commits and tags `v<version>`.
    - A GitHub Actions workflow on a `v*` tag runs typecheck and build, checks the tag matches the
      manifest, zips `dist/`, and creates a GitHub Release with the zip.
-   - With the store's credentials set as repository secrets, the same workflow uploads the zip and
-     submits it for review. Without them it stops after the GitHub Release, green.
+   - With the store's ids set as repository variables, the same workflow uploads the zip and
+     submits it for review. Without them it stops after the GitHub Release, green. Federation
+     needs no secret at all: the ids it reads (publisher, item, provider, service account) are not
+     credentials.
 8. **First submission (owner, by hand)**, guided step by step: developer account, listing, privacy
    tab, the zip of the first version. Then the credentials for the workflow, proven by one tag.
 
