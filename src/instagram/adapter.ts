@@ -44,6 +44,9 @@ export interface Item {
   thumb: string | null; // a still for the strip; a signed URL that may expire
 }
 
+/** I reacted to it or replied quoting it; a reply that doesn't quote can't be tied to an item. */
+export const engaged = (item: Item) => item.myReaction !== null || item.myReplies.length > 0;
+
 export type Media = Slide | { type: 'slides'; slides: Slide[] };
 
 export { QUICK_REACTIONS, type Box, type ItemKind, type Slide };

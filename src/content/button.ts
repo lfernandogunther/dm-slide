@@ -1,6 +1,6 @@
 // The "▶ DM Slide" entry button in the thread header. It lives in its own shadow root so
 // Instagram's CSS never reaches it; color and font are inherited from the header.
-import type { Item } from '../instagram/adapter';
+import { engaged, type Item } from '../instagram/adapter';
 
 export const BUTTON_HOST_ATTR = 'data-dm-slide';
 
@@ -36,7 +36,7 @@ export function renderButton(host: HTMLElement, state: ButtonState): void {
   } else if (state.items.length === 0) {
     label = 'Nothing to watch';
   } else {
-    label = `▶ DM Slide · ${state.items.filter((r) => r.myReaction === null).length} to react`;
+    label = `▶ DM Slide · ${state.items.filter((r) => !engaged(r)).length} to react`;
   }
   // Rewriting identical text would still be a DOM write; skip it.
   if (button.textContent !== label) button.textContent = label;

@@ -1,6 +1,6 @@
 # Tasks — S03
 
-**16 of 20 done · next: 19**
+**17 of 20 done · next: 20**
 
 - [x] **01 — thumbnails: `thumb` on `Item` (page, bridge, adapter), strip tiles show it, number fallback; counts-only snippet for the owner**
 - [x] **02 — layout C v2: CSS to `style.ts`, vertical thumbnail strip, video alone, content-sized panel, slim header; arrows on the video and 280px panel below 1200px**
@@ -20,7 +20,7 @@
 - [ ] 16 — on a page view (a story), `I` and Back call `history.back()` when `closeLayer()` finds no dialog, once a hand check shows how Instagram routes a story (self-review flag 3, MED)
 - [ ] 17 — hide the player only once `openLayer` resolves, or narrow `layerOpen()` to the dialog showing the item, once a hand check shows the layer's shape (self-review flag 5, LOW)
 - [x] **18 — strip badges: my reaction and 💬 sit inside the tile's bottom-right corner, not clipped; the flyer lands there**
-- [ ] 19 — a quoted reply counts as answered: start item, filter, "N to react", caught-up card
+- [x] **19 — a quoted reply counts as answered: start item, filter, "N to react", caught-up card**
 - [ ] 20 — react → next at once: reactions queued one at a time, never during a reply; one retry, then undone with a red tile and a pill
 
 ---

@@ -1,6 +1,6 @@
 // The player: a full-window overlay in its own shadow root, with the strip on the left, the video
 // alone in the middle and a panel on the right. It talks only to the ThreadAdapter.
-import { CantRead, QUICK_REACTIONS, type Box, type Item, type ThreadAdapter } from '../instagram/adapter';
+import { CantRead, engaged, QUICK_REACTIONS, type Box, type Item, type ThreadAdapter } from '../instagram/adapter';
 import { createPill, keyCard, stateCard } from './cards';
 import { bindKeys } from './keys';
 import { animate, finishAll, reduceMotion } from './motion';
@@ -83,7 +83,7 @@ const LAYOUT = `
     <header class="p-head">
       <span class="p-title">DM Slide</span>
       <span class="p-pos" data-pos></span>
-      <button class="pill" data-filter tabindex="-1" aria-pressed="false" title="Only the ones without my reaction (U)" data-kt="U" data-kt-at="br">Not reacted</button>
+      <button class="pill" data-filter tabindex="-1" aria-pressed="false" title="Only the ones without my reaction or reply (U)" data-kt="U" data-kt-at="br">Not reacted</button>
       <button class="pill" data-ig tabindex="-1" title="Instagram view (I)" data-kt="I" data-kt-at="br">◧ Instagram view</button>
       <span class="sp"></span>
       <span class="p-hold" data-hold></span>
@@ -156,9 +156,9 @@ export interface Player {
   away(): boolean; // stepped aside for Instagram's view, which may change the page's path
 }
 
-/** The oldest loaded item without my reaction, or the newest one when every item has one. */
+/** The oldest loaded item without my reaction or reply, or the newest one when every item has one. */
 export function startIndex(items: Item[]): number {
-  const unreacted = items.findIndex((r) => r.myReaction === null);
+  const unreacted = items.findIndex((r) => !engaged(r));
   return unreacted >= 0 ? unreacted : items.length - 1;
 }
 
@@ -294,7 +294,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   $('data-quick').append(...quick);
 
   // With the filter on, the current item stays shown: the one I just reacted to leaves once I move away.
-  const shown = (i: number) => !onlyNotReacted || i === current || items[i].myReaction === null;
+  const shown = (i: number) => !onlyNotReacted || i === current || !engaged(items[i]);
 
   /** The nearest shown item from `from` in direction `step`, or -1. */
   function neighbour(from: number, step: 1 | -1): number {
@@ -309,7 +309,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   function renderChrome(follow: Follow): void {
     const item = items[current];
-    const left = items.filter((r) => r.myReaction === null).length;
+    const left = items.filter((r) => !engaged(r)).length;
     $('data-pos').textContent = `${items.length - current} / ${items.length} loaded · ${left} to react`;
     renderNav();
     $('data-filter').setAttribute('aria-pressed', String(onlyNotReacted));
@@ -338,7 +338,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       stateCard({
         big: '✓',
         title: 'All caught up',
-        text: `You reacted to all ${items.length} loaded.`,
+        text: `You reacted or replied to all ${items.length} loaded.`,
         keys: [
           ...(edge === 'start' ? [] : [{ key: 'W', label: 'Look further back', act: () => item(-1) }]),
           { key: 'U', label: 'Show all', act: toggleFilter },
@@ -436,7 +436,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     const older = found.filter((r) => !known.has(r.id) && r.timestampMs <= items[0].timestampMs);
     items = [...older, ...items];
     current += older.length;
-    return older.filter((r) => !onlyNotReacted || r.myReaction === null).length;
+    return older.filter((r) => !onlyNotReacted || !engaged(r)).length;
   }
 
   const wakeWaiters = () => pageWaiters.splice(0).forEach((wake) => wake());
