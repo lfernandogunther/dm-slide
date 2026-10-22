@@ -37,6 +37,15 @@ read it before non-trivial calls.
   This line documents it; each clone declares it in local git config (`git config cn.precommit`),
   because a committed declaration would let any cloned repo run a command of its choosing here.
 
+## Testing on the real Instagram
+- Automated checks run on my real account: react only with 👍 (key `6`) or 😂, never ❤️; never
+  click, type into or focus Instagram's own elements (`.click()` and dispatched events go on ours
+  only); `press_key` only while our overlay is open and focused; never send, never press Enter in
+  Instagram's inputs; act on one row at a time.
+- Diagnostics I run in my own Chrome are console snippets in the "top" context that return
+  numbers and booleans only — never message text, names, usernames or ids.
+- Instagram's internals and the testing gotchas live in NOTES.md.
+
 ## Conventions
 - Everything written here is in English — code, identifiers, comments, docs, README, commit
   messages, specs, tasks, notes. We may talk in any language; the language of the conversation
