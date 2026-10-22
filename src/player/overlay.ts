@@ -128,7 +128,7 @@ const LAYOUT = `
     <header class="p-head">
       <div class="p-title"><strong>Reel Queue</strong> <span class="muted" data-pos></span></div>
       <div class="p-keys">
-        <span><kbd>A</kbd><kbd>D</kbd>, <kbd>W</kbd><kbd>S</kbd> or <kbd>←</kbd><kbd>→</kbd> prev / next</span>
+        <span><kbd>W</kbd><kbd>S</kbd> or <kbd>↑</kbd><kbd>↓</kbd> prev / next</span><span><kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> slides</span>
         <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>F</kbd> or <kbd>1</kbd>–<kbd>6</kbd> react</span><span><kbd>R</kbd> reply</span><span><kbd>U</kbd> not reacted</span><span><kbd>Esc</kbd> close</span>
       </div>
       <button class="p-filter" data-filter tabindex="-1" aria-pressed="false" title="Only the ones without my reaction (U)">Not reacted</button>
@@ -138,7 +138,7 @@ const LAYOUT = `
     <div class="p-body">
       <ol class="p-strip" data-strip></ol>
       <div class="p-stage">
-        <button class="nav" data-prev title="Previous (A / W / ←)">‹</button>
+        <button class="nav" data-prev title="Previous (A / ←)">‹</button>
         <div class="p-center">
           <div class="p-meta"><strong data-sender></strong><span data-sent></span></div>
           <div class="p-empty" data-empty hidden><span data-empty-text></span><button type="button" data-show-all tabindex="-1">Show all (U)</button></div>
@@ -157,7 +157,7 @@ const LAYOUT = `
           <div class="p-quick" data-quick></div>
           <label class="p-setting"><input type="checkbox" data-next-after tabindex="-1" checked>Next reel after reacting</label>
         </div>
-        <button class="nav" data-next title="Next (D / S / →)">›</button>
+        <button class="nav" data-next title="Next (D / →)">›</button>
       </div>
     </div>
   </div>
@@ -409,6 +409,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   }
 
   const next = () => go(neighbour(current, 1));
+  const item = (delta: -1 | 1) => (delta < 0 ? void prev() : next());
+  const step = (delta: -1 | 1) => stage.slide(delta) || item(delta);
 
   function toggleFilter(): void {
     onlyNotReacted = !onlyNotReacted;
@@ -482,8 +484,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   }
 
   const unbindKeys = bindKeys((e) => e.composedPath()[0] === reply, {
-    prev: () => void prev(),
-    next,
+    item,
+    step,
     close,
     togglePause: () => stage.togglePause(),
     toggleMute: () => stage.toggleMute(),
@@ -502,8 +504,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   }
 
   $('data-close').addEventListener('click', close);
-  $('data-prev').addEventListener('click', () => void prev());
-  $('data-next').addEventListener('click', next);
+  $('data-prev').addEventListener('click', () => step(-1));
+  $('data-next').addEventListener('click', () => step(1));
   $('data-filter').addEventListener('click', toggleFilter);
   $('data-show-all').addEventListener('click', toggleFilter);
   $('data-strip').addEventListener('click', (e) => {

@@ -5,6 +5,7 @@ import { reelUrl } from '../instagram/selectors';
 
 export interface Stage {
   show(reel: Item, next: Item | undefined): void;
+  slide(delta: -1 | 1): boolean; // false when there is no slide that way
   togglePause(): void;
   toggleMute(): void;
   destroy(): void;
@@ -139,6 +140,9 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter): Stage {
       if (url) play(reel, url);
       else unavailable(reel, 'no video URL in the embed');
       void preload(next);
+    },
+    slide() {
+      return false;
     },
     togglePause() {
       if (current.hidden || !current.src) return;

@@ -1,6 +1,6 @@
 # Tasks — S02
 
-**5 of 12 done · next: 01 — spike, read only**
+**6 of 12 done · next: 01 — spike, read only**
 
 - [ ] **01 — spike, read only: each kind's Relay record, card flag, availability and media lookup**
 - [x] **02 — doc: amend the constitution (dated, with my ok) and move the roadmap to phase 04**
@@ -8,7 +8,7 @@
 - [ ] **04 — list every kind: posts, carousels, stories, gallery photos and videos; drop known-unavailable**
 - [ ] **05 — media resolution: video, photo or slides per item**
 - [ ] **06 — stage: photos, slides with dots, the current slide's video**
-- [ ] **07 — keys: `W`/`S` and `↑`/`↓` for items; `A`/`D` and `←`/`→` for slides, then items**
+- [x] **07 — keys: `W`/`S` and `↑`/`↓` for items; `A`/`D` and `←`/`→` for slides, then items**
 - [x] **08 — strip: kind icons beside the numbers**
 - [ ] **09 — chat cards: a click on any media card opens the player there**
 - [x] **10 — filter "Not reacted": toggle and `U`, saved, numbers kept, empty state, loading older while filtered**
