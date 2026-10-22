@@ -21,6 +21,7 @@ import {
   QUICK_REACTIONS,
   SEND_TIMEOUT_MS,
   THREAD_PATH,
+  reelUrl,
 } from './selectors';
 import { videoUrl } from './video';
 
@@ -35,6 +36,9 @@ export interface Item {
   myReplies: string[]; // my loaded replies quoting it
 }
 
+export type Slide = { type: 'video' | 'photo'; url: string };
+export type Media = Slide | { type: 'slides'; slides: Slide[] };
+
 export { QUICK_REACTIONS, type ItemKind };
 
 export type Health = { ok: true } | { ok: false; reason: string };
@@ -47,7 +51,8 @@ export interface ThreadAdapter {
   loadOlder(): Promise<boolean>; // one page; false = start of chat
   oldestLoadedMs(): number | null; // when the oldest loaded message, of any kind, was sent
   reveal(id: string): void; // scrolls Instagram's thread to that message
-  videoUrl(shortcode: string): Promise<string | null>; // null = unavailable
+  media(item: Item): Promise<Media | null>; // null = unavailable
+  link(item: Item): string; // the item on Instagram itself
   health(): Health;
   itemAt(el: Element): string | null; // the message of the chat's media card holding el
 }
@@ -173,7 +178,11 @@ export function createThreadAdapter(): ThreadAdapter {
       const result = requestReveal(id);
       if (!result.ok) throw new Error(`reveal: ${result.reason}`);
     },
-    videoUrl,
+    async media(item) {
+      const url = await videoUrl(item.shortcode);
+      return url ? { type: 'video', url } : null;
+    },
+    link: (item) => reelUrl(item.shortcode),
     react: (id, emoji) => setReaction(id, emoji),
     unreact: (id) => setReaction(id, null),
     reply: sendReply,

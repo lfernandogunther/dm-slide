@@ -79,7 +79,7 @@ const STYLE = `
     height: clamp(280px, calc(100vh - 220px), 640px); aspect-ratio: 9 / 16; border-radius: 14px;
     background: #1c1c1e; display: grid; place-items: center;
   }
-  .reel video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .reel video, .reel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
   .reel [hidden] { display: none; }
   .reel-status { text-align: center; color: #a8a8a8; padding: 16px; line-height: 1.8; }
   .reel-status a { color: #0095f6; }
@@ -93,6 +93,9 @@ const STYLE = `
     border: 0; padding: 0; background: rgba(38, 38, 38, 0.8); color: #fff; display: grid; place-items: center;
   }
   .reel-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, 0.25); }
+  .reel-dots { position: absolute; top: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; pointer-events: none; }
+  .reel-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
+  .reel-dots span.on { background: #fff; }
   .reel-progress div { height: 100%; width: 0; background: #fff; }
   .p-reply { display: flex; gap: 8px; align-items: center; background: #121212; border: 1px solid #3a3a3a; border-radius: 22px; padding: 4px 6px 4px 14px; }
   .p-reply:focus-within { border-color: #0095f6; }
@@ -228,7 +231,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const $ = <T extends HTMLElement>(attr: string) => root.querySelector<T>(`[${attr}]`)!;
   const player = root.querySelector<HTMLElement>('.player')!;
   const reply = $<HTMLInputElement>('data-reply');
-  const stage = createStage($('data-reel'), adapter);
+  const stage = createStage($('data-reel'), adapter, renderNav);
 
   let items = loaded;
   let current = start;
@@ -273,12 +276,16 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     return -1;
   }
 
+  function renderNav(): void {
+    $<HTMLButtonElement>('data-prev').disabled = !stage.canSlide(-1) && neighbour(current, -1) < 0 && edge === 'start';
+    $<HTMLButtonElement>('data-next').disabled = !stage.canSlide(1) && neighbour(current, 1) < 0;
+  }
+
   function renderChrome(follow: boolean): void {
     const item = items[current];
     const left = items.filter((r) => r.myReaction === null).length;
     $('data-pos').textContent = `· ${items.length - current} of ${items.length} loaded · ${left} to react`;
-    $<HTMLButtonElement>('data-prev').disabled = neighbour(current, -1) < 0 && edge === 'start';
-    $<HTMLButtonElement>('data-next').disabled = neighbour(current, 1) < 0;
+    renderNav();
     $('data-filter').setAttribute('aria-pressed', String(onlyNotReacted));
     $('data-empty').hidden = !onlyNotReacted || left > 0;
     $('data-empty-text').textContent = `Nothing left to react to${edge === 'start' ? '' : ' in what is loaded'}.`;
