@@ -95,3 +95,12 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   adapter there. `console.warn` from a content script lands on the extension's Errors page.
 - The button syncs on page mutations only, so an idle page can lag in a test.
 - An unreadable thread can be simulated by blocking the `scan` request at window capture.
+
+## Icon
+- `icons/icon.svg` is the master; the PNGs are rendered from it by headless Chrome, never by hand.
+  For each size `n` in 16 32 48 128: an HTML file holding `<img src="file://…/icons/icon.svg">` at
+  `n`×`n` px on a transparent `html, body`, then
+  `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu
+  --hide-scrollbars --force-device-scale-factor=1 --default-background-color=00000000
+  --window-size=$n,$n --screenshot=icons/icon$n.png file://…/icon-$n.html`. The build copies the
+  PNGs (not the SVG) into `dist/icons`.

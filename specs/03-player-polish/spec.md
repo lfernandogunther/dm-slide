@@ -2,7 +2,7 @@
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide
-**Origin:** .lab/01-polish-player-design-motion
+**Origin:** .lab/01-polish-player-design-motion, .lab/02-extension-icon
 
 ## Context
 S01 and S02 work end to end, but the player still looks and moves like the MVP prototype. The
@@ -20,6 +20,10 @@ are local only (`.lab/` is not committed):
 The lab's appetite moved. `src/instagram/` gains three small additions: a thumbnail on `Item`, the
 on-screen rect of a message, and opening an item's own Instagram layer. The fix rule still holds:
 only `src/instagram/` knows Instagram's markup.
+
+The extension's icon was shaped in lab-02-extension-icon.md; drawings linked, not copied (local:
+`.lab/02-extension-icon/drawings/icon-concepts.html` for the shape, B; `icon-colour.html` for the
+colour, F).
 
 ## What to build
 1. **Layout C v2.**
@@ -71,6 +75,16 @@ only `src/instagram/` knows Instagram's markup.
    - If the message can't be found, the player says so and does nothing.
    - `I` never acts while a text box has focus.
 
+7. **Extension icon.** The mark from lab 02: B, the queue — three portrait cards stacked like
+   reels, the front one playing — in F, orange → pink (`#fa7e1e` → `#d62976` on the front card,
+   bottom-left to top-right; the cards behind flat `#fa7e1e` at .62 and .35).
+   - One SVG master, `icons/icon.svg`, and PNGs rendered from it once at 16, 32, 48 and 128,
+     committed in `icons/`.
+   - `manifest.json` declares them in `icons` and `action.default_icon`; the build copies `icons/`
+     into `dist/`. No popup: the action only gives the icon a place on the toolbar.
+   - If the cards behind blur at 16px, the 16px PNG gets its own simplified drawing of the same
+     mark.
+
 ## Acceptance criteria
 Checked by hand on the real Instagram, per CLAUDE.md "Testing on the real Instagram".
 - [ ] Strip tiles show the item's thumbnail; a tile without one shows its number. The marks for
@@ -96,6 +110,8 @@ Checked by hand on the real Instagram, per CLAUDE.md "Testing on the real Instag
 - [ ] `I` opens the item's Instagram layer. Instagram's ✕, Esc or `I` brings the player back,
       paused, on the same item. `I` typed in Instagram's comment box stays a letter. Checked by
       the owner by hand only.
+- [ ] The extension shows the icon on `chrome://extensions` (128) and pinned on the toolbar (16),
+      on a light and a dark Chrome theme; the cards and the play read at 16px.
 - [ ] `npm run typecheck` and `npm run build` pass.
 
 ## Approach

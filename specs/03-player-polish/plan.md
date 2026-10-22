@@ -58,9 +58,15 @@ Each part below is one module, and the parts come in dependency order.
 | `src/player/keys.ts` | `?`, the Alt hold, `I`, any key for the key card, finish-on-key |
 | `src/player/settings.ts` | `volume` and `seenKeys` |
 | `src/content/main.ts` | the can't-read path opens the player frame; the open motion needs the card's message id |
+| `icons/icon.svg`, `icons/icon-{16,32,48,128}.png` | new: the mark from lab 02, and its PNGs rendered once from the SVG |
+| `manifest.json` | `icons` and `action.default_icon` |
+| `scripts/build.mjs` | copy `icons/` into `dist/` |
 | `NOTES.md` | the layer selector and anything learned about it |
 
 ## Key decisions
+- **The icon's PNGs are rendered once and committed**, not built on every run. A renderer in the
+  build would be a new dependency for four files that change only when the mark does. Headless
+  Chrome renders them, and the command goes in NOTES.md.
 - **The Web Animations API is used instead of CSS transitions toggled by classes.** `animate()`
   returns a handle that can be finished, which "a key finishes the current motion" needs. Class
   transitions can only be cut by removing the class, and that snaps the element to its end state

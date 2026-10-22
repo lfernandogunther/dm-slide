@@ -1,6 +1,6 @@
 # Tasks — S03
 
-**13 of 14 done · next: 14 — extension icon**
+**14 of 15 done · next: 15 — self-review**
 
 - [x] **01 — thumbnails: `thumb` on `Item` (page, bridge, adapter), strip tiles show it, number fallback; counts-only snippet for the owner**
 - [x] **02 — layout C v2: CSS to `style.ts`, vertical thumbnail strip, video alone, content-sized panel, slim header; arrows on the video and 280px panel below 1200px**
@@ -15,6 +15,7 @@
 - [x] **11 — action states: failed control shakes with a red ring and a line; reply bubble sending / sent ✓ / not sent**
 - [x] **12 — first open: key card shown once (`seenKeys` setting), `?` brings it back**
 - [x] **13 — Instagram view `I`: `openLayer` + `layerOpen` in the adapter, player hides and comes back paused; gated on the owner's hand check**
-- [ ] **14 — self-review, close learnings.md and promote**
+- [x] **14 — extension icon: SVG master (B, the queue, orange → pink), PNGs 16 / 32 / 48 / 128 in `icons/`, `icons` + `action.default_icon` in the manifest, copied by the build**
+- [ ] **15 — self-review, close learnings.md and promote**
 
 ---

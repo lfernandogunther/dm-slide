@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild';
-import { copyFile, mkdir } from 'node:fs/promises';
+import { copyFile, cp, mkdir } from 'node:fs/promises';
 
 const watch = process.argv.includes('--watch');
 
@@ -15,6 +15,7 @@ const options = {
 
 await mkdir('dist', { recursive: true });
 await copyFile('manifest.json', 'dist/manifest.json');
+await cp('icons', 'dist/icons', { recursive: true, filter: (src) => !src.endsWith('.svg') });
 
 if (watch) {
   const ctx = await esbuild.context(options);
