@@ -25,15 +25,15 @@ The Web Store link goes in the README once the listing is public.
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
 
-**2026-10-22 13:55** - branch `main`
+**2026-10-22 14:21** - branch `main`
 
-Next open task: **02 — demo page: the real player over a fake adapter, generated media, invented names; `npm run demo`; outside `dist/`**
+Next open task: **09 — owner, guided: developer account, first submission by hand with the first release's zip**
 
 ### Recent commits
 ```
-2e3c8c0 doc [S04 #01]: amend the constitution to allow the Chrome Web Store release
-2610a89 doc [S04]: plan the Web Store release, README and automatic releases
-b6800e3 chore: license the code under MIT
-b88023d doc: add install steps and S03 to the README
-ec1fbe2 doc [S03]: mark the session done
+6eaf927 doc [S04]: mark tasks 02-08 done and record their learnings
+b06f87e feat [S04 #08]: release on a v* tag to GitHub Releases and the Chrome Web Store
+67a1106 feat [S04 #07]: add npm run release to bump, commit, tag and push a version
+b232086 doc [S04 #06]: add the Chrome Web Store listing kit and promo tile
+f5e7582 doc [S04 #04]: rewrite the README with screenshots, install, keys and privacy
 ```
