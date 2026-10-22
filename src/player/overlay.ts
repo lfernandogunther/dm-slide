@@ -6,8 +6,14 @@ import { loadSettings, saveSettings } from './settings';
 import { createStage } from './stage';
 import { renderStrip, type StripEdge } from './strip';
 
-// Pages fetched for one press of A at the oldest item, when the pages fetched hold no items.
+// Going back loads page after page on its own until the chat reaches this far into the past.
+const LOAD_HORIZON_MS = 60 * 24 * 60 * 60 * 1000;
+// Past that, one load goes on for at most this many pages while they bring no item to show.
 const MAX_PAGES_PER_LOAD = 5;
+// A pause between pages, drawn at random, so loading reads like a person scrolling up, not a burst.
+const PAGE_PAUSE_MS = { min: 1200, max: 3000 };
+// Loading starts once fewer shown items than this are left above the current one.
+const PREFETCH_ITEMS = 3;
 const STRIP_LOAD_MARGIN_PX = 40;
 // Long enough to read; the next action clears it sooner.
 const ALERT_MS = 6000;
@@ -156,6 +162,8 @@ const LAYOUT = `
   </div>
 `;
 
+const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
 // The browser's own language decides the date's format.
 const SENT_AT = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -224,7 +232,9 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let items = loaded;
   let current = start;
   let edge: StripEdge = null;
-  let loading: Promise<number> | null = null;
+  let loading: Promise<void> | null = null;
+  let pageWaiters: (() => void)[] = [];
+  let closed = false;
   let reacting = false;
   let sending = false;
   let nextAfterReact = true;
@@ -319,6 +329,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     renderChrome(true);
     stage.show(items[current], items[current + 1]);
     revealCurrent();
+    if (shownAbove() < PREFETCH_ITEMS) void loadOlder();
+  }
+
+  function shownAbove(): number {
+    let count = 0;
+    for (let i = current - 1; i >= 0 && count < PREFETCH_ITEMS; i--) if (shown(i)) count++;
+    return count;
   }
 
   /** Puts the items older than the first one in front, and counts those shown; newer arrivals wait for the next open. */
@@ -330,40 +347,62 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     return older.filter((r) => !onlyNotReacted || r.myReaction === null).length;
   }
 
-  async function fetchOlder(): Promise<number> {
+  const wakeWaiters = () => pageWaiters.splice(0).forEach((wake) => wake());
+
+  /** Page after page with a pause between: back to the horizon, then until one brings an item to show. */
+  async function fetchOlder(): Promise<void> {
     edge = 'loading';
     renderChrome(false);
-    let added = 0;
+    const horizon = Date.now() - LOAD_HORIZON_MS;
+    let found = false;
     try {
-      for (let page = 0; page < MAX_PAGES_PER_LOAD && added === 0; page++) {
+      for (let page = 0, beyond = 0; ; page++) {
+        if (page > 0) await sleep(PAGE_PAUSE_MS.min + Math.random() * (PAGE_PAUSE_MS.max - PAGE_PAUSE_MS.min));
+        if (closed) break;
         if (!(await adapter.loadOlder())) {
           edge = 'start';
           break;
         }
-        added = mergeOlder(adapter.listItems());
+        if (closed) break;
+        if (mergeOlder(adapter.listItems()) > 0) {
+          found = true;
+          wakeWaiters();
+        }
+        renderChrome(false);
+        const oldest = adapter.oldestLoadedMs();
+        if (oldest !== null && oldest > horizon) continue;
+        if (found || ++beyond >= MAX_PAGES_PER_LOAD) break;
       }
     } catch (e) {
-      showFailure('load older messages', e);
+      if (!closed) showFailure('load older messages', e);
     }
     if (edge === 'loading') edge = null;
-    renderChrome(false);
-    // Loading scrolled the thread to its top: bring it back to the item on screen.
+    wakeWaiters();
+    // Loading scrolled the thread to its top: bring it back to the item on screen, open or closed.
     revealCurrent();
-    return added;
+    if (!closed) renderChrome(false);
   }
 
-  /** One load at a time; a press during a load waits for that one. */
-  function loadOlder(): Promise<number> {
-    if (edge === 'start') return Promise.resolve(0);
+  /** One load at a time; asking during one joins it. */
+  function loadOlder(): Promise<void> {
+    if (edge === 'start' || closed) return Promise.resolve();
     loading ??= fetchOlder().finally(() => (loading = null));
     return loading;
+  }
+
+  /** Resolves once a page brings an older item to show, or loading stops. */
+  function olderShown(): Promise<void> {
+    return new Promise((done) => {
+      pageWaiters.push(done);
+      void loadOlder().then(done);
+    });
   }
 
   async function prev(): Promise<void> {
     const before = neighbour(current, -1);
     if (before >= 0) return go(before);
     const from = items[current].id;
-    await loadOlder();
+    await olderShown();
     // Only if the player is still on the item A was pressed on.
     if (items[current].id === from) go(neighbour(current, -1));
   }
@@ -454,6 +493,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   });
 
   function close(): void {
+    closed = true;
     unbindKeys();
     stage.destroy();
     host.remove();
