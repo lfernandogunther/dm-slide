@@ -1,8 +1,8 @@
 # Tasks — S03
 
-**0 of 14 done · next: 01 — thumbnails on `Item` and on the strip's tiles**
+**1 of 14 done · next: 02 — layout C v2**
 
-- [ ] **01 — thumbnails: `thumb` on `Item` (page, bridge, adapter), strip tiles show it, number fallback; counts-only snippet for the owner**
+- [x] **01 — thumbnails: `thumb` on `Item` (page, bridge, adapter), strip tiles show it, number fallback; counts-only snippet for the owner**
 - [ ] **02 — layout C v2: CSS to `style.ts`, vertical thumbnail strip, video alone, content-sized panel, slim header; arrows on the video and 280px panel below 1200px**
 - [ ] **03 — key tips: hold Option or `?` shows each control's key; the header legend goes**
 - [ ] **04 — volume: slider on hover of the sound button, wide hit target, level saved; `M` unchanged**

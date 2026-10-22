@@ -36,6 +36,7 @@ export interface Item {
   myReaction: string | null; // one of QUICK_REACTIONS when it is one of them
   myReplies: string[]; // my loaded replies quoting it
   notes: string[]; // the sender's texts sent right after it
+  thumb: string | null; // a still for the strip; a signed URL that may expire
 }
 
 export type Media = Slide | { type: 'slides'; slides: Slide[] };
@@ -107,6 +108,7 @@ function listOthersItems(): Item[] {
         myReaction: mine ? canonical(mine.emoji) : null,
         myReplies: r.myReplies,
         notes: r.notes,
+        thumb: r.source.thumb,
       };
     });
 }

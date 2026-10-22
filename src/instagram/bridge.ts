@@ -20,6 +20,7 @@ export interface ItemSource {
   path: string | null; // the item's own page on instagram.com
   isVideo: boolean; // a shared video post, whose record holds only a poster
   stored: Slide[]; // in send order; a carousel's holds its first slide only
+  thumb: string | null; // a still the record carries, for the strip; not the media itself
 }
 
 export interface RawItem {

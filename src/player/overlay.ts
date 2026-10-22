@@ -4,7 +4,7 @@ import { CantRead, QUICK_REACTIONS, type Item, type ThreadAdapter } from '../ins
 import { bindKeys } from './keys';
 import { loadSettings, saveSettings } from './settings';
 import { createStage } from './stage';
-import { renderStrip, type StripEdge } from './strip';
+import { createStrip, type StripEdge } from './strip';
 
 // Going back loads page after page on its own until the chat reaches this far into the past.
 const LOAD_HORIZON_MS = 60 * 24 * 60 * 60 * 1000;
@@ -57,6 +57,8 @@ const STYLE = `
     display: grid; place-items: center; font-size: 16px; background: #1c1c1e; opacity: 0.5;
     border: 2px solid transparent;
   }
+  .p-strip li img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+  .p-strip li.thumb .num { position: absolute; left: 4px; bottom: 2px; font: 600 9px ui-monospace, monospace; text-shadow: 0 1px 3px #000; }
   .p-strip li.current { opacity: 1; border-color: #fff; }
   .p-strip li.edge { height: auto; background: none; opacity: 1; border: 0; cursor: default; font-size: 11px; color: #a8a8a8; text-align: center; }
   .p-strip li[hidden] { display: none; }
@@ -237,6 +239,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const player = root.querySelector<HTMLElement>('.player')!;
   const reply = $<HTMLInputElement>('data-reply');
   const stage = createStage($('data-reel'), adapter, renderNav);
+  const strip = createStrip($('data-strip'));
 
   let items = loaded;
   let current = start;
@@ -313,7 +316,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       ...item.notes.map((text) => bubble(text, item.senderName ?? 'Them')),
       ...item.myReplies.map((text) => bubble(text, null)),
     );
-    renderStrip($('data-strip'), items, current, edge, follow, shown);
+    strip.render(items, current, edge, follow, shown);
   }
 
   let alertTimer = 0;

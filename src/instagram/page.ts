@@ -100,6 +100,8 @@ function photoOf(preview: any): Slide[] {
 
 const NO_SHARE = { shortcode: null, path: null, isVideo: false };
 
+const firstPhoto = (slides: Slide[]) => slides.find((s) => s.type === 'photo')?.url ?? null;
+
 /** What the record holds to watch, or null for text, voice, links, stickers and unavailable shares. */
 function sourceOf(src: RecordSource, record: any): { kind: ItemKind; source: ItemSource } | null {
   const content = recordOf(src, record.content);
@@ -107,28 +109,33 @@ function sourceOf(src: RecordSource, record: any): { kind: ItemKind; source: Ite
   const target = typeof xma?.target_url === 'string' ? xma.target_url : '';
   const preview = recordOf(src, xma?.[S.XMA_PREVIEW_FIELD]);
   const stored = photoOf(preview);
+  const thumb = firstPhoto(stored);
   const reel = target.match(S.REEL_URL)?.[1];
-  if (reel) return { kind: 'reel', source: { shortcode: reel, path: `/reel/${reel}/`, isVideo: true, stored: [] } };
+  // A reel's preview is only its cover: kept as the thumb, never played.
+  if (reel) return { kind: 'reel', source: { shortcode: reel, path: `/reel/${reel}/`, isVideo: true, stored: [], thumb } };
   const post = target.match(S.POST_URL)?.[1];
   if (post) {
     const decoration = preview?.[S.XMA_DECORATION_FIELD];
     const isVideo = decoration === S.VIDEO_DECORATION;
     const kind = decoration === S.CAROUSEL_DECORATION ? 'carousel' : 'post';
-    return { kind, source: { shortcode: post, path: `/p/${post}/`, isVideo, stored } };
+    return { kind, source: { shortcode: post, path: `/p/${post}/`, isVideo, stored, thumb } };
   }
   const story = target.match(S.STORY_URL)?.[1];
   if (story) {
     if (xma[S.STORY_REPLY_TEXT_FIELD] || !stored.length) return null;
-    return { kind: 'story', source: { ...NO_SHARE, path: story, stored } };
+    return { kind: 'story', source: { ...NO_SHARE, path: story, stored, thumb } };
   }
   if (xma) return null;
   for (const field of S.GALLERY_FIELDS) {
-    const slides = listOf(src, content?.[field]).flatMap((a): Slide[] => {
+    const attachments = listOf(src, content?.[field]);
+    const slides = attachments.flatMap((a): Slide[] => {
       const isVideo = field === S.GALLERY_VIDEO_FIELD || Number(a?.attachment_type) === S.VIDEO_ATTACHMENT_TYPE;
       const url = httpsUrl(a?.[S.GALLERY_URL_FIELD]) ?? (isVideo ? undefined : httpsUrl(a?.[S.GALLERY_PREVIEW_FIELD]));
       return url ? [{ type: isVideo ? 'video' : 'photo', url }] : [];
     });
-    if (slides.length) return { kind: 'gallery', source: { ...NO_SHARE, stored: slides } };
+    // A video's preview is a still of it, fine for the strip though never shown as the item.
+    const still = firstPhoto(slides) ?? httpsUrl(attachments[0]?.[S.GALLERY_PREVIEW_FIELD]) ?? null;
+    if (slides.length) return { kind: 'gallery', source: { ...NO_SHARE, stored: slides, thumb: still } };
   }
   return null;
 }
