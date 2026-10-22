@@ -1,10 +1,23 @@
-import { requestLoadOlder, requestOpenPicker, requestPickEmoji, requestReveal, requestScan, type ScanResult } from './bridge';
 import {
+  requestComposerEmpty,
+  requestLoadOlder,
+  requestOpenPicker,
+  requestPickEmoji,
+  requestReveal,
+  requestScan,
+  requestSendReply,
+  requestStartReply,
+  requestTypeReply,
+  type OpResult,
+  type ScanResult,
+} from './bridge';
+import {
+  ACTION_POLL_MS,
+  ACTION_TIMEOUT_MS,
   LOAD_OLDER_POLL_MS,
   LOAD_OLDER_TIMEOUT_MS,
   QUICK_REACTIONS,
-  REACT_POLL_MS,
-  REACT_TIMEOUT_MS,
+  SEND_TIMEOUT_MS,
   THREAD_PATH,
 } from './selectors';
 import { videoUrl } from './video';
@@ -15,6 +28,7 @@ export interface Reel {
   senderId: string;
   timestampMs: number;
   myReaction: string | null; // one of QUICK_REACTIONS when it is one of them
+  myReplies: string[]; // my loaded replies quoting it
 }
 
 export { QUICK_REACTIONS };
@@ -70,20 +84,23 @@ function listOthersReels(): Reel[] {
         senderId: r.senderId,
         timestampMs: r.timestampMs,
         myReaction: mine ? canonical(mine.emoji) : null,
+        myReplies: r.myReplies,
       };
     });
 }
 
 /** Retries `step` until it returns true; any other value is why not yet, quoted on timeout. */
-async function retry(step: () => true | string, what: string): Promise<void> {
+async function retry(step: () => true | string, what: string, timeoutMs = ACTION_TIMEOUT_MS): Promise<void> {
   let why = '';
-  for (const deadline = Date.now() + REACT_TIMEOUT_MS; Date.now() < deadline; await sleep(REACT_POLL_MS)) {
+  for (const deadline = Date.now() + timeoutMs; Date.now() < deadline; await sleep(ACTION_POLL_MS)) {
     const done = step();
     if (done === true) return;
     why = done;
   }
-  throw new Error(`${what} within ${REACT_TIMEOUT_MS} ms (${why})`);
+  throw new Error(`${what} within ${timeoutMs} ms (${why})`);
 }
+
+const answered = (r: OpResult) => r.ok || r.reason;
 
 /** One reaction per person per message, so picking my own emoji again removes it. */
 async function setReaction(id: string, target: string | null): Promise<void> {
@@ -93,22 +110,42 @@ async function setReaction(id: string, target: string | null): Promise<void> {
   if (reel.myReaction === target) return;
   const emoji = target ?? reel.myReaction!;
   // Each step clicks at most once: a step that clicked returns true and is not called again.
-  await retry(() => {
-    const r = requestOpenPicker(id);
-    return r.ok || r.reason;
-  }, 'react: the React button did not answer');
-  await retry(() => {
-    const r = requestPickEmoji(emoji);
-    return r.ok || r.reason;
-  }, 'react: the picker did not open');
+  await retry(() => answered(requestOpenPicker(id)), 'react: the React button did not answer');
+  await retry(() => answered(requestPickEmoji(emoji)), 'react: the picker did not open');
   await retry(() => {
     const now = reactionOf()?.myReaction ?? null;
     return now === target || `my reaction is still ${now ?? 'none'}`;
   }, `react: Instagram did not show ${target ?? 'no reaction'}`);
 }
 
-function notYet(task: string): Promise<never> {
-  return Promise.reject(new Error(`not implemented yet (S01 ${task})`));
+/** Sends through Instagram's composer, quoting the message via its Reply button when `quote`. */
+async function sendReply(id: string, text: string, quote: boolean): Promise<void> {
+  const body = text.trim();
+  if (!body) throw new Error('reply: nothing to send');
+  const before = scanThread();
+  if (!before.ok) throw new Error(`reply: ${before.reason}`);
+  if (!before.reels.some((r) => r.messageId === id && r.senderId !== before.viewerId)) {
+    throw new Error(`reply: message ${id} is not a loaded reel from someone else`);
+  }
+  // A draft of mine in Instagram's composer is never sent along or overwritten.
+  const empty = requestComposerEmpty();
+  if (!empty.ok) throw new Error(`reply: ${empty.reason}`);
+  if (quote) await retry(() => answered(requestStartReply(id)), 'reply: the Reply button did not answer');
+  // With a quote, Instagram focuses the composer itself; waiting for that is waiting for the quote.
+  await retry(() => answered(requestTypeReply(body, !quote)), 'reply: the composer did not take the focus');
+  await retry(() => answered(requestSendReply(body)), 'reply: the composer did not take the text');
+  const previous = before.lastMine?.id;
+  await retry(
+    () => {
+      const now = scanThread();
+      const last = now.ok ? now.lastMine : null;
+      if (!last || last.id === previous || last.text?.trim() !== body) return 'no new message of mine with that text';
+      if (last.repliedToId !== (quote ? id : null)) throw new Error(`reply: sent, but ${quote ? 'without' : 'with'} a quote`);
+      return true;
+    },
+    'reply: Instagram did not show the message',
+    SEND_TIMEOUT_MS,
+  );
 }
 
 export function createThreadAdapter(): ThreadAdapter {
@@ -125,7 +162,7 @@ export function createThreadAdapter(): ThreadAdapter {
     videoUrl,
     react: (id, emoji) => setReaction(id, emoji),
     unreact: (id) => setReaction(id, null),
-    reply: () => notYet('#08'),
+    reply: sendReply,
     loadOlder: loadOlderPage,
   };
 }

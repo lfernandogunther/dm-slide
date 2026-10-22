@@ -58,5 +58,15 @@ export const ROW_ACTION_COUNT = 3;
 export const REACT_BUTTON = '[role=button][aria-haspopup="dialog"]';
 export const PICKER = '[role=dialog]';
 export const PICKER_BUTTON = '[role=button], button';
-export const REACT_TIMEOUT_MS = 5000;
-export const REACT_POLL_MS = 100;
+export const ACTION_TIMEOUT_MS = 5000;
+export const ACTION_POLL_MS = 100;
+
+// Replying: Reply is the toolbar button without aria-haspopup, and it focuses the composer. The
+// composer is a Lexical editor: it takes text from execCommand('insertText') and sends on Enter.
+// A quoted reply is a plain message whose record names the quoted message's id.
+export const REPLY_BUTTON = '[role=button]:not([aria-haspopup])';
+export const COMPOSER = 'div[role=textbox][contenteditable=true][data-lexical-editor]';
+export const REPLIED_TO_FIELD = 'replied_to_message_id';
+export const TEXT_FIELD = 'text_body';
+// Sending waits on the server, unlike a reaction.
+export const SEND_TIMEOUT_MS = 10000;

@@ -221,6 +221,33 @@ typed without sending. End state verified clean: no reaction, empty composer, no
   both for adding and removing. No picker dialog is left open afterwards.
 - Actions only use a row matched by its own fiber key (`findRow(..., exact)`), never by position.
 - Checked in the test thread with 👍 only (key `6`): react, next after react, back, remove, no
-  advance on removal, setting toggle, clean end state. ❤️ via `F` is for the user's own Chrome.
+  advance on removal, setting toggle, clean end state. ❤️ via `F` confirmed by the user in their
+  own Chrome through the real extension.
 - A reaction picked from the full emoji picker (not the quick set) cannot be removed by the player:
   the quick picker does not offer it. Untested; #11 should surface the timeout.
+
+## #08 spike — replies and the composer, read only (2026-10-21)
+- A quoted reply is just another `SlideMessage` with `replied_to_message_id` (string, equal to the
+  quoted message's `id` = `message_id` = record `__id`) and `replied_to_message` (`{__ref}` to the
+  same record). No separate reply type in the store. Its text is `text_body`.
+- `igd_snippet` is not a reply field: it sits on `MESSAGE_INLINE_SHARE` messages (share preview).
+- My replies to a reel = loaded messages with `sender_fbid === me` and `replied_to_message_id ===
+  reel id`. Only loaded messages count.
+- The composer is a Lexical editor: `div[role=textbox][contenteditable=true][data-lexical-editor]`,
+  the DOM node carries `__lexicalEditor`. Not a textarea; typing must go through events Lexical
+  listens to.
+- The thread read had 1 quoted reply (from the other person, to a reel); none of mine.
+
+## #08 reply (2026-10-21)
+- Sending through Instagram's own composer works, quoted and plain, confirmed by the user in their
+  own Chrome: Reply on the row (quote) or `focus()` (plain), `execCommand('insertText')`, then a
+  synthetic Enter keydown. keys.ts lets untrusted events through, so the Enter reaches Lexical.
+- Lexical applies `insertText` a moment later: on an empty paragraph it cancels the native insert
+  and commits its own update afterwards, so the composer's text is still empty right after the
+  call. The first build checked synchronously, retried, then saw its own text as "a draft" until
+  the timeout, and left the text in Instagram's composer. Fix: type exactly once, and let the send
+  step wait until the composer holds the text before pressing Enter.
+- A failed send can leave text in Instagram's composer; the next send then refuses it as a draft
+  (by design). Clear it by hand.
+- Typing while "Sending…" shows lands in Instagram's composer (it has the focus) and aborts the
+  send. Not guarded; the window is about a second.

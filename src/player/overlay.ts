@@ -43,6 +43,8 @@ const STYLE = `
   .p-strip li.edge { height: auto; background: none; opacity: 1; border: 0; cursor: default; font-size: 11px; color: #a8a8a8; text-align: center; }
   .p-strip li[hidden] { display: none; }
   .p-strip li.reacted::after { content: attr(data-reaction); position: absolute; right: -6px; bottom: -6px; font-size: 14px; }
+  .p-strip li.replied::before { content: "💬"; position: absolute; right: -6px; bottom: -6px; font-size: 14px; }
+  .p-strip li.replied.reacted::before { right: 12px; }
   .p-stage { flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
   .nav { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #262626; font-size: 24px; flex-shrink: 0; }
   .nav:disabled { opacity: 0.25; cursor: default; }
@@ -72,6 +74,15 @@ const STYLE = `
   .p-reply input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; padding: 8px 0; color: inherit; font: inherit; }
   .p-reply button { border: 0; background: #0095f6; border-radius: 16px; padding: 6px 12px; font-weight: 600; }
   .p-reply button:disabled { opacity: 0.4; cursor: default; }
+  .p-reply input:disabled { opacity: 0.5; }
+  /* Under the box, text wraps to the video's width instead of widening the column. */
+  .p-reply-opts, .p-replies { width: 0; min-width: 100%; }
+  .p-reply-opts { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: #a8a8a8; padding: 0 14px; }
+  .p-reply-opts label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  .p-reply-opts input { margin: 0; }
+  .p-replies { list-style: none; margin: 0; padding: 0 14px; max-height: 96px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .p-replies li { background: #262626; border-radius: 12px; padding: 4px 10px; align-self: flex-end; max-width: 100%; overflow-wrap: anywhere; }
+  .p-replies li::before { content: "You: "; color: #a8a8a8; }
   .p-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 76px; }
   .p-quick { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .quick { width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; background: transparent; font-size: 20px; padding: 0; }
@@ -105,8 +116,13 @@ const LAYOUT = `
           <div class="reel" data-reel></div>
           <form class="p-reply" data-reply-form>
             <input type="text" data-reply autocomplete="off" placeholder="Reply…">
-            <button type="submit" disabled title="Sending comes in S01 #08">Send</button>
+            <button type="submit" data-send disabled title="Send (Enter)">Send</button>
           </form>
+          <div class="p-reply-opts">
+            <label><input type="checkbox" data-quote tabindex="-1" checked>Quote this reel</label>
+            <span data-reply-status></span>
+          </div>
+          <ul class="p-replies" data-replies></ul>
         </div>
         <div class="p-actions">
           <div class="p-quick" data-quick></div>
@@ -143,9 +159,15 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
   let edge: StripEdge = null;
   let loading: Promise<number> | null = null;
   let reacting = false;
+  let sending = false;
   let nextAfterReact = true;
   const nextAfter = $<HTMLInputElement>('data-next-after');
-  void loadSettings().then((s) => (nextAfter.checked = nextAfterReact = s.nextAfterReact));
+  const quote = $<HTMLInputElement>('data-quote');
+  const send = $<HTMLButtonElement>('data-send');
+  void loadSettings().then((s) => {
+    nextAfter.checked = nextAfterReact = s.nextAfterReact;
+    quote.checked = s.quoteReply;
+  });
 
   // Not focusable: Space must keep pausing instead of pressing a button.
   const quick = QUICK_REACTIONS.map((emoji, i) => {
@@ -169,6 +191,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     $<HTMLButtonElement>('data-next').disabled = current === reels.length - 1;
     quick.forEach((b) => b.classList.toggle('mine', b.textContent === reel.myReaction));
     player.classList.toggle('reacting', reacting);
+    $('data-replies').replaceChildren(
+      ...reel.myReplies.map((text) => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        return li;
+      }),
+    );
     renderStrip($('data-strip'), reels, current, edge, follow);
   }
 
@@ -260,6 +289,47 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     else renderChrome(false);
   }
 
+  let statusTimer = 0;
+  /** Shows how the last send went; "Sent" fades, while "Sending…" and a failure stay. */
+  function replyStatus(text: string, fades = true): void {
+    clearTimeout(statusTimer);
+    $('data-reply-status').textContent = text;
+    $('data-reply-status').title = '';
+    if (text && fades) statusTimer = window.setTimeout(() => replyStatus(''), 3000);
+  }
+
+  function renderSend(): void {
+    reply.disabled = sending;
+    send.disabled = sending || reply.value.trim() === '';
+  }
+
+  /** Sends the box's text about the current reel; the text stays in the box when it fails. */
+  async function sendReply(): Promise<void> {
+    const text = reply.value.trim();
+    if (!text || sending) return;
+    const reel = reels[current];
+    const quoted = quote.checked;
+    sending = true;
+    renderSend();
+    replyStatus('Sending…', false);
+    try {
+      await adapter.reply(reel.id, text, quoted);
+      if (quoted) reel.myReplies.push(text);
+      reply.value = '';
+      replyStatus('Sent');
+    } catch (e) {
+      // S01 #11 turns this into a visible message.
+      console.warn('[reel-queue]', e instanceof Error ? e.message : e);
+      replyStatus('Not sent', false);
+      $('data-reply-status').title = e instanceof Error ? e.message : String(e);
+    }
+    sending = false;
+    renderSend();
+    renderChrome(false);
+    // Instagram's composer took the focus to type; the player takes it back.
+    player.focus();
+  }
+
   const unbindKeys = bindKeys((e) => e.composedPath()[0] === reply, {
     prev: () => void prev(),
     next: () => go(current + 1),
@@ -301,7 +371,15 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     saveSettings({ nextAfterReact });
     player.focus();
   });
-  $('data-reply-form').addEventListener('submit', (e) => e.preventDefault());
+  $('data-reply-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    void sendReply();
+  });
+  reply.addEventListener('input', renderSend);
+  quote.addEventListener('change', () => {
+    saveSettings({ quoteReply: quote.checked });
+    player.focus();
+  });
 
   // Instagram's composer may hold the focus; typed keys would land in it.
   (document.activeElement as HTMLElement | null)?.blur();

@@ -2,9 +2,10 @@
 
 export interface Settings {
   nextAfterReact: boolean;
+  quoteReply: boolean;
 }
 
-const DEFAULTS: Settings = { nextAfterReact: true };
+const DEFAULTS: Settings = { nextAfterReact: true, quoteReply: true };
 
 // Absent when the script runs outside the extension (injected by hand for a check).
 const storage = () => (typeof chrome === 'undefined' ? undefined : chrome.storage?.local);

@@ -43,7 +43,8 @@ See [constitution.md](../../constitution.md) for principles and non-goals.
 - **Reply:** `R` focuses the box under the video and `Enter` sends to the conversation. With
   "Quote this reel" on (the default), the message is a reply to that reel's message; off, it is a
   plain message. Shortcuts are off while typing, and `Esc` leaves the box. Under the box, the
-  replies I already sent quoting that reel show, so I see what I said about it.
+  replies I already sent quoting that reel show, so I see what I said about it, and the strip marks
+  that reel with a 💬 beside my reaction.
 - **Lazy loading:** scrolling the strip up, or pressing `A` near the oldest loaded reel, fetches
   older messages, one page at a time. The current reel stays in place, and the strip shows
   "start of chat" when nothing older is left.

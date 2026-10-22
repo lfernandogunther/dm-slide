@@ -15,10 +15,24 @@ export interface RawReel {
   senderId: string;
   timestampMs: number;
   reactions: RawReaction[];
+  myReplies: string[]; // the texts of my loaded messages quoting this one, oldest first
+}
+
+export interface SentMessage {
+  id: string;
+  text: string | null;
+  repliedToId: string | null;
 }
 
 export type ScanResult =
-  | { ok: true; viewerId: string; hasMoreAbove: boolean; messageCount: number; reels: RawReel[] }
+  | {
+      ok: true;
+      viewerId: string;
+      hasMoreAbove: boolean;
+      messageCount: number;
+      reels: RawReel[];
+      lastMine: SentMessage | null; // my newest loaded message
+    }
   | { ok: false; reason: string };
 
 export type OpResult = { ok: true } | { ok: false; reason: string };
@@ -28,7 +42,11 @@ export type Request =
   | { op: 'reveal'; messageId: string }
   | { op: 'loadOlder' }
   | { op: 'openPicker'; messageId: string }
-  | { op: 'pickEmoji'; emoji: string };
+  | { op: 'pickEmoji'; emoji: string }
+  | { op: 'composerEmpty' }
+  | { op: 'startReply'; messageId: string }
+  | { op: 'typeReply'; text: string; focus: boolean }
+  | { op: 'sendReply'; text: string };
 
 /** Isolated side: ask the page script. dispatchEvent runs its listener synchronously. */
 function call<T extends { ok: boolean }>(request: Request): T | { ok: false; reason: string } {
@@ -52,3 +70,12 @@ export const requestLoadOlder = (): OpResult => call<OpResult>({ op: 'loadOlder'
 export const requestOpenPicker = (messageId: string): OpResult => call<OpResult>({ op: 'openPicker', messageId });
 
 export const requestPickEmoji = (emoji: string): OpResult => call<OpResult>({ op: 'pickEmoji', emoji });
+
+export const requestComposerEmpty = (): OpResult => call<OpResult>({ op: 'composerEmpty' });
+
+export const requestStartReply = (messageId: string): OpResult => call<OpResult>({ op: 'startReply', messageId });
+
+export const requestTypeReply = (text: string, focus: boolean): OpResult =>
+  call<OpResult>({ op: 'typeReply', text, focus });
+
+export const requestSendReply = (text: string): OpResult => call<OpResult>({ op: 'sendReply', text });

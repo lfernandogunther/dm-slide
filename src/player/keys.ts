@@ -17,6 +17,8 @@ const KEY_EVENTS = ['keydown', 'keyup', 'keypress'] as const;
 /** Binds the shortcuts; `isTyping` says whether an event comes from the reply box. Returns the unbind. */
 export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyActions): () => void {
   const onKey = (e: KeyboardEvent) => {
+    // Keys the extension itself dispatches (Enter in Instagram's composer, to send) go through.
+    if (!e.isTrusted) return;
     // Browser shortcuts (⌘R, ⌘D…) stay the browser's.
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     e.stopPropagation();

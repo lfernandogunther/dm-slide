@@ -1,6 +1,6 @@
 // The strip of loaded reels on the left, in chat order: one tile per reel, the current one
-// outlined, a ❤️ on the ones I reacted to. Numbers count from the newest (1, at the bottom), so
-// older reels loading at the top never renumber the ones already there.
+// outlined, my reaction and a 💬 on the ones I reacted or replied to. Numbers count from the
+// newest (1, at the bottom), so older reels loading at the top never renumber the ones already there.
 import type { Reel } from '../instagram/adapter';
 
 export type StripEdge = 'loading' | 'start' | null;
@@ -23,6 +23,7 @@ export function renderStrip(strip: HTMLElement, reels: Reel[], current: number, 
       tile.classList.toggle('current', i === current);
       tile.classList.toggle('reacted', reel.myReaction !== null);
       if (reel.myReaction) tile.dataset.reaction = reel.myReaction;
+      tile.classList.toggle('replied', reel.myReplies.length > 0);
       return tile;
     }),
   );

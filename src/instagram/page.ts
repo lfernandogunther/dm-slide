@@ -1,7 +1,16 @@
 // Runs in the page's MAIN world: reads the loaded messages from React and the Relay store, and
 // answers the isolated content script over the bridge. Besides the thread's scroll position (to
-// follow the player and load older messages), it only ever clicks Instagram's own React picker.
-import { REQUEST_EVENT, RESPONSE_EVENT, type RawReel, type Request, type ScanResult, type OpResult } from './bridge';
+// follow the player and load older messages), it only ever drives Instagram's own React picker,
+// Reply button and composer.
+import {
+  REQUEST_EVENT,
+  RESPONSE_EVENT,
+  type OpResult,
+  type RawReel,
+  type Request,
+  type ScanResult,
+  type SentMessage,
+} from './bridge';
 import * as S from './selectors';
 
 // React and Relay internals are untyped, hence the `any`s.
@@ -60,7 +69,7 @@ function viewerIdOf(src: RecordSource): string | null {
   return id ? String(id) : null;
 }
 
-function reelOf(src: RecordSource, item: any): RawReel | null {
+function reelOf(src: RecordSource, item: any, myReplies: Map<string, string[]>): RawReel | null {
   const message = item?.currentMessage;
   const record = message?.__id && src.get(message.__id);
   if (!record) return null;
@@ -77,7 +86,23 @@ function reelOf(src: RecordSource, item: any): RawReel | null {
     senderId: String(message.sender_fbid),
     timestampMs: Number(message.timestamp_ms),
     reactions,
+    myReplies: myReplies.get(String(message.id)) ?? [],
   };
+}
+
+/** My loaded messages: the texts of those quoting another message, by quoted id, and the newest one. */
+function readMine(src: RecordSource, items: any[], viewerId: string) {
+  const replies = new Map<string, string[]>();
+  let last: SentMessage | null = null;
+  for (const item of items) {
+    const record = item?.currentMessage?.__id && src.get(item.currentMessage.__id);
+    if (!record || String(record.sender_fbid) !== viewerId) continue;
+    const text = typeof record[S.TEXT_FIELD] === 'string' ? record[S.TEXT_FIELD] : null;
+    const repliedToId = record[S.REPLIED_TO_FIELD] ? String(record[S.REPLIED_TO_FIELD]) : null;
+    last = { id: String(record.id), text, repliedToId };
+    if (repliedToId && text) replies.set(repliedToId, [...(replies.get(repliedToId) ?? []), text]);
+  }
+  return { replies, last };
 }
 
 function scan(): ScanResult {
@@ -88,9 +113,10 @@ function scan(): ScanResult {
   const viewerId = viewerIdOf(src);
   if (!viewerId) return { ok: false, reason: 'no viewer id in the Relay store' };
   const items: unknown[] = list.fiber.memoizedProps[S.LOADED_MESSAGES_PROP];
-  const reels = items.map((item) => reelOf(src, item)).filter((r): r is RawReel => r !== null);
+  const mine = readMine(src, items, viewerId);
+  const reels = items.map((item) => reelOf(src, item, mine.replies)).filter((r): r is RawReel => r !== null);
   const hasMoreAbove = Boolean(list.fiber.memoizedProps[S.HAS_MORE_ABOVE_PROP]);
-  return { ok: true, viewerId, hasMoreAbove, messageCount: items.length, reels };
+  return { ok: true, viewerId, hasMoreAbove, messageCount: items.length, reels, lastMine: mine.last };
 }
 
 /** The row of a message: by the row's own fiber key or, unless `exact`, by position when the counts line up. */
@@ -129,11 +155,11 @@ function loadOlder(): OpResult {
 
 const plain = (emoji: string) => emoji.replace(/\uFE0F/g, '').trim();
 
-/** The row's own toolbar: the group of exactly React, Reply and More, not an outer group around it. */
-function findReactButton(row: Element): HTMLElement | null {
+/** A button of the row's own toolbar: the group of exactly React, Reply and More, not an outer group around it. */
+function findToolbarButton(row: Element, selector: string): HTMLElement | null {
   for (const group of row.querySelectorAll('[role=group]')) {
     if (group.querySelectorAll('[role=button]').length !== S.ROW_ACTION_COUNT) continue;
-    const button = group.querySelector<HTMLElement>(S.REACT_BUTTON);
+    const button = group.querySelector<HTMLElement>(selector);
     if (button) return button;
   }
   return null;
@@ -152,20 +178,51 @@ function hover(row: Element): void {
   target.dispatchEvent(new MouseEvent('mousemove', init));
 }
 
-/** Clicks the row's React button once; the toolbar renders a moment after the hover, so the caller retries. */
-function openPicker(messageId: string): OpResult {
+/** Clicks a toolbar button of the message's row once; the toolbar renders a moment after the hover, so the caller retries. */
+function clickToolbar(messageId: string, selector: string, name: string): OpResult {
   const list = findMessageList();
   if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
-  // A row matched by position is a guess, and a guess would react to the wrong message.
+  // A row matched by position is a guess, and a guess would act on the wrong message.
   const row = findRow(list, messageId, true);
   if (!row) return { ok: false, reason: `no row whose fiber carries message ${messageId}` };
   row.scrollIntoView({ block: 'center' });
-  const button = findReactButton(row);
+  const button = findToolbarButton(row, selector);
   if (!button) {
     hover(row);
-    return { ok: false, reason: "no React button in the row's toolbar after hovering it" };
+    return { ok: false, reason: `no ${name} button in the row's toolbar after hovering it` };
   }
   button.click();
+  return { ok: true };
+}
+
+const composer = () => document.querySelector<HTMLElement>(S.COMPOSER);
+const composerText = (el: HTMLElement) => (el.textContent ?? '').trim();
+
+function composerEmpty(): OpResult {
+  const el = composer();
+  if (!el) return { ok: false, reason: 'no composer in the thread' };
+  return composerText(el) === '' ? { ok: true } : { ok: false, reason: 'the composer already holds a draft' };
+}
+
+/** Types once into the empty composer once it has the focus: Reply gives it the focus, or `focus` does. */
+function typeReply(text: string, focus: boolean): OpResult {
+  const el = composer();
+  if (!el) return { ok: false, reason: 'no composer in the thread' };
+  if (composerText(el) !== '') return { ok: false, reason: 'the composer already holds a draft' };
+  if (focus) el.focus();
+  if (document.activeElement !== el) return { ok: false, reason: 'the composer has no focus yet' };
+  // Lexical renders the text a moment later, so the send step waits for it instead of checking here.
+  return document.execCommand('insertText', false, text) ? { ok: true } : { ok: false, reason: 'insertText was refused' };
+}
+
+/** Presses Enter in the composer, only if it holds exactly this text. */
+function sendReply(text: string): OpResult {
+  const el = composer();
+  if (!el) return { ok: false, reason: 'no composer in the thread' };
+  if (composerText(el) !== text.trim()) return { ok: false, reason: 'the composer does not hold the reply' };
+  const init = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true };
+  el.dispatchEvent(new KeyboardEvent('keydown', init));
+  el.dispatchEvent(new KeyboardEvent('keyup', init));
   return { ok: true };
 }
 
@@ -187,8 +244,12 @@ function handle(request: Request): ScanResult | OpResult {
   if (request.op === 'scan') return scan();
   if (request.op === 'reveal') return reveal(request.messageId);
   if (request.op === 'loadOlder') return loadOlder();
-  if (request.op === 'openPicker') return openPicker(request.messageId);
+  if (request.op === 'openPicker') return clickToolbar(request.messageId, S.REACT_BUTTON, 'React');
   if (request.op === 'pickEmoji') return pickEmoji(request.emoji);
+  if (request.op === 'composerEmpty') return composerEmpty();
+  if (request.op === 'startReply') return clickToolbar(request.messageId, S.REPLY_BUTTON, 'Reply');
+  if (request.op === 'typeReply') return typeReply(request.text, request.focus);
+  if (request.op === 'sendReply') return sendReply(request.text);
   return { ok: false, reason: `unknown op ${(request as { op: string }).op}` };
 }
 
