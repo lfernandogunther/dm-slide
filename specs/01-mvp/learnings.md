@@ -286,3 +286,19 @@ typed without sending. End state verified clean: no reaction, empty composer, no
   Instagram changes something. Harmless in real use, misleading in a test.
 - A step that the page never answers is retried every ~100 ms until its timeout (~50 tries in
   5 s). Each try clicks at most once, so it is safe, just chatty.
+
+## #12 click-through (2026-10-21)
+- A thread loaded back to its start shows a profile header above the rows: the scroller's first
+  child then holds [header, rows, …], so the rows' container is not always the first grandchild.
+  Found as "can't read" on a short 1:1 with no reels; the same would have hit any thread after
+  loading older reels up to "start of chat". The list is now the first child whose fiber reaches
+  the loaded messages.
+- "Loading older…" and "Start of chat" live in a tile above the oldest reel, so following that
+  reel with `scrollIntoView({block: 'nearest'})` kept them just out of view: seen only sometimes.
+  At the oldest reel, the strip now scrolls to its very top.
+- The count on the button and in the player is of loaded reels only, never the thread's total, so
+  "without ❤️" read as wrong (and any reaction counts, not just ❤️). It now says "N to react".
+- Photos and posts shared in a thread open Instagram's own viewer on click, by design (reels only
+  in the MVP; posts are roadmap phase 04).
+- All ten acceptance criteria passed by hand in my own Chrome on 2026-10-21: in a 1:1 (all ten) and
+  in a group (1, 2, 4, 5, 7). #9 was checked in the automated Chrome and seen live on a real thread.
