@@ -13,7 +13,8 @@ export type Follow = boolean | 'glide';
 
 const FOLLOW_MS = 280;
 
-const EDGE_TEXT = { loading: 'Loading older…', start: 'Start of chat' };
+// Grey tiles stand in for the older items while they load.
+const SKELETON_TILES = 2;
 
 // Reels are most of what is sent, so they stay unmarked and the rest stands out.
 const KIND_ICON: Record<ItemKind, string> = { reel: '', post: '🖼', carousel: '▦', story: '◯', gallery: '📷' };
@@ -63,13 +64,20 @@ export function createStrip(box: HTMLElement): Strip {
   const tiles = new Map<string, HTMLLIElement>();
   const edgeTile = document.createElement('li');
   edgeTile.className = 'edge';
+  edgeTile.textContent = 'Start of chat';
+  const skeletons = Array.from({ length: SKELETON_TILES }, () => {
+    const tile = document.createElement('li');
+    tile.className = 'skel';
+    return tile;
+  });
+  const edges = [edgeTile, ...skeletons];
 
   return {
     render(items, current, edge, follow, shown) {
       const fromBottom = box.scrollHeight - box.scrollTop;
       const top = box.scrollTop;
-      edgeTile.hidden = edge === null;
-      edgeTile.textContent = edge ? EDGE_TEXT[edge] : '';
+      edgeTile.hidden = edge !== 'start';
+      for (const tile of skeletons) tile.hidden = edge !== 'loading';
       const list = items.map((item, i) => {
         let tile = tiles.get(item.id);
         if (!tile) tiles.set(item.id, (tile = createTile(item)));
@@ -85,12 +93,12 @@ export function createStrip(box: HTMLElement): Strip {
       });
       // Only when the list changed, so a render that changes no tile moves none.
       const children = strip.children;
-      if (children.length !== list.length + 1 || list.some((tile, i) => children[i + 1] !== tile)) {
-        strip.replaceChildren(edgeTile, ...list);
+      if (children.length !== list.length + edges.length || list.some((tile, i) => children[i + edges.length] !== tile)) {
+        strip.replaceChildren(...edges, ...list);
       }
       if (follow) strip.querySelector('.current')?.scrollIntoView({ block: 'nearest' });
       else box.scrollTop = box.scrollHeight - fromBottom;
-      // The edge tile sits above the oldest shown item, where scrolling to that item would hide it.
+      // The edge tiles sit above the oldest shown item, where scrolling to that item would hide them.
       if (edge && current === items.findIndex((_, i) => shown(i))) box.scrollTop = 0;
       // The scroll already jumped; the list starts where it was and glides to it.
       const moved = box.scrollTop - top;

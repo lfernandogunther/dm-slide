@@ -1,6 +1,7 @@
 // The player: a full-window overlay in its own shadow root, with the strip on the left, the video
 // alone in the middle and a panel on the right. It talks only to the ThreadAdapter.
 import { CantRead, QUICK_REACTIONS, type Box, type Item, type ThreadAdapter } from '../instagram/adapter';
+import { createPill, stateCard } from './cards';
 import { bindKeys } from './keys';
 import { animate, finishAll, reduceMotion } from './motion';
 import { loadSettings, saveSettings } from './settings';
@@ -53,6 +54,11 @@ const RISE_FROM = { opacity: 0, transform: 'translateY(18px) scale(.985)' };
 const RISE_IN_MS = 280;
 const BACKDROP_IN_MS = 220;
 const SINK_MS = 200;
+// W at the start of the chat: the video bumps against it, and a pill says so.
+const BUMP = [{ transform: 'none' }, { transform: 'translateY(16px)', offset: 0.35 }, { transform: 'none' }];
+const BUMP_MS = 450;
+const START_PILL_MS = 2000;
+const LOADING_OLDER = 'Loading older…';
 const BLACK = { backgroundColor: '#000' };
 const CLEAR = { backgroundColor: 'transparent' };
 const SHOW = { opacity: 1 };
@@ -78,7 +84,7 @@ const LAYOUT = `
           <div class="p-burst" data-burst></div>
           <button class="nav prev" data-prev tabindex="-1" title="Previous (A / ←)" data-kt="A">‹</button>
           <button class="nav next" data-next tabindex="-1" title="Next (D / →)" data-kt="D">›</button>
-          <div class="p-empty" data-empty hidden><span data-empty-text></span><button type="button" data-show-all tabindex="-1">Show all (U)</button></div>
+          <div class="p-caught" data-caught hidden></div>
         </div>
       </div>
       <aside class="p-side">
@@ -180,7 +186,12 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const reel = $('data-reel');
   const chrome = [head, $('data-strip'), root.querySelector<HTMLElement>('.p-side')!];
   const reply = $<HTMLInputElement>('data-reply');
-  const stage = createStage(reel, adapter, renderNav);
+  const stage = createStage(reel, adapter, renderNav, [
+    { key: 'I', label: 'Instagram view', act: () => window.open(adapter.link(items[current]), '_blank', 'noopener') },
+    { key: 'S', label: 'Next', act: () => next() },
+  ]);
+  const pill = createPill(video);
+  let caughtShows = '';
   const strip = createStrip($('data-strip'));
 
   let items = loaded;
@@ -240,8 +251,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     $('data-pos').textContent = `${items.length - current} / ${items.length} loaded · ${left} to react`;
     renderNav();
     $('data-filter').setAttribute('aria-pressed', String(onlyNotReacted));
-    $('data-empty').hidden = !onlyNotReacted || left > 0;
-    $('data-empty-text').textContent = `Nothing left to react to${edge === 'start' ? '' : ' in what is loaded'}.`;
+    renderCaught(onlyNotReacted && left === 0);
     quick.forEach((b) => b.classList.toggle('mine', b.textContent === item.myReaction));
     const av = $('data-av');
     av.hidden = !item.senderName;
@@ -252,6 +262,28 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     player.classList.toggle('reacting', reacting);
     renderTalk(item);
     strip.render(items, current, edge, follow, shown);
+  }
+
+  /** The end card over the dimmed video once the filter leaves nothing to react to. */
+  function renderCaught(on: boolean): void {
+    const box = $('data-caught');
+    box.hidden = !on;
+    video.classList.toggle('caught', on);
+    const shows = on ? `${items.length}${edge === 'start'}` : '';
+    if (!on || shows === caughtShows) return;
+    caughtShows = shows;
+    box.replaceChildren(
+      stateCard({
+        big: '✓',
+        title: 'All caught up',
+        text: `You reacted to all ${items.length} loaded.`,
+        keys: [
+          ...(edge === 'start' ? [] : [{ key: 'W', label: 'Look further back', act: () => item(-1) }]),
+          { key: 'U', label: 'Show all', act: toggleFilter },
+          { key: 'Esc', label: 'Close', act: close },
+        ],
+      }),
+    );
   }
 
   /** What the sender wrote with the item, then my replies; a section with nothing in it isn't shown. */
@@ -385,10 +417,22 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   async function prev(): Promise<void> {
     const before = neighbour(current, -1);
     if (before >= 0) return go(before);
-    const from = items[current].id;
-    await olderShown();
-    // Only if the player is still on the item A was pressed on.
-    if (items[current].id === from) go(neighbour(current, -1));
+    if (edge !== 'start') {
+      const from = items[current].id;
+      pill.show(LOADING_OLDER);
+      await olderShown();
+      if (pill.text === LOADING_OLDER) pill.hide();
+      // Only if the player is still on the item A was pressed on.
+      if (items[current].id !== from || closed) return;
+      const older = neighbour(current, -1);
+      if (older >= 0) return go(older);
+    }
+    if (edge === 'start') atStart();
+  }
+
+  function atStart(): void {
+    pill.show('Start of the chat', START_PILL_MS);
+    if (!reduceMotion()) animate(video, BUMP, { duration: BUMP_MS });
   }
 
   const next = () => go(neighbour(current, 1));
@@ -605,7 +649,6 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   $('data-next').addEventListener('click', () => step(1));
   $('data-filter').addEventListener('click', toggleFilter);
   tipsButton.addEventListener('click', toggleTips);
-  $('data-show-all').addEventListener('click', toggleFilter);
   $('data-strip').addEventListener('click', (e) => {
     const tile = (e.target as Element).closest<HTMLElement>('li[data-i]');
     if (tile) go(Number(tile.dataset.i));
@@ -619,7 +662,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     { passive: true },
   );
   $('data-reel').addEventListener('click', (e) => {
-    if (!(e.target as Element).closest('a')) stage.togglePause();
+    if (!(e.target as Element).closest('a, button')) stage.togglePause();
   });
   nextAfter.addEventListener('change', () => {
     nextAfterReact = nextAfter.checked;

@@ -50,6 +50,13 @@ export const STYLE = `
     color: rgba(255, 255, 255, 0.85); text-shadow: 0 1px 2px #000;
   }
   .p-strip li.current { opacity: 1; border-color: #fff; }
+  .p-strip li.skel { background: #1d1d20; opacity: 1; overflow: hidden; cursor: default; }
+  .p-strip li.skel::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(170deg, transparent 30%, rgba(255, 255, 255, 0.09) 50%, transparent 70%);
+    animation: skel-shine 1.1s linear infinite;
+  }
+  @keyframes skel-shine { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
   .p-strip li.edge { height: auto; background: none; opacity: 1; border: 0; cursor: default; font-size: 11px; color: #a8a8a8; text-align: center; }
   .p-strip li .kind { position: absolute; left: 3px; top: 2px; font-size: 10px; line-height: 1; }
   .p-strip li .note { position: absolute; right: 3px; top: 2px; font-size: 10px; line-height: 1; }
@@ -75,11 +82,7 @@ export const STYLE = `
   .nav.prev { left: -46px; }
   .nav.next { right: -46px; }
   .nav:disabled { opacity: 0.25; cursor: default; }
-  .p-empty {
-    position: absolute; z-index: 3; top: 48px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px;
-    align-items: center; padding: 12px; border-radius: 12px; background: rgba(38, 38, 38, 0.92); text-align: center;
-  }
-  .p-empty button { border: 0; background: #0095f6; border-radius: 16px; padding: 6px 16px; font-weight: 600; }
+  .p-video.caught .reel-media { filter: brightness(0.35); }
 
   .reel {
     position: absolute; inset: 0; overflow: hidden; cursor: pointer; border-radius: 14px;
@@ -87,10 +90,11 @@ export const STYLE = `
   }
   .reel-media { position: absolute; inset: 0; display: grid; place-items: center; }
   .reel video, .reel img, .reel canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
-  .reel-status { position: relative; text-align: center; color: #a8a8a8; padding: 16px; line-height: 1.8; }
-  .reel-status a { color: #0095f6; }
+  .reel-status { position: absolute; inset: 0; }
   .reel-cover { position: absolute; inset: 0; overflow: hidden; background: #1d1d20; }
   .reel .reel-cover img { object-fit: cover; background: none; filter: blur(18px) brightness(0.7); transform: scale(1.15); }
+  .reel.unplayable .reel-cover img { filter: blur(18px) brightness(0.5); }
+  .reel.unplayable .reel-bar { display: none; }
   .reel-bar {
     position: absolute; left: 0; bottom: 0; height: 3px; width: 40%; background: rgba(255, 255, 255, 0.7);
     animation: reel-bar 1s ease-in-out infinite;
@@ -99,6 +103,7 @@ export const STYLE = `
   @keyframes reel-pulse { from { opacity: 0.2; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
     .reel-bar { left: 30%; animation: reel-pulse 1s ease-in-out infinite alternate; }
+    .p-strip li.skel::before { animation: reel-pulse 1s ease-in-out infinite alternate; transform: none; }
   }
   /* The loading bar takes the progress bar's place until the media shows. */
   .reel.loading .reel-progress { visibility: hidden; }
@@ -191,4 +196,27 @@ export const STYLE = `
     .nav.prev { left: 8px; }
     .nav.next { right: 8px; }
   }
+
+  /* States: a card or a pill on the video, with the keys acting on it. */
+  .c-card {
+    position: absolute; left: 22px; right: 22px; top: 50%; transform: translateY(-50%); z-index: 4;
+    background: rgba(18, 18, 18, 0.94); border: 1px solid #333; border-radius: 14px; padding: 18px 16px; text-align: center;
+  }
+  .c-card h3 { margin: 0 0 4px; font-size: 16px; }
+  .c-card p { margin: 0; color: #b5b5b5; font-size: 12.5px; }
+  .c-card .detail { margin-top: 8px; font: 11px ui-monospace, monospace; color: #7a7a7a; }
+  .c-card .big { font-size: 34px; line-height: 1; margin-bottom: 8px; }
+  .c-keys { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+  .kb {
+    display: inline-flex; gap: 6px; align-items: center; border: 1px solid #3a3a3a; border-radius: 999px;
+    padding: 4px 10px; font-size: 12px; white-space: nowrap; background: none; color: inherit;
+  }
+  button.kb:hover { border-color: #6a6a6a; }
+  .kb b { font: 700 11px ui-monospace, monospace; background: #2a2a2a; border-radius: 4px; padding: 1px 5px; }
+  .c-pill {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 4; pointer-events: none;
+    background: rgba(10, 10, 10, 0.85); border: 1px solid #333; border-radius: 999px; padding: 6px 14px;
+    font-size: 12px; white-space: nowrap;
+  }
+  .c-pill.bad { border-color: #ff6b6b; }
 `;

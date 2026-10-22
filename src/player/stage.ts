@@ -2,6 +2,7 @@
 // photo, or slides with dots. The next item's video loads in a second, hidden <video> and takes
 // over when the player moves to it.
 import type { Item, Slide, ThreadAdapter } from '../instagram/adapter';
+import { stateCard, type KeyAct } from './cards';
 import { animate, finishAll } from './motion';
 import { loadSettings, saveSettings } from './settings';
 
@@ -23,7 +24,6 @@ const ITEM_MS = 300;
 const SLIDE_MS = 260;
 const REVEAL_MS = 320;
 
-const UNAVAILABLE = { reel: 'Reel', post: 'Post', carousel: 'Post', story: 'Story', gallery: 'Media' };
 
 function createVideo(): HTMLVideoElement {
   const video = document.createElement('video');
@@ -33,8 +33,8 @@ function createVideo(): HTMLVideoElement {
   return video;
 }
 
-/** `onSlides` runs when the slides that A/D can reach change. */
-export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: () => void): Stage {
+/** `onSlides` runs when the slides that A/D can reach change; `cantPlay` are the keys on the won't-play card. */
+export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: () => void, cantPlay: KeyAct[]): Stage {
   const status = document.createElement('div');
   status.className = 'reel-status';
   // What moves when the item or slide changes; the controls over it stay put.
@@ -146,6 +146,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     else coverImg.removeAttribute('src');
     coverImg.hidden = !thumb;
     cover.hidden = false;
+    el.classList.remove('unplayable');
     el.classList.add('loading');
   }
 
@@ -154,12 +155,12 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     reveal = null;
     cover.hidden = true;
     cover.style.opacity = '';
-    el.classList.remove('loading');
+    el.classList.remove('loading', 'unplayable');
   }
 
   /** Fades the cover away once the media of the item it covers can show. */
   function uncover(ticket: number): void {
-    if (ticket !== showing || cover.hidden || reveal) return;
+    if (ticket !== showing || cover.hidden || reveal || el.classList.contains('unplayable')) return;
     el.classList.remove('loading');
     // The end state is set up front, so a finish (by the next key) leaves no frame of cover behind.
     cover.style.opacity = '0';
@@ -228,17 +229,12 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   function unavailable(shown: Item, reason: string): void {
     console.info('[dm-slide] item unavailable:', reason);
     blank();
-    coverOff();
+    // The blurred thumbnail stays, still, under the card.
+    coverOn(shown.thumb);
+    el.classList.replace('loading', 'unplayable');
     current.removeAttribute('src');
     setSlides([]);
-    const link = document.createElement('a');
-    link.href = adapter.link(shown);
-    link.target = '_blank';
-    link.rel = 'noopener';
-    link.textContent = 'Open on Instagram';
-    const card = document.createElement('div');
-    card.append(`${UNAVAILABLE[shown.kind]} unavailable`, document.createElement('br'), link);
-    setStatus(card);
+    setStatus(stateCard({ title: "Can't play this here", text: 'It may be private, deleted, or not loading.', keys: cantPlay }));
   }
 
   function play(shown: Item, url: string): void {
@@ -316,7 +312,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     } else new Image().src = first.url;
   }
 
-  media.append(current, spare, photo, status, cover);
+  media.append(current, spare, photo, cover, status);
   el.replaceChildren(media, playMark, sound, progress, dots);
   blank();
   coverOff();
