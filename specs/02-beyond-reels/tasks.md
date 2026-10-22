@@ -1,6 +1,6 @@
 # Tasks — S02
 
-**13 of 13 done · next: the manual test on the real extension**
+**13 of 13 done · closed 2026-10-22**
 
 - [x] **01 — spike, read only: each kind's Relay record, card flag, availability and media lookup**
 - [x] **02 — doc: amend the constitution (dated, with my ok) and move the roadmap to phase 04**

@@ -1,11 +1,9 @@
 # Session — S02
 
-## Status: built · 2026-10-21 · all 13 tasks committed, waiting on the manual test
+## Status: done · 2026-10-22 · all 13 tasks committed, tested by hand
 
 ## Next
-I test on the real extension (reload `dist/` in chrome://extensions): react, unreact and replies on
-every kind, the filter surviving a reload, carousel/photo/story/gallery stages, a card click, paced
-loading in a busy thread, and a gallery photo I send myself. Then phase 04 closes in ROADMAP.md.
+Nothing pending in S02. The next phase is picked from ROADMAP.md (02, 03 or 05).
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** reel-queue · **PR:** none (solo, local only)
@@ -23,7 +21,8 @@ loading in a busy thread, and a gallery photo I send myself. Then phase 04 close
 - 2026-10-21: tasks 01–12 built and committed unattended, read-only checks only on the real
   account (nothing reacted, sent or replied). Learnings sorted into NOTES.md.
 - 2026-10-22: task 13 added: the sender's texts within 5 min after an item show beside it, on
-  their side; checked read-only on a live thread (counts and layout match).
+  their side, with a 💬 at the top of the tile; checked read-only on a live thread.
+- 2026-10-22: tested by hand and closed; phase 04 marked done in ROADMAP.md.
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->

@@ -13,9 +13,10 @@ filter, "not reacted", shipped early with phase 04 (`specs/02-beyond-reels/`).
 Other reactions besides ❤️ on single keys, and quick replies (a short list of canned messages on
 number keys).
 
-## 04 · Beyond reels (current)
+## 04 · Beyond reels (done)
 Posts, carousels, stories and photos or videos sent from the gallery go through the same player,
-marked by kind in the strip, with the "not reacted" filter and faster loading of older messages.
+marked by kind in the strip, with the "not reacted" filter, faster loading of older messages and
+the sender's texts shown beside the item they came with.
 Spec: `specs/02-beyond-reels/`.
 
 ## 05 · Settings & polish (future)
