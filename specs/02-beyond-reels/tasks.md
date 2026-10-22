@@ -1,8 +1,8 @@
 # Tasks — S02
 
-**7 of 12 done · next: 01 — spike, read only**
+**8 of 12 done · next: 04 — list every kind**
 
-- [ ] **01 — spike, read only: each kind's Relay record, card flag, availability and media lookup**
+- [x] **01 — spike, read only: each kind's Relay record, card flag, availability and media lookup**
 - [x] **02 — doc: amend the constitution (dated, with my ok) and move the roadmap to phase 04**
 - [x] **03 — refactor: `Reel` → `Item` with `kind`, `listItems`, `itemAt` (reels only, no behaviour change)**
 - [ ] **04 — list every kind: posts, carousels, stories, gallery photos and videos; drop known-unavailable**
