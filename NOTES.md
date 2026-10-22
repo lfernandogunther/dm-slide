@@ -56,13 +56,18 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   the send (a ~1 s window, unguarded).
 - The bridge can ask about one element: dispatch the request on it (bubbling) and the page script
   reads `e.target`, a node both worlds share.
-- **Instagram view (`I`)** clicks the row's media card once (the pressable around its largest
+- **Instagram view (`I`)** clicks the row's media card (the pressable around its largest
   img/video, exact row only) and waits for Instagram's view: a `[role=dialog]` showing media
-  ≥ 200 px (the picker is a dialog of emoji only), or any page but a thread, which is how a story
-  opens. The player hides, lets every key through but `I` outside a text box, and polls every
-  250 ms; once the view is gone it comes back paused, or closes if the path is another thread.
-  `I` closes the view with a synthetic Esc on the dialog. **Unconfirmed live** (written on faith,
-  2026-10-22): the dialog shape, whether the path changes, and whether a synthetic Esc closes it.
+  ≥ 200 px (the picker is a dialog of emoji only), or any page but a thread. A row scrolled into
+  view draws its media ~15 ms later, so the click is retried until the card exists (one click at
+  most). The player stays up, paused, until the view opens, then hides, lets every key through but
+  `I` outside a text box, and polls every 250 ms; once the view is gone it comes back paused, or
+  closes if the path is another thread. **Live, 2026-10-22:** a shared post opens at `/p/<code>/`
+  (a `pushState`) over the chat, in a dialog where no img/video ≥ 200 px ever showed. `I` and Back
+  dispatch a synthetic Esc on that dialog (any dialog, off a thread path), and Instagram closes it
+  itself with a `popstate` back to the thread, ~20 ms; the player is back on the same item ~200 ms
+  later. Our own `history.back()` once landed on another thread instead (cause unconfirmed), so it
+  is kept only for a page with no dialog (a story, unverified).
 - The header button's anchor is found from the message scroller, not from labels or
   `data-pagelet`; a `MutationObserver` with a 400 ms debounce puts it back when React drops it.
 

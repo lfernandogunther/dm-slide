@@ -258,6 +258,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let closed = false;
   // Stepped aside for Instagram's view of the item, from the thread at `path`.
   let away = false;
+  let opening = false;
   let awayTimer: ReturnType<typeof setTimeout> | undefined;
   const path = location.pathname;
   const back = $('data-back');
@@ -730,18 +731,22 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       return;
     }
     // The view could cover a picker or composer the extension is driving, or a thread a load is scrolling.
-    if (closed || reacting || sending || loading) return;
+    if (closed || opening || reacting || sending || loading) return;
     finishAll();
     stage.pause();
-    setAway(true);
+    opening = true;
     try {
       await adapter.openLayer(items[current].id);
     } catch (e) {
       console.warn('[dm-slide]', e);
-      comeBack();
       pill.show(e instanceof CantRead ? CANT_READ : "Instagram view didn't open · I to try again", FAIL_MS, true);
       return;
+    } finally {
+      opening = false;
     }
+    // Hidden only now, so a view that never opens leaves the player where it was instead of blinking away.
+    if (closed) return void adapter.closeLayer();
+    setAway(true);
     watchLayer();
   }
 

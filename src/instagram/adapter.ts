@@ -185,11 +185,27 @@ async function sendReply(id: string, text: string, quote: boolean): Promise<void
 
 const layerOpen = () => !THREAD_PATH.test(location.pathname) || requestLayerOpen().ok;
 
+// The path a close already went back from, so a second press before the path changes doesn't leave the thread too.
+let backedFrom: string | null = null;
+
 async function openLayer(id: string): Promise<void> {
   if (!listOthersItems().some((r) => r.id === id)) throw new Error(`openLayer: message ${id} is not a loaded item from someone else`);
-  const clicked = requestOpenLayer(id);
-  if (!clicked.ok) throw new Error(`openLayer: ${clicked.reason}`);
+  backedFrom = null;
+  // A row scrolled into view draws its media a moment later.
+  await retry(() => answered(requestOpenLayer(id)), 'openLayer: no media card to click');
   await retry(() => layerOpen() || 'no view of the item yet', "openLayer: Instagram's view did not open");
+}
+
+/** Esc in Instagram's dialog; a page with no dialog (a story) is left by going back to the thread. */
+function closeLayer(): boolean {
+  // Going back is a last resort: Instagram may replace the thread's history entry with the post's.
+  const pressed = requestCloseLayer().ok;
+  if (pressed || THREAD_PATH.test(location.pathname)) return pressed;
+  if (backedFrom !== location.pathname) {
+    backedFrom = location.pathname;
+    history.back();
+  }
+  return true;
 }
 
 export function createThreadAdapter(): ThreadAdapter {
@@ -223,6 +239,6 @@ export function createThreadAdapter(): ThreadAdapter {
     },
     openLayer,
     layerOpen,
-    closeLayer: () => requestCloseLayer().ok,
+    closeLayer,
   };
 }

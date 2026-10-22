@@ -378,7 +378,8 @@ function layerOpen(): OpResult {
 
 /** Presses Esc in Instagram's view, as its own close key. */
 function closeLayer(): OpResult {
-  const dialog = openLayerDialog();
+  // Off the thread the view is the page's own dialog, which may show no media while it loads.
+  const dialog = openLayerDialog() ?? (S.THREAD_PATH.test(location.pathname) ? undefined : [...document.querySelectorAll(S.LAYER)].pop());
   if (!dialog) return { ok: false, reason: 'no dialog showing media' };
   const init = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true };
   dialog.dispatchEvent(new KeyboardEvent('keydown', init));

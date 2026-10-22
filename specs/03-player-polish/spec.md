@@ -171,7 +171,7 @@ the order of the drawings.
 | 9 | Reduce motion: every motion a crossfade | harness ✓ (emulated) · hand check pending |
 | 10 | Eight states as in `states.html` | harness ✓ · hand check pending |
 | 11 | Key card on first open, `?` brings it back | harness ✓ · hand check pending |
-| 12 | `I`: Instagram's layer and back, same item, paused | harness ✓ on a fake layer · **unverified on Instagram** (tasks 16, 17) |
+| 12 | `I`: Instagram's layer and back, same item, paused | opens live after the click retry; closing by `history.back()` · hand check pending |
 | 13 | Icon at 128 and 16, light and dark theme | rendered ✓ · toolbar check pending |
 | 14 | `npm run typecheck` and `npm run build` | pass ✓ |
 
