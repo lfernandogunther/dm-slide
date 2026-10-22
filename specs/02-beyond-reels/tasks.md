@@ -1,6 +1,6 @@
 # Tasks — S02
 
-**11 of 12 done · next: 12 — self-review**
+**12 of 12 done · next: the manual test on the real extension**
 
 - [x] **01 — spike, read only: each kind's Relay record, card flag, availability and media lookup**
 - [x] **02 — doc: amend the constitution (dated, with my ok) and move the roadmap to phase 04**
@@ -13,6 +13,6 @@
 - [x] **09 — chat cards: a click on any media card opens the player there**
 - [x] **10 — filter "Not reacted": toggle and `U`, saved, numbers kept, empty state, loading older while filtered**
 - [x] **11 — load older faster: several pages per request, paced like a person, up to ~2 months back**
-- [ ] **12 — self-review, close learnings.md and promote**
+- [x] **12 — self-review, close learnings.md and promote**
 
 ---

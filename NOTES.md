@@ -21,9 +21,22 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   `interop_messaging_user_fbid`.
 - **Virtualized rows:** only ~5 rows near the viewport render; the rest are placeholders. Act only
   on a row matched by its own fiber key (`messageId`), scrolled into view first, never by index.
-- **Reel card in the chat:** a `div[role=button]`; a few fibers up, a pressable with `isReel: true`,
-  above it `slideMessageRef.__id`. Shared posts use the same pressable without `isReel`.
-- Loading older: `scrollTop` to the top loads a page of 20 messages in ~2–4 s.
+- **Kinds:** every message record is a `SlideMessage`; the kind is `content_type`, the content's
+  `__typename` and, for shares, the XMA's: reel = `/reel/` target; post = `/p/` target, where
+  `preview_image.preview_image_decoration_type` COLLAGE means carousel and VIDEO a video post
+  (`preview_layout_type` is always SINGLE); story = `/stories/` target, a reply when
+  `xma_text_body` is non-empty; gallery = `videos[]` / `attachments` /
+  `ordered_photo_video_attachments` with `attachment_cdn_url`. Gallery photos and story *shares*
+  are read from the bundle only, never seen live.
+- **Availability has no boolean:** PlaceholderXMA and ExpiredPlaceholderXMA (no target, no
+  preview) are the unavailable ones; `tombstone_reason` and expirations were always null.
+- **Media card in the chat:** any `[role=button]` or `a[href*="/stories/"]` showing an img/video of
+  100px or more; the nearest `slideMessageRef.__id` above it (5–26 fibers up depending on kind) is
+  the message. `isReel` exists only on reels, so it can't be the rule.
+- Loading older: `scrollTop` to the top loads a page of 20 messages in 450–625 ms plus ~600 ms to
+  settle. Two months back is ~2 pages in a quiet thread, 30+ in a busy one.
+- Revealing a row near the top of the loaded list makes Instagram fetch older pages on its own, so
+  list indices shift under the caller: keep ids, never indices, across an await.
 - The loaded window can in principle miss the newest messages (`hasMoreBelow`); in normal use it
   doesn't. A jump into old history may break "1 = newest"; untested.
 
@@ -54,6 +67,11 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 - Video URL: the web app's `/api/v1/media/<id>/info/` (with `X-IG-App-ID`) first — the media id is
   the shortcode's first 11 characters read in base 64 — and the `/reel/<code>/embed/` page second,
   because many authors turn embedding off. Our own `<video>` plays the mp4 with sound.
+- Since 2026-10, that lookup answers 302 to the home page for every kind, so reels play through the
+  embed, a carousel shows only the first slide the record holds, and a video post needs its
+  `/p/<code>/embed/`. Photos, stories and gallery media come from the record and ask nothing.
+- A one-photo post's `preview_image.url` is full resolution; its `fallback_url` is the copy to try
+  when the browser can't decode the first (HEIC).
 - Two `<video>` elements (current and a spare preloading the next); a swapped-out video must not
   drive the stage or report errors for the reel on screen.
 

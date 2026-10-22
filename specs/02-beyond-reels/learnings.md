@@ -22,7 +22,7 @@
     always SINGLE, even for carousels.
   - **Availability has no boolean.** The XMA typename is the flag: PlaceholderXMA and
     ExpiredPlaceholderXMA hold only fixed UI copy. `tombstone_reason` and the expiration fields
-    were null everywhere.
+    were null everywhere. → NOTES.md (Reading Instagram, Playback)
   - **What the store alone can show:** a one-photo post's `preview_image.url` is full resolution.
     A carousel's preview is its first slide only; a video post's is a poster. A gallery video's
     `videos[].attachment_cdn_url` is a direct mp4, so it needs no lookup.
@@ -43,13 +43,14 @@
   - Story: an `<a href="/stories/…">`, not a pressable; `slideMessageRef` about 26 up from its img.
   - Gallery video: `[role=button]`, `attachmentType=4` at 4, `slideMessageRef` at 7.
   - So the one rule that covers every kind is "the nearest `slideMessageRef` above a pressable or a
-    story link", and the listed items decide whether that message opens the player.
+    story link", and the listed items decide whether that message opens the player. → NOTES.md
 - 2026-10-21 — **Spike: paging.** Every page adds 20 messages in 450–625 ms, plus ~600 ms to
   settle. Two months back is ~2 pages in a quiet thread and 30+ in a busy one (1.5–2 min at a
-  person's pace).
+  person's pace). → NOTES.md
 - 2026-10-21 — Revealing a row near the top of the loaded list makes Instagram fetch more older
-  pages on its own, so list indices shift under the caller.
+  pages on its own, so list indices shift under the caller. → NOTES.md
 
 ## Concepts learned
 
 ## Promoted
+- 2026-10-21 — all four entries → NOTES.md (decisions and gotchas about Instagram's page). Nothing for CLAUDE.md, lessons or rules: each is true of this repo only.
