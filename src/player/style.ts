@@ -56,6 +56,15 @@ export const STYLE = `
   .p-strip li.reacted::after { content: attr(data-reaction); position: absolute; right: -6px; bottom: -6px; font-size: 13px; }
   .p-strip li.replied::before { content: "💬"; position: absolute; right: -6px; bottom: -6px; font-size: 12px; }
   .p-strip li.replied.reacted::before { right: 10px; }
+  /* A reaction bursts over the video, then a copy flies to its tile; both rest invisible. */
+  .p-burst {
+    position: absolute; left: 50%; top: 50%; z-index: 3; font-size: 120px; line-height: 1; pointer-events: none;
+    opacity: 0; transform: translate(-50%, -50%);
+  }
+  .p-flyer {
+    position: absolute; left: 0; top: 0; z-index: 20; width: 26px; height: 26px; font-size: 26px; line-height: 26px;
+    text-align: center; pointer-events: none; opacity: 0;
+  }
 
   .p-theatre { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
   .p-video { position: relative; height: var(--video-h); aspect-ratio: 9 / 16; flex-shrink: 0; }

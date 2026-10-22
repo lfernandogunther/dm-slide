@@ -1,6 +1,6 @@
 # Tasks — S03
 
-**6 of 14 done · next: 07 — react**
+**7 of 14 done · next: 08 — open / close**
 
 - [x] **01 — thumbnails: `thumb` on `Item` (page, bridge, adapter), strip tiles show it, number fallback; counts-only snippet for the owner**
 - [x] **02 — layout C v2: CSS to `style.ts`, vertical thumbnail strip, video alone, content-sized panel, slim header; arrows on the video and 280px panel below 1200px**
@@ -8,7 +8,7 @@
 - [x] **04 — volume: slider on hover of the sound button, wide hit target, level saved; `M` unchanged**
 - [x] **05 — motion: `motion.ts` (finish on key, no queue, reduce-motion crossfade); items 300ms, slides 260ms, panel rise, strip follow**
 - [x] **06 — loading: blurred thumbnail + thin bar, fades out when the media is ready**
-- [ ] **07 — react: pop, burst, flyer to the tile, badge pop; react → next at 850ms**
+- [x] **07 — react: pop, burst, flyer to the tile, badge pop; react → next at 850ms**
 - [ ] **08 — open / close: `rectOf` in the adapter; grow from / shrink into the message, fade-and-rise when off screen**
 - [ ] **09 — place states: all caught up card, loading older (skeleton tiles + pill), start of the chat (bump + pill), won't play card**
 - [ ] **10 — can't read: the player frame with its card replaces `openNotice`**

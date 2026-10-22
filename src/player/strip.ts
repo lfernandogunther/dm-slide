@@ -21,6 +21,8 @@ const KIND_ICON: Record<ItemKind, string> = { reel: '', post: '🖼', carousel: 
 export interface Strip {
   /** `follow` scrolls to the current tile; otherwise the visible tiles stay put while older ones prepend. */
   render(items: Item[], current: number, edge: StripEdge, follow: Follow, shown: (i: number) => boolean): void;
+  /** The item's tile when it is shown and wholly in view, else null. */
+  visibleTile(id: string): HTMLElement | null;
 }
 
 function mark(className: string, text: string, title?: string): HTMLSpanElement {
@@ -95,6 +97,13 @@ export function createStrip(box: HTMLElement): Strip {
       if (follow === 'glide' && moved && !reduceMotion()) {
         animate(strip, [{ transform: `translateY(${moved}px)` }, { transform: 'none' }], { duration: FOLLOW_MS });
       }
+    },
+    visibleTile(id) {
+      const tile = tiles.get(id);
+      if (!tile?.isConnected || tile.hidden) return null;
+      const t = tile.getBoundingClientRect();
+      const b = box.getBoundingClientRect();
+      return t.top >= b.top && t.bottom <= b.bottom ? tile : null;
     },
   };
 }

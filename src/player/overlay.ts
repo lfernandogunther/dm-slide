@@ -2,7 +2,7 @@
 // alone in the middle and a panel on the right. It talks only to the ThreadAdapter.
 import { CantRead, QUICK_REACTIONS, type Item, type ThreadAdapter } from '../instagram/adapter';
 import { bindKeys } from './keys';
-import { animate, finishAll } from './motion';
+import { animate, finishAll, reduceMotion } from './motion';
 import { loadSettings, saveSettings } from './settings';
 import { createStage } from './stage';
 import { createStrip, type Follow, type StripEdge } from './strip';
@@ -24,6 +24,22 @@ const ALERT_MS = 6000;
 // The sender and the reactions rise into place as a new item comes in.
 const PANEL_RISE = [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }];
 const PANEL_MS = 200;
+// A reaction: the button pops, the emoji bursts over the video, a copy flies to the tile, the badge pops.
+const POP = [{ transform: 'scale(1)' }, { transform: 'scale(1.35)', offset: 0.4 }, { transform: 'scale(1)' }];
+const POP_MS = 320;
+const BURST = [
+  { transform: 'translate(-50%, -50%) scale(0)', opacity: 0 },
+  { transform: 'translate(-50%, -50%) scale(1.25)', opacity: 1, offset: 0.3 },
+  { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.55 },
+  { transform: 'translate(-50%, -80%) scale(.9)', opacity: 0 },
+];
+const BURST_MS = 900;
+const FLY_DELAY_MS = 350;
+const FLY_MS = 450;
+const BADGE_POP = [{ transform: 'scale(0)' }, { transform: 'scale(1.4)', offset: 0.6 }, { transform: 'scale(1)' }];
+const BADGE_MS = 260;
+// Long enough to see the reaction land on its tile before the next item comes in.
+const REACT_NEXT_MS = 850;
 
 const LAYOUT = `
   <div class="player" tabindex="-1">
@@ -42,6 +58,7 @@ const LAYOUT = `
       <div class="p-theatre">
         <div class="p-video">
           <div class="reel" data-reel data-kt="Space"></div>
+          <div class="p-burst" data-burst></div>
           <button class="nav prev" data-prev tabindex="-1" title="Previous (A / ←)" data-kt="A">‹</button>
           <button class="nav next" data-next tabindex="-1" title="Next (D / →)" data-kt="D">›</button>
           <div class="p-empty" data-empty hidden><span data-empty-text></span><button type="button" data-show-all tabindex="-1">Show all (U)</button></div>
@@ -370,6 +387,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     const item = items[current];
     const removing = item.myReaction === emoji;
     clearFailure();
+    clearTimeout(reactNextTimer);
+    if (!reduceMotion()) animate(quick[slot], POP, { duration: POP_MS, easing: 'ease-out' });
     reacting = true;
     renderChrome(false);
     let done = false;
@@ -383,9 +402,52 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     reacting = false;
     // Instagram's picker took the focus (onto its ❤️); keys never reach it, but the player wants it back.
     player.focus();
+    renderChrome(false);
+    if (!done || removing || closed) return;
+    // The motion waits for Instagram's answer, so it never shows a reaction that didn't land.
+    if (items[current] === item) celebrate(item, emoji);
+    if (!nextAfterReact) return;
     // Only if the player is still on the item the reaction was for.
-    if (done && !removing && nextAfterReact && items[current] === item && neighbour(current, 1) >= 0) next();
-    else renderChrome(false);
+    reactNextTimer = window.setTimeout(() => {
+      if (!closed && items[current] === item && neighbour(current, 1) >= 0) next();
+    }, REACT_NEXT_MS);
+  }
+
+  let reactNextTimer = 0;
+  /** Bursts the emoji over the video and flies a copy to the item's tile, whose badge then pops. */
+  function celebrate(item: Item, emoji: string): void {
+    const burst = $('data-burst');
+    burst.textContent = emoji;
+    animate(burst, BURST, { duration: BURST_MS, easing: 'ease-out', fade: 'out' });
+    const tile = strip.visibleTile(item.id);
+    // A tile out of view or filtered out gets no flyer: the strip never scrolls for one.
+    if (!tile) return;
+    const reduced = reduceMotion();
+    animate(tile, BADGE_POP, { pseudoElement: '::after', duration: BADGE_MS, delay: reduced ? 0 : FLY_DELAY_MS + FLY_MS, fill: 'backwards' });
+    if (reduced) return;
+    const box = player.getBoundingClientRect();
+    const from = $('data-reel').getBoundingClientRect();
+    const to = tile.getBoundingClientRect();
+    const flyer = document.createElement('span');
+    flyer.className = 'p-flyer';
+    flyer.textContent = emoji;
+    player.append(flyer);
+    // The 26px flyer is centred on the video, then on the badge that sits over the tile's bottom-right corner.
+    const x0 = from.left - box.left + from.width / 2 - 13;
+    const y0 = from.top - box.top + from.height / 2 - 13;
+    const x1 = to.right - box.left - 15;
+    const y1 = to.bottom - box.top - 16;
+    const fly = animate(
+      flyer,
+      [
+        { transform: `translate(${x0}px, ${y0}px) scale(1.8)`, opacity: 0.9 },
+        { transform: `translate(${x1}px, ${y1}px) scale(.6)`, opacity: 1 },
+      ],
+      { duration: FLY_MS, delay: FLY_DELAY_MS, easing: 'cubic-bezier(.5,0,.2,1)' },
+    );
+    const drop = () => flyer.remove();
+    fly.addEventListener('finish', drop);
+    fly.addEventListener('cancel', drop);
   }
 
   let statusTimer = 0;
@@ -458,6 +520,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   function close(): void {
     closed = true;
+    clearTimeout(reactNextTimer);
     unbindKeys();
     stage.destroy();
     host.remove();
