@@ -14,6 +14,8 @@ const MAX_PAGES_PER_LOAD = 5;
 const PAGE_PAUSE_MS = { min: 1200, max: 3000 };
 // Loading starts once fewer shown items than this are left above the current one.
 const PREFETCH_ITEMS = 3;
+// How often a paused load checks whether the reaction or reply it waits on is done.
+const BUSY_POLL_MS = 250;
 const STRIP_LOAD_MARGIN_PX = 40;
 // Long enough to read; the next action clears it sooner.
 const ALERT_MS = 6000;
@@ -366,6 +368,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     try {
       for (let page = 0, beyond = 0; ; page++) {
         if (page > 0) await sleep(PAGE_PAUSE_MS.min + Math.random() * (PAGE_PAUSE_MS.max - PAGE_PAUSE_MS.min));
+        // A page scrolls the thread to its top, which would pull the row away from a reaction or reply under way.
+        while ((reacting || sending) && !closed) await sleep(BUSY_POLL_MS);
         if (closed) break;
         if (!(await adapter.loadOlder())) {
           edge = 'start';
