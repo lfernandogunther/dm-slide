@@ -20,5 +20,9 @@ the sender's texts shown beside the item they came with.
 Spec: `specs/02-beyond-reels/`.
 
 ## 05 · Settings & polish (future)
-An options page (defaults for auto-advance and quote, key remapping). Possibly a Chrome Web Store
-release, if someone other than me wants it.
+An options page (defaults for auto-advance and quote, key remapping). The player's polish shipped
+early (`specs/03-player-polish/`).
+
+## 06 · Web Store release (in progress)
+The extension on the Chrome Web Store, a README with screenshots and every key, and releases that
+ship from a tag. Spec: `specs/04-web-store-release/`.

@@ -36,7 +36,6 @@ DM Slide you do all of it on one screen, from the keyboard, in any conversation,
 - No mobile, and no browser other than Chrome (desktop).
 - No liking or commenting on the reel itself. Reactions and replies go to the DM message.
 - No bulk or automatic actions of any kind (principle 3).
-- No Chrome Web Store release. The extension is loaded unpacked.
 - No automated tests (principle 6).
 - No live updates while the player is open. Reels that arrive meanwhile show up on the next open.
 
@@ -49,3 +48,5 @@ dated. Created 2026-10-21.
   scoped to the MVP.
 - 2026-10-22: principle 5 gains I (Instagram view: the item's own layer over the chat, and back)
   and ? (the key tips), from S03.
+- 2026-10-22: the Chrome Web Store release leaves the non-goals, on the owner's request (S04); the
+  extension ships there and as a zip on each GitHub release. The principles are unchanged.
