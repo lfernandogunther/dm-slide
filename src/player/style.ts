@@ -30,11 +30,6 @@ export const STYLE = `
     position: absolute; z-index: 6; top: 48px; left: 0; right: 0;
     padding: 8px 16px; background: #3a1d1d; color: #ffb4b4; text-align: center;
   }
-  .p-notice { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; }
-  .p-notice strong { font-size: 18px; }
-  .p-notice p { margin: 0; max-width: 480px; overflow-wrap: anywhere; }
-  .p-notice button { margin-top: 8px; border: 0; background: #262626; border-radius: 16px; padding: 6px 16px; }
-
   .p-body { position: relative; flex: 1; display: flex; gap: 16px; padding: 0 16px 16px; min-height: 0; }
 
   .p-strip { width: 62px; flex-shrink: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
@@ -74,6 +69,8 @@ export const STYLE = `
   }
 
   .p-theatre { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
+  .p-frame { justify-content: center; }
+  .p-frame .p-video { border-radius: 14px; background: #0d0d0f; }
   .p-video { position: relative; height: var(--video-h); aspect-ratio: 9 / 16; flex-shrink: 0; transform-origin: 0 0; }
   .nav {
     position: absolute; top: calc(50% - 16px); width: 32px; height: 32px;

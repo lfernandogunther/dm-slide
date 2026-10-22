@@ -130,42 +130,59 @@ export function startIndex(items: Item[]): number {
   return unreacted >= 0 ? unreacted : items.length - 1;
 }
 
+const NOTICE_KEY_EVENTS = ['keydown', 'keyup', 'keypress'] as const;
 const NOTICE = `
   <div class="player" tabindex="-1">
     <header class="p-head">
-      <div class="p-title"><strong>DM Slide</strong></div>
+      <span class="p-title">DM Slide</span>
       <span class="sp"></span>
-      <button class="circ" data-close title="Close (Esc)">✕</button>
+      <button class="circ" data-close tabindex="-1" title="Close (Esc)">✕</button>
     </header>
-    <div class="p-notice">
-      <strong>Can't read this conversation</strong>
-      <p>Instagram's page may have changed, so DM Slide does nothing here.</p>
-      <p class="muted" data-detail></p>
-      <button data-done>Close</button>
-    </div>
+    <div class="p-body p-frame"><div class="p-video" data-notice></div></div>
   </div>
 `;
 
-/** In place of the player when the thread can't be read: says so, and does nothing else. */
+// Missing outside the extension (the scratch harness), where the detail line goes without it.
+const VERSION = typeof chrome === 'undefined' ? null : chrome.runtime?.getManifest?.().version;
+
+/** In place of the player when the thread can't be read: its frame and a card saying so, and nothing else. */
 export function openNotice(detail: string, onClose: () => void): Player {
   const host = document.createElement('div');
   host.style.cssText = 'position: fixed; inset: 0; z-index: 2147483647;';
   const root = host.attachShadow({ mode: 'open' });
   root.innerHTML = `<style>${STYLE}</style>${NOTICE}`;
   const panel = root.querySelector<HTMLElement>('.player')!;
-  root.querySelector('[data-detail]')!.textContent = detail;
+  root.querySelector('[data-notice]')!.append(
+    stateCard({
+      big: '⚠︎',
+      title: "Can't read this conversation",
+      text: "Instagram's page may have changed. Nothing was done here: no reaction, no reply.",
+      detail: VERSION ? `${detail} · v${VERSION}` : detail,
+      // Instagram's own view is the chat under the player, so I simply uncovers it.
+      keys: [
+        { key: 'I', label: 'Instagram view', act: close },
+        { key: 'Esc', label: 'Close', act: close },
+      ],
+    }),
+  );
 
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') close();
+    if (!e.isTrusted || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key !== 'Escape' && e.key.toLowerCase() !== 'i') return;
+    e.stopPropagation();
+    e.preventDefault();
+    if (e.type === 'keydown') close();
   };
+  let closed = false;
   function close(): void {
-    window.removeEventListener('keydown', onKey, true);
+    if (closed) return;
+    closed = true;
+    for (const type of NOTICE_KEY_EVENTS) window.removeEventListener(type, onKey, true);
     host.remove();
     onClose();
   }
   root.querySelector('[data-close]')!.addEventListener('click', close);
-  root.querySelector('[data-done]')!.addEventListener('click', close);
-  window.addEventListener('keydown', onKey, true);
+  for (const type of NOTICE_KEY_EVENTS) window.addEventListener(type, onKey, true);
 
   (document.activeElement as HTMLElement | null)?.blur();
   document.body.append(host);
