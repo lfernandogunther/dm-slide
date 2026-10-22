@@ -37,9 +37,11 @@ function findMessageList(): MessageList | null {
   for (const scroller of document.querySelectorAll('main div')) {
     if (scroller.scrollHeight <= scroller.clientHeight) continue;
     if (!S.SCROLLABLE_OVERFLOW.includes(getComputedStyle(scroller).overflowY)) continue;
-    const el = scroller.firstElementChild?.firstElementChild;
-    const fiber = el && findUp(fiberOf(el), (f) => Array.isArray(f.memoizedProps?.[S.LOADED_MESSAGES_PROP]));
-    if (el && fiber) return { scroller, el, fiber };
+    // Once the start of the chat is loaded, a profile header sits above the rows' container.
+    for (const el of scroller.firstElementChild?.children ?? []) {
+      const fiber = findUp(fiberOf(el), (f) => Array.isArray(f.memoizedProps?.[S.LOADED_MESSAGES_PROP]));
+      if (fiber) return { scroller, el, fiber };
+    }
   }
   return null;
 }
