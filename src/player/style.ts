@@ -37,10 +37,8 @@ export const STYLE = `
 
   .p-body { position: relative; flex: 1; display: flex; gap: 16px; padding: 0 16px 16px; min-height: 0; }
 
-  .p-strip {
-    list-style: none; margin: 0; padding: 4px 0; width: 62px; flex-shrink: 0;
-    overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none;
-  }
+  .p-strip { width: 62px; flex-shrink: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+  .p-strip ol { list-style: none; margin: 0; padding: 4px 0; display: flex; flex-direction: column; gap: 8px; }
   .p-strip li {
     position: relative; width: 52px; height: 80px; flex-shrink: 0; border-radius: 8px; cursor: pointer;
     display: grid; place-items: center; font-size: 15px; background: #1c1c1e; opacity: 0.55;
@@ -78,7 +76,8 @@ export const STYLE = `
     position: absolute; inset: 0; overflow: hidden; cursor: pointer; border-radius: 14px;
     background: #1c1c1e; display: grid; place-items: center;
   }
-  .reel video, .reel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .reel-media { position: absolute; inset: 0; display: grid; place-items: center; }
+  .reel video, .reel img, .reel canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
   .reel-status { position: relative; text-align: center; color: #a8a8a8; padding: 16px; line-height: 1.8; }
   .reel-status a { color: #0095f6; }
   .reel-play {

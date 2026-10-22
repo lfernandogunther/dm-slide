@@ -2,9 +2,10 @@
 // alone in the middle and a panel on the right. It talks only to the ThreadAdapter.
 import { CantRead, QUICK_REACTIONS, type Item, type ThreadAdapter } from '../instagram/adapter';
 import { bindKeys } from './keys';
+import { animate, finishAll } from './motion';
 import { loadSettings, saveSettings } from './settings';
 import { createStage } from './stage';
-import { createStrip, type StripEdge } from './strip';
+import { createStrip, type Follow, type StripEdge } from './strip';
 import { STYLE } from './style';
 
 // Going back loads page after page on its own until the chat reaches this far into the past.
@@ -20,6 +21,9 @@ const BUSY_POLL_MS = 250;
 const STRIP_LOAD_MARGIN_PX = 40;
 // Long enough to read; the next action clears it sooner.
 const ALERT_MS = 6000;
+// The sender and the reactions rise into place as a new item comes in.
+const PANEL_RISE = [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }];
+const PANEL_MS = 200;
 
 const LAYOUT = `
   <div class="player" tabindex="-1">
@@ -34,7 +38,7 @@ const LAYOUT = `
     </header>
     <div class="p-alert" data-alert role="alert" hidden></div>
     <div class="p-body">
-      <ol class="p-strip" data-strip></ol>
+      <div class="p-strip" data-strip></div>
       <div class="p-theatre">
         <div class="p-video">
           <div class="reel" data-reel data-kt="Space"></div>
@@ -45,7 +49,7 @@ const LAYOUT = `
       </div>
       <aside class="p-side">
         <div class="p-panel">
-          <div class="p-who"><div class="p-av" data-av></div><div><b data-sender></b><div class="p-date" data-sent></div></div></div>
+          <div class="p-who" data-who><div class="p-av" data-av></div><div><b data-sender></b><div class="p-date" data-sent></div></div></div>
           <div class="p-talk" data-talk>
             <h4 data-notes-head>Sent with it</h4>
             <ul class="p-th" data-notes></ul>
@@ -191,7 +195,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     $<HTMLButtonElement>('data-next').disabled = !stage.canSlide(1) && neighbour(current, 1) < 0;
   }
 
-  function renderChrome(follow: boolean): void {
+  function renderChrome(follow: Follow): void {
     const item = items[current];
     const left = items.filter((r) => r.myReaction === null).length;
     $('data-pos').textContent = `${items.length - current} / ${items.length} loaded · ${left} to react`;
@@ -260,9 +264,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   function go(index: number): void {
     if (index < 0 || index >= items.length) return;
+    // A click doesn't pass through the keys; the strip must be measured settled, not mid-glide.
+    finishAll();
+    const dir = Math.sign(index - current) as -1 | 0 | 1;
     current = index;
-    renderChrome(true);
-    stage.show(items[current], items[current + 1]);
+    renderChrome(dir ? 'glide' : true);
+    if (dir) for (const el of [$('data-who'), $('data-quick')]) animate(el, PANEL_RISE, { duration: PANEL_MS });
+    stage.show(items[current], items[current + 1], dir);
     revealCurrent();
     if (shownAbove() < PREFETCH_ITEMS) void loadOlder();
   }

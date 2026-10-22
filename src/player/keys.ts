@@ -1,5 +1,6 @@
 // The player's shortcuts. While it is open, Instagram never sees a key: every keyboard event is
 // stopped at the window in the capture phase, before it reaches any of Instagram's listeners.
+import { finishAll } from './motion';
 
 export interface KeyActions {
   item(delta: -1 | 1): void; // the older or newer item
@@ -61,6 +62,7 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
     }[e.key.toLowerCase()];
     if (!action) return;
     e.preventDefault();
+    finishAll();
     action();
   };
   // A release can land in another window (⌥⇥), and its keyup then never comes here.

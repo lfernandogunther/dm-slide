@@ -5,8 +5,13 @@
 // hiding some ever renumber a tile. A tile without a thumbnail, or whose thumbnail fails, shows its
 // number large instead.
 import type { Item, ItemKind } from '../instagram/adapter';
+import { animate, reduceMotion } from './motion';
 
 export type StripEdge = 'loading' | 'start' | null;
+/** Whether to bring the current tile into view: at once, gliding there, or not at all. */
+export type Follow = boolean | 'glide';
+
+const FOLLOW_MS = 280;
 
 const EDGE_TEXT = { loading: 'Loading older…', start: 'Start of chat' };
 
@@ -15,7 +20,7 @@ const KIND_ICON: Record<ItemKind, string> = { reel: '', post: '🖼', carousel: 
 
 export interface Strip {
   /** `follow` scrolls to the current tile; otherwise the visible tiles stay put while older ones prepend. */
-  render(items: Item[], current: number, edge: StripEdge, follow: boolean, shown: (i: number) => boolean): void;
+  render(items: Item[], current: number, edge: StripEdge, follow: Follow, shown: (i: number) => boolean): void;
 }
 
 function mark(className: string, text: string, title?: string): HTMLSpanElement {
@@ -49,14 +54,18 @@ function createTile(item: Item): HTMLLIElement {
   return tile;
 }
 
-export function createStrip(strip: HTMLElement): Strip {
+/** `box` scrolls; the list inside it is what glides. */
+export function createStrip(box: HTMLElement): Strip {
+  const strip = document.createElement('ol');
+  box.append(strip);
   const tiles = new Map<string, HTMLLIElement>();
   const edgeTile = document.createElement('li');
   edgeTile.className = 'edge';
 
   return {
     render(items, current, edge, follow, shown) {
-      const fromBottom = strip.scrollHeight - strip.scrollTop;
+      const fromBottom = box.scrollHeight - box.scrollTop;
+      const top = box.scrollTop;
       edgeTile.hidden = edge === null;
       edgeTile.textContent = edge ? EDGE_TEXT[edge] : '';
       const list = items.map((item, i) => {
@@ -78,9 +87,14 @@ export function createStrip(strip: HTMLElement): Strip {
         strip.replaceChildren(edgeTile, ...list);
       }
       if (follow) strip.querySelector('.current')?.scrollIntoView({ block: 'nearest' });
-      else strip.scrollTop = strip.scrollHeight - fromBottom;
+      else box.scrollTop = box.scrollHeight - fromBottom;
       // The edge tile sits above the oldest shown item, where scrolling to that item would hide it.
-      if (edge && current === items.findIndex((_, i) => shown(i))) strip.scrollTop = 0;
+      if (edge && current === items.findIndex((_, i) => shown(i))) box.scrollTop = 0;
+      // The scroll already jumped; the list starts where it was and glides to it.
+      const moved = box.scrollTop - top;
+      if (follow === 'glide' && moved && !reduceMotion()) {
+        animate(strip, [{ transform: `translateY(${moved}px)` }, { transform: 'none' }], { duration: FOLLOW_MS });
+      }
     },
   };
 }

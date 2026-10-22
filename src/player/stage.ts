@@ -2,10 +2,12 @@
 // photo, or slides with dots. The next item's video loads in a second, hidden <video> and takes
 // over when the player moves to it.
 import type { Item, Slide, ThreadAdapter } from '../instagram/adapter';
+import { animate, finishAll } from './motion';
 import { loadSettings, saveSettings } from './settings';
 
 export interface Stage {
-  show(item: Item, next: Item | undefined): void;
+  /** `dir` slides the new item in from below (1) or above (-1); 0 just shows it. */
+  show(item: Item, next: Item | undefined, dir?: -1 | 0 | 1): void;
   slide(delta: -1 | 1): boolean; // false when there is no slide that way
   canSlide(delta: -1 | 1): boolean;
   togglePause(): void;
@@ -16,6 +18,9 @@ export interface Stage {
 const SPEAKER = '<path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>';
 const SOUND_ON = `${SPEAKER}<path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>`;
 const SOUND_OFF = `${SPEAKER}<path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
+
+const ITEM_MS = 300;
+const SLIDE_MS = 260;
 
 const UNAVAILABLE = { reel: 'Reel', post: 'Post', carousel: 'Post', story: 'Story', gallery: 'Media' };
 
@@ -31,6 +36,9 @@ function createVideo(): HTMLVideoElement {
 export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: () => void): Stage {
   const status = document.createElement('div');
   status.className = 'reel-status';
+  // What moves when the item or slide changes; the controls over it stay put.
+  const media = document.createElement('div');
+  media.className = 'reel-media';
   const playMark = document.createElement('div');
   playMark.className = 'reel-play';
   playMark.textContent = '▶';
@@ -120,6 +128,42 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     renderMute();
   });
 
+  /** A still of what shows now, to leave the stage while the next one comes in. */
+  function ghost(): HTMLElement | null {
+    let still: HTMLElement;
+    const shown = !current.hidden ? current : !photo.hidden ? photo : null;
+    if (shown) {
+      const w = shown === current ? current.videoWidth : photo.naturalWidth;
+      const h = shown === current ? current.videoHeight : photo.naturalHeight;
+      if (!w || !h) return null;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      // A cross-origin frame taints the canvas, which only forbids reading it back: it still shows.
+      canvas.getContext('2d')?.drawImage(shown, 0, 0, w, h);
+      still = canvas;
+    } else if (!status.hidden) still = status.cloneNode(true) as HTMLElement;
+    else return null;
+    const layer = document.createElement('div');
+    layer.className = 'reel-media';
+    layer.append(still);
+    return layer;
+  }
+
+  /** The current view leaves toward -dir while the media comes in from dir. */
+  function move(axis: 'X' | 'Y', dir: -1 | 1, duration: number): void {
+    finishAll();
+    const old = ghost();
+    if (old) {
+      media.after(old);
+      const leave = animate(old, [{ transform: 'none' }, { transform: `translate${axis}(${-dir * 100}%)` }], { duration, fill: 'forwards', fade: 'out' });
+      const drop = () => old.remove();
+      leave.addEventListener('finish', drop);
+      leave.addEventListener('cancel', drop);
+    }
+    animate(media, [{ transform: `translate${axis}(${dir * 100}%)` }, { transform: 'none' }], { duration });
+  }
+
   function setStatus(content: Node | string | null): void {
     status.replaceChildren(...(content === null ? [] : [content]));
     status.hidden = content === null;
@@ -195,6 +239,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
         dot.addEventListener('click', (e) => {
           e.stopPropagation();
           if (i === at) return;
+          move('X', i > at ? 1 : -1, SLIDE_MS);
           at = i;
           showSlide(shown);
           onSlides();
@@ -220,7 +265,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     } else new Image().src = first.url;
   }
 
-  el.replaceChildren(current, spare, photo, status, playMark, sound, progress, dots);
+  media.append(current, spare, photo, status);
+  el.replaceChildren(media, playMark, sound, progress, dots);
   blank();
   dots.hidden = true;
   renderMute();
@@ -228,7 +274,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   const canSlide = (delta: -1 | 1) => item !== null && at + delta >= 0 && at + delta < slides.length;
 
   return {
-    async show(shown, next) {
+    async show(shown, next, dir = 0) {
+      if (dir) move('Y', dir, ITEM_MS);
       const ticket = ++showing;
       item = null;
       blank();
@@ -247,6 +294,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     },
     slide(delta) {
       if (!item || !canSlide(delta)) return false;
+      move('X', delta, SLIDE_MS);
       at += delta;
       showSlide(item);
       onSlides();
