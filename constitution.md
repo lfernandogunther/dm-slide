@@ -1,11 +1,11 @@
-# reel-queue — Constitution
+# DM Slide — Constitution
 
 ## Vision
 A Chrome extension that turns what people send you to watch in Instagram DMs (reels, posts,
 photos, stories) into a player you walk through: watch, react ❤️, reply, next. Today every one
 means opening it, going back, scrolling to find the message again, reacting, scrolling to the
 bottom to reply, and doing that again. With
-reel-queue you do all of it on one screen, from the keyboard, in any conversation, 1:1 or group.
+DM Slide you do all of it on one screen, from the keyboard, in any conversation, 1:1 or group.
 
 ## Principles
 1. **Never leave the player.** Watching, reacting and replying all happen on one screen. A

@@ -134,7 +134,7 @@ const STYLE = `
 const LAYOUT = `
   <div class="player" tabindex="-1">
     <header class="p-head">
-      <div class="p-title"><strong>Reel Queue</strong> <span class="muted" data-pos></span></div>
+      <div class="p-title"><strong>DM Slide</strong> <span class="muted" data-pos></span></div>
       <div class="p-keys">
         <span><kbd>W</kbd><kbd>S</kbd> or <kbd>↑</kbd><kbd>↓</kbd> prev / next</span><span><kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> slides</span>
         <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>F</kbd> or <kbd>1</kbd>–<kbd>6</kbd> react</span><span><kbd>R</kbd> reply</span><span><kbd>U</kbd> not reacted</span><span><kbd>Esc</kbd> close</span>
@@ -189,12 +189,12 @@ export function startIndex(items: Item[]): number {
 const NOTICE = `
   <div class="player" tabindex="-1">
     <header class="p-head">
-      <div class="p-title"><strong>Reel Queue</strong></div>
+      <div class="p-title"><strong>DM Slide</strong></div>
       <button class="icon-btn" data-close title="Close (Esc)">✕</button>
     </header>
     <div class="p-notice">
       <strong>Can't read this conversation</strong>
-      <p>Instagram's page may have changed, so Reel Queue does nothing here.</p>
+      <p>Instagram's page may have changed, so DM Slide does nothing here.</p>
       <p class="muted" data-detail></p>
       <button data-done>Close</button>
     </div>
@@ -320,7 +320,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   /** Says an action did nothing: the thread can't be read at all, or that one action failed. */
   function showFailure(what: string, e: unknown): void {
     const reason = e instanceof Error ? e.message : String(e);
-    console.warn('[reel-queue]', reason);
+    console.warn('[dm-slide]', reason);
     const el = $('data-alert');
     el.textContent = e instanceof CantRead ? "Can't read this conversation. Nothing was done." : `Couldn't ${what}.`;
     el.title = reason;
@@ -339,7 +339,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     try {
       adapter.reveal(items[current].id);
     } catch (e) {
-      console.warn('[reel-queue]', e instanceof Error ? e.message : e);
+      console.warn('[dm-slide]', e instanceof Error ? e.message : e);
     }
   }
 

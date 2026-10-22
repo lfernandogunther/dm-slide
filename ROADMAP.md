@@ -1,4 +1,4 @@
-# reel-queue — Roadmap
+# DM Slide — Roadmap
 
 ## 01 · MVP — the player (done)
 A player over any Instagram DM conversation, 1:1 or group: every reel others sent, in the order

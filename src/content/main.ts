@@ -8,8 +8,8 @@ import { createButton, renderButton, type ButtonState } from './button';
 
 const adapter = createThreadAdapter();
 
-// Debug handle, reachable from the console's "Reel Queue" context: __rq.listItems(), __rq.health().
-(globalThis as unknown as { __rq: typeof adapter }).__rq = adapter;
+// Debug handle, reachable from the console's "DM Slide" context: __dms.listItems(), __dms.health().
+(globalThis as unknown as { __dms: typeof adapter }).__dms = adapter;
 
 // Instagram mutates the page constantly (typing, presence); a burst becomes one sync.
 const SYNC_DEBOUNCE_MS = 400;
@@ -29,7 +29,7 @@ function open(at?: string): boolean {
     items = adapter.listItems();
   } catch (e) {
     const reason = e instanceof Error ? e.message : String(e);
-    console.error('[reel-queue]', reason);
+    console.error('[dm-slide]', reason);
     // From a card the click goes on to Instagram; from the button, say why nothing opens.
     if (at === undefined) player = { instance: openNotice(reason, onClose), path: location.pathname };
     return false;
@@ -86,7 +86,7 @@ new MutationObserver(() => {
 }).observe(document.body, { childList: true, subtree: true });
 sync();
 
-console.log('[reel-queue] content script loaded', {
+console.log('[dm-slide] content script loaded', {
   path: location.pathname,
   inThread: THREAD_PATH.test(location.pathname),
 });

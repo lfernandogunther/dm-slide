@@ -1,4 +1,4 @@
-# reel-queue
+# DM Slide
 
 <!-- Personal project. This CLAUDE.md is committed to the repo (it's mine). -->
 <!-- Inherits the global ~/.claude rules (plan-first, conventional commits, no AI attribution, etc). -->

@@ -1,8 +1,8 @@
-// The "▶ Reel Queue" entry button in the thread header. It lives in its own shadow root so
+// The "▶ DM Slide" entry button in the thread header. It lives in its own shadow root so
 // Instagram's CSS never reaches it; color and font are inherited from the header.
 import type { Item } from '../instagram/adapter';
 
-export const BUTTON_HOST_ATTR = 'data-reel-queue';
+export const BUTTON_HOST_ATTR = 'data-dm-slide';
 
 const STYLE = `
   button {
@@ -31,12 +31,12 @@ export function renderButton(host: HTMLElement, state: ButtonState): void {
   let label: string;
   let title = '';
   if ('error' in state) {
-    label = "Reel Queue · can't read";
+    label = "DM Slide · can't read";
     title = state.error;
   } else if (state.items.length === 0) {
     label = 'Nothing to watch';
   } else {
-    label = `▶ Reel Queue · ${state.items.filter((r) => r.myReaction === null).length} to react`;
+    label = `▶ DM Slide · ${state.items.filter((r) => r.myReaction === null).length} to react`;
   }
   // Rewriting identical text would still be a DOM write; skip it.
   if (button.textContent !== label) button.textContent = label;

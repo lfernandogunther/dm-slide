@@ -1,8 +1,8 @@
 // The page's React and Relay data are only visible from the page's own (MAIN) world, while the
 // extension runs isolated. The two talk through synchronous DOM events carrying JSON strings.
 
-export const REQUEST_EVENT = 'reel-queue:request';
-export const RESPONSE_EVENT = 'reel-queue:response';
+export const REQUEST_EVENT = 'dm-slide:request';
+export const RESPONSE_EVENT = 'dm-slide:response';
 
 export interface RawReaction {
   emoji: string;

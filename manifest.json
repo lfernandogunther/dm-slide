@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Reel Queue",
+  "name": "DM Slide",
   "version": "0.0.1",
-  "description": "Watch, react to and reply to the reels sent in an Instagram DM conversation, one after another.",
+  "description": "Slide through the reels, posts, stories and photos sent in an Instagram DM conversation, reacting and replying on one screen.",
   "permissions": [
     "storage"
   ],

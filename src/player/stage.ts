@@ -104,7 +104,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   }
 
   function unavailable(shown: Item, reason: string): void {
-    console.info('[reel-queue] item unavailable:', reason);
+    console.info('[dm-slide] item unavailable:', reason);
     blank();
     current.removeAttribute('src');
     setSlides([]);

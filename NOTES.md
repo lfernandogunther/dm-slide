@@ -1,4 +1,4 @@
-# reel-queue — Notes
+# DM Slide — Notes
 
 Decisions and gotchas that outlive a single spec. The full record per task is in
 `specs/<NN>-*/learnings.md`; this file keeps what the next spec needs to know.
@@ -84,7 +84,7 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 ## Testing
 - The DevTools-controlled Chrome runs with extensions off: test there by reloading the tab and
   injecting `dist/page.js`, then `dist/content.js`. The real extension is tested in my own Chrome.
-- Content-script logs show under the console's "Reel Queue" context, not "top"; `__rq` is the
+- Content-script logs show under the console's "DM Slide" context, not "top"; `__dms` is the
   adapter there. `console.warn` from a content script lands on the extension's Errors page.
 - The button syncs on page mutations only, so an idle page can lag in a test.
 - An unreadable thread can be simulated by blocking the `scan` request at window capture.
