@@ -1,6 +1,6 @@
 # Session — S02
 
-## Status: built · 2026-10-21 · all 12 tasks committed, waiting on the manual test
+## Status: built · 2026-10-21 · all 13 tasks committed, waiting on the manual test
 
 ## Next
 I test on the real extension (reload `dist/` in chrome://extensions): react, unreact and replies on
@@ -15,13 +15,15 @@ loading in a busy thread, and a gallery photo I send myself. Then phase 04 close
   their embed. Worth a spike on another source if that matters in use.
 
 ## Tasks status
-12 of 12 done; see tasks.md.
+13 of 13 done; see tasks.md.
 
 ## What was done
 - 2026-10-21: scope settled in chat: every non-text media item, the strip marks (number + icon),
   the keys (W/S items, A/D slides), and the "Not reacted" filter (toggle + `U`, remembered).
 - 2026-10-21: tasks 01–12 built and committed unattended, read-only checks only on the real
   account (nothing reacted, sent or replied). Learnings sorted into NOTES.md.
+- 2026-10-22: task 13 added: the sender's texts within 5 min after an item show beside it, on
+  their side; checked read-only on a live thread (counts and layout match).
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
