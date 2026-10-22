@@ -7,7 +7,7 @@
   Option held down (Playwright: a held key through `run_code_unsafe`). → notes
 - 2026-10-22: the Playwright MCP browser was sitting on a real Instagram DM thread when the
   screenshot subagent started; it navigated away without touching it. A demo-only subagent should
-  open a new tab, never reuse what is on screen. → notes + CLAUDE.md (proposed)
+  open a new tab, never reuse what is on screen. → notes + CLAUDE.md
 - 2026-10-22: the Web Store counts data handled only on the device as "handled": personal
   communications, website content and the sender's name are declared, though none leaves the page. → notes
 - 2026-10-22: the store's docs name only gcloud impersonation and a JSON key for the service
@@ -22,7 +22,7 @@
 - 2026-10-22: Claude Code's auto mode refuses `git push` and `npm run release` here as a public
   surface; the owner runs them. → stays
 - 2026-10-22: a guide line naming a block ("the `storage` block") got pasted into the dashboard as
-  is. Give the text itself, ready to copy, never a pointer to it. → lessons (proposed)
+  is. Give the text itself, ready to copy, never a pointer to it. → lessons
 - 2026-10-22: the dashboard's privacy tab rejects nothing until submit; one popup then lists every
   missing privacy field at once. Screenshots upload one per drop: four files dragged once landed one. → notes
 
@@ -32,4 +32,4 @@
 
 ## Promoted
 - 2026-10-22: seven entries → NOTES.md (`## Demo`, `## Release and the store`); two stay here;
-  one proposed for CLAUDE.md, one for cn-lessons.
+  one to CLAUDE.md, one to cn-lessons (approved).

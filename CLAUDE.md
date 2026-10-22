@@ -44,6 +44,8 @@ read it before non-trivial calls.
   Instagram's inputs; act on one row at a time.
 - Diagnostics I run in my own Chrome are console snippets in the "top" context that return
   numbers and booleans only — never message text, names, usernames or ids.
+- A browser subagent opens a new tab and never reuses what is on screen: the shared browser may be
+  sitting on a real DM thread.
 - Instagram's internals and the testing gotchas live in NOTES.md.
 
 ## Conventions
