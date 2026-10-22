@@ -16,6 +16,15 @@
   service account. One service account per publisher.
 - 2026-10-22: `.gitignore`'s `node_modules/` (trailing slash) doesn't match a symlink, so a scratch
   clone with a linked `node_modules` reads as a dirty tree.
+- 2026-10-22: the first push of `.github/workflows/` was refused: the personal `gh` token had no
+  `workflow` scope. `gh auth refresh -s workflow` only took once the browser was signed in to the
+  right account (a private window); with another account signed in, the scope never arrived.
+- 2026-10-22: Claude Code's auto mode refuses `git push` and `npm run release` here as a public
+  surface; the owner runs them.
+- 2026-10-22: a guide line naming a block ("the `storage` block") got pasted into the dashboard as
+  is. Give the text itself, ready to copy, never a pointer to it.
+- 2026-10-22: the dashboard's privacy tab rejects nothing until submit; one popup then lists every
+  missing privacy field at once. Screenshots upload one per drop: four files dragged once landed one.
 
 ## Concepts learned
 - **Repository variables vs secrets**: `vars.*` are readable in a job's `if:`, `secrets.*` are not;
