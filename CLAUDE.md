@@ -3,8 +3,8 @@
 <!-- Personal project. This CLAUDE.md is committed to the repo (it's mine). -->
 <!-- Inherits the global ~/.claude rules (plan-first, conventional commits, no AI attribution, etc). -->
 
-Chrome extension that plays the reels sent in an Instagram DM conversation one after another,
-with react ❤️ and reply on the same screen. Principles live in [constitution.md](constitution.md);
+Chrome extension that plays what was sent to watch in an Instagram DM conversation (reels,
+posts, photos, stories) one after another, with react ❤️ and reply on the same screen. Principles live in [constitution.md](constitution.md);
 read it before non-trivial calls.
 
 ## Stack & layout
