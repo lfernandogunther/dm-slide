@@ -22,8 +22,10 @@ const KIND_ICON: Record<ItemKind, string> = { reel: '', post: '🖼', carousel: 
 export interface Strip {
   /** `follow` scrolls to the current tile; otherwise the visible tiles stay put while older ones prepend. */
   render(items: Item[], current: number, edge: StripEdge, follow: Follow, shown: (i: number) => boolean): void;
-  /** The item's tile when it is shown and wholly in view, else null. */
-  visibleTile(id: string): HTMLElement | null;
+  /** The item's tile and where it rests, when it is shown and wholly in view, else null. */
+  visibleTile(id: string): { tile: HTMLElement; rect: DOMRect } | null;
+  /** Rings the item's tile red, or clears it; returns the tile when it is shown. */
+  flag(id: string, on: boolean): HTMLElement | null;
 }
 
 function mark(className: string, text: string, title?: string): HTMLSpanElement {
@@ -109,9 +111,18 @@ export function createStrip(box: HTMLElement): Strip {
     visibleTile(id) {
       const tile = tiles.get(id);
       if (!tile?.isConnected || tile.hidden) return null;
-      const t = tile.getBoundingClientRect();
+      // Mid-glide the list is still shifted: the tile counts where it comes to rest.
+      const glide = getComputedStyle(strip).transform;
+      const shift = glide === 'none' ? 0 : new DOMMatrixReadOnly(glide).m42;
+      const at = tile.getBoundingClientRect();
+      const rect = new DOMRect(at.x, at.y - shift, at.width, at.height);
       const b = box.getBoundingClientRect();
-      return t.top >= b.top && t.bottom <= b.bottom ? tile : null;
+      return rect.top >= b.top && rect.bottom <= b.bottom ? { tile, rect } : null;
+    },
+    flag(id, on) {
+      const tile = tiles.get(id);
+      tile?.classList.toggle('bad', on);
+      return tile?.isConnected && !tile.hidden ? tile : null;
     },
   };
 }

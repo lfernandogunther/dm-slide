@@ -92,8 +92,11 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   reading never scrolls. Otherwise the player fades.
 - `close()` hands the chat back at once (`onClose`, `inert`, no pointer events) and only then
   finishes leaving, so the header button works during the shrink.
-- React → next counts its 850 ms from Instagram's confirmation, not from the key, so the motion never
-  shows a reaction that didn't land. Any move, and `I`, cancel the pending move.
+- React → next moves at once and shows the reaction before Instagram confirms it. Reactions wait in
+  a queue told to Instagram one at a time, never while a reply drives the composer; the chat stays
+  on the row being reacted to and follows the player once the queue empties. A failed one is tried
+  once more (setReaction is idempotent), then undone from what Instagram shows: red ring on its
+  control, or on its tile plus a pill once the player moved on. `I` waits for the queue to empty.
 
 ## Failure
 - `CantRead` (the scan failed, so nothing was attempted) vs any other error (one action failed).

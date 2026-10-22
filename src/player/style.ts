@@ -54,6 +54,7 @@ export const STYLE = `
   .p-strip li.reacted::after { content: attr(data-reaction); position: absolute; right: 3px; bottom: 2px; font-size: 13px; line-height: 1; }
   .p-strip li.replied::before { content: "💬"; position: absolute; right: 3px; bottom: 2px; font-size: 12px; line-height: 1; }
   .p-strip li.replied.reacted::before { right: 19px; }
+  .p-strip li.bad { border-color: #ff6b6b; opacity: 1; }
   /* A reaction bursts over the video, then a copy flies to its tile; both rest invisible. */
   .p-burst {
     position: absolute; left: 50%; top: 50%; z-index: 3; font-size: 120px; line-height: 1; pointer-events: none;
@@ -144,7 +145,6 @@ export const STYLE = `
   }
   .emo:hover { background: #1c1c1e; }
   .emo.mine { background: #262626; box-shadow: 0 0 0 2px #fff inset; }
-  .reacting .emo { opacity: 0.4; cursor: progress; }
   .emo.bad, .emo.mine.bad { box-shadow: 0 0 0 2px #ff6b6b inset; }
   .p-fail { font-size: 11px; color: #ff6b6b; text-align: center; }
   .bub .st { font-size: 10px; margin-left: 6px; color: rgba(255, 255, 255, 0.7); }

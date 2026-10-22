@@ -53,8 +53,8 @@ const FLY_DELAY_MS = 350;
 const FLY_MS = 450;
 const BADGE_POP = [{ transform: 'scale(0)' }, { transform: 'scale(1.4)', offset: 0.6 }, { transform: 'scale(1)' }];
 const BADGE_MS = 260;
-// Long enough to see the reaction land on its tile before the next item comes in.
-const REACT_NEXT_MS = 850;
+// A reaction Instagram didn't show is tried once more before it shows as failed.
+const REACT_TRIES = 2;
 // Opening grows the video out of its message and closing shrinks it back in; the rest of the player fades.
 const GROW_MS = 440;
 const SHRINK_MS = 380;
@@ -138,6 +138,13 @@ interface Pending {
   text: string;
   quoted: boolean;
   state: 'sending' | 'sent' | 'failed';
+}
+
+interface ReactJob {
+  item: Item;
+  target: string | null; // null removes mine
+  was: string | null; // what the item showed before the press, if Instagram can't be read after a failure
+  slot: number; // the quick reaction pressed
 }
 
 /** A key as the states write it: bold, in the key font. */
@@ -254,8 +261,12 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let awayTimer: ReturnType<typeof setTimeout> | undefined;
   const path = location.pathname;
   const back = $('data-back');
+  // Reactions wait here and are told to Instagram one at a time, while the player moves on.
+  const reactions: ReactJob[] = [];
   let reacting = false;
   let sending = false;
+  // Only around Instagram's composer, so a reaction never drives the picker at the same time.
+  let replying = false;
   // The reply being sent, or the last one sent or not, shown as a bubble on its item.
   let pending: Pending | null = null;
   let nextAfterReact = true;
@@ -288,7 +299,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     button.dataset.kt = i === 0 ? 'F · 1' : String(i + 1);
     button.dataset.ktAt = 't';
     button.title = i === 0 ? `React ${emoji} (F or 1)` : `React ${emoji} (${i + 1})`;
-    button.addEventListener('click', () => void react(i));
+    button.addEventListener('click', () => react(i));
     return button;
   });
   $('data-quick').append(...quick);
@@ -321,7 +332,6 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     $('data-sender').textContent = item.senderName ?? '';
     $('data-sent').textContent = SENT_AT.format(item.timestampMs);
     reply.placeholder = item.senderName ? `Reply to ${item.senderName}…` : 'Reply…';
-    player.classList.toggle('reacting', reacting);
     renderTalk(item);
     strip.render(items, current, edge, follow, shown);
   }
@@ -412,7 +422,6 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   function go(index: number): void {
     if (index < 0 || index >= items.length) return;
-    clearTimeout(reactNextTimer);
     // A click doesn't pass through the keys; the strip must be measured settled, not mid-glide.
     finishAll();
     const dir = Math.sign(index - current) as -1 | 0 | 1;
@@ -420,7 +429,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     renderChrome(dir ? 'glide' : true);
     if (dir) for (const el of [$('data-who'), $('data-quick')]) animate(el, PANEL_RISE, { duration: PANEL_MS });
     stage.show(items[current], items[current + 1], dir);
-    revealCurrent();
+    // Scrolling now would pull the row from under a reaction under way; the chat follows once they're done.
+    if (!reacting) revealCurrent();
     if (shownAbove() < PREFETCH_ITEMS) void loadOlder();
   }
 
@@ -474,7 +484,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (edge === 'loading') edge = null;
     wakeWaiters();
     // Loading scrolled the thread to its top: bring it back to the item on screen, open or closed.
-    revealCurrent();
+    if (!reacting) revealCurrent();
     if (!closed) renderChrome(false);
   }
 
@@ -525,55 +535,98 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     player.focus();
   }
 
-  /** Reacts with the quick reaction in `slot`, or removes it when it is already mine. One at a time. */
-  async function react(slot: number): Promise<void> {
+  /** Shows the quick reaction in `slot` at once, or removes it when it is already mine, and moves on; Instagram hears in the background. */
+  function react(slot: number): void {
     const emoji = QUICK_REACTIONS[slot];
-    if (!emoji || reacting) return;
+    if (!emoji) return;
     const item = items[current];
     const removing = item.myReaction === emoji;
     clearFailure();
-    clearTimeout(reactNextTimer);
+    strip.flag(item.id, false);
+    const job: ReactJob = { item, target: removing ? null : emoji, was: item.myReaction, slot };
+    item.myReaction = job.target;
+    // A press on an item still waiting its turn replaces that one.
+    const waiting = reactions.findIndex((j) => j.item === item);
+    if (waiting >= 0) reactions[waiting] = { ...job, was: reactions[waiting].was };
+    else reactions.push(job);
+    void tellReactions();
+    if (removing || !nextAfterReact || neighbour(current, 1) < 0) renderChrome(false);
+    else next();
+    // After the move, which settles every running motion.
     if (!reduceMotion()) animate(quick[slot], POP, { duration: POP_MS, easing: 'ease-out' });
-    reacting = true;
-    renderChrome(false);
-    let done = false;
-    try {
-      await (removing ? adapter.unreact(item.id) : adapter.react(item.id, emoji));
-      item.myReaction = removing ? null : emoji;
-      done = true;
-    } catch (e) {
-      const key = keyMark(slot === 0 ? 'F' : String(slot + 1));
-      showFailure(quick[slot], [`Your ${emoji} ${removing ? 'is still there' : "didn't land"} · `, key, ' to try again'], e);
-    }
-    reacting = false;
-    // Instagram's picker took the focus (onto its ❤️); keys never reach it, but the player wants it back.
-    player.focus();
-    renderChrome(false);
-    if (!done || removing || closed) return;
-    // The motion waits for Instagram's answer, so it never shows a reaction that didn't land.
-    if (items[current] === item) celebrate(item, emoji);
-    if (!nextAfterReact) return;
-    // Only if the player is still on the item the reaction was for.
-    reactNextTimer = window.setTimeout(() => {
-      if (!closed && !away && items[current] === item && neighbour(current, 1) >= 0) next();
-    }, REACT_NEXT_MS);
+    if (!removing) celebrate(item, emoji);
   }
 
-  let reactNextTimer = 0;
+  /** Tells Instagram each waiting reaction in turn, never during a reply; a failed one is tried again, then undone. */
+  async function tellReactions(): Promise<void> {
+    if (reacting) return;
+    reacting = true;
+    while (reactions.length > 0) {
+      const job = reactions.shift()!;
+      while (replying) await sleep(BUSY_POLL_MS);
+      // Instagram's picker takes the focus (onto its ❤️); whatever had it gets it back.
+      const focused = root.activeElement instanceof HTMLElement ? root.activeElement : player;
+      let error: unknown = null;
+      for (let tries = 0; tries < REACT_TRIES; tries++) {
+        try {
+          await (job.target ? adapter.react(job.item.id, job.target) : adapter.unreact(job.item.id));
+          error = null;
+          break;
+        } catch (e) {
+          error = e;
+        }
+      }
+      if (!closed && !away) focused.focus();
+      if (error) reactionFailed(job, error);
+    }
+    reacting = false;
+    if (!closed) revealCurrent();
+  }
+
+  /** Puts back what Instagram shows for the item, and says the reaction failed on its control, or on its tile once the player moved on. */
+  function reactionFailed(job: ReactJob, e: unknown): void {
+    const { item, slot } = job;
+    // A newer press on the item is still waiting; that one decides what it shows.
+    if (!reactions.some((j) => j.item === item)) item.myReaction = reactionShown(item) ?? job.was;
+    const emoji = QUICK_REACTIONS[slot];
+    const verb = job.target ? "didn't land" : 'is still there';
+    if (!closed && items[current] === item) {
+      showFailure(quick[slot], [`Your ${emoji} ${verb} · `, keyMark(slot === 0 ? 'F' : String(slot + 1)), ' to try again'], e);
+    } else {
+      console.warn('[dm-slide]', e instanceof Error ? e.message : e);
+      if (closed) return;
+      const tile = strip.flag(item.id, true);
+      if (tile && !reduceMotion()) animate(tile, SHAKE, { duration: SHAKE_MS, easing: 'ease-in-out' });
+      window.setTimeout(() => strip.flag(item.id, false), FAIL_MS);
+      pill.show(e instanceof CantRead ? CANT_READ : `Your ${emoji} on #${items.length - items.indexOf(item)} ${verb}`, FAIL_MS, true);
+    }
+    renderChrome(false);
+  }
+
+  /** My reaction as Instagram shows it now, or undefined when the thread can't be read. */
+  function reactionShown(item: Item): string | null | undefined {
+    try {
+      const found = adapter.listItems().find((r) => r.id === item.id);
+      return found ? found.myReaction : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   /** Bursts the emoji over the video and flies a copy to the item's tile, whose badge then pops. */
   function celebrate(item: Item, emoji: string): void {
     const burst = $('data-burst');
     burst.textContent = emoji;
     animate(burst, BURST, { duration: BURST_MS, easing: 'ease-out', fade: 'out' });
-    const tile = strip.visibleTile(item.id);
+    const target = strip.visibleTile(item.id);
     // A tile out of view or filtered out gets no flyer: the strip never scrolls for one.
-    if (!tile) return;
+    if (!target) return;
     const reduced = reduceMotion();
-    animate(tile, BADGE_POP, { pseudoElement: '::after', duration: BADGE_MS, delay: reduced ? 0 : FLY_DELAY_MS + FLY_MS, fill: 'backwards' });
+    animate(target.tile, BADGE_POP, { pseudoElement: '::after', duration: BADGE_MS, delay: reduced ? 0 : FLY_DELAY_MS + FLY_MS, fill: 'backwards' });
     if (reduced) return;
     const box = player.getBoundingClientRect();
     const from = $('data-reel').getBoundingClientRect();
-    const to = tile.getBoundingClientRect();
+    const to = target.rect;
     const flyer = document.createElement('span');
     flyer.className = 'p-flyer';
     flyer.textContent = emoji;
@@ -617,6 +670,9 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     renderSend();
     renderChrome(false);
     try {
+      // A reaction under way is driving Instagram's picker; the composer waits for the queue to empty.
+      while (reacting) await sleep(BUSY_POLL_MS);
+      replying = true;
       await adapter.reply(item.id, text, quoted);
       if (quoted) item.myReplies.push(text);
       sent.state = 'sent';
@@ -632,6 +688,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       // Typing something else meanwhile wins over the text that failed.
       if (!reply.value.trim()) reply.value = text;
     }
+    replying = false;
     sending = false;
     renderSend();
     renderChrome(false);
@@ -653,7 +710,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     togglePause: () => stage.togglePause(),
     toggleMute: () => stage.toggleMute(),
     toggleFilter,
-    react: (slot) => void react(slot),
+    react,
     focusReply: () => reply.focus(),
     blurReply: () => player.focus(),
     holdTips: (held) => {
@@ -674,7 +731,6 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     }
     // The view could cover a picker or composer the extension is driving, or a thread a load is scrolling.
     if (closed || reacting || sending || loading) return;
-    clearTimeout(reactNextTimer);
     finishAll();
     stage.pause();
     setAway(true);
@@ -783,7 +839,6 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   function close(): void {
     if (closed) return;
     closed = true;
-    clearTimeout(reactNextTimer);
     clearTimeout(awayTimer);
     unbindKeys();
     finishAll();

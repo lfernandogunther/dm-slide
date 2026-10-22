@@ -42,7 +42,7 @@ colour, F).
    - Items slide up and down in 300ms, and a carousel's slides slide sideways in 260ms.
    - The panel's sender and reactions rise 8px over 200ms, and the strip follows in 280ms.
    - A reaction pops its button, bursts a big emoji over the video, then flies it to the tile,
-     where the badge pops. React → next starts 850ms after the key.
+     where the badge pops. React → next moves at once; Instagram hears in the background.
    - Close (Esc) shrinks the video into its message in the chat. Open grows the video from the
      message, and the rest fades in 200ms later. If the message is off screen, both fall back to a
      fade-and-rise. The chat is never scrolled for an animation.
@@ -99,7 +99,7 @@ Checked by hand on the real Instagram, per CLAUDE.md "Testing on the real Instag
       strip follow. Holding S moves at the key-repeat rate, and nothing plays catch-up after
       release.
 - [ ] Reacting with `6` (👍) shows pop, burst, flyer and badge. With "Next after reacting" on, the
-      next item comes in 850ms after the key.
+      next item comes in at once.
 - [ ] Esc shrinks the video into its message when the message is on screen, and fades otherwise.
       Opening from a card grows the video from that card.
 - [ ] A slow item shows its blurred thumbnail and a bar, not a black box or "Loading…".
@@ -123,8 +123,9 @@ the order of the drawings.
   number, the same as a tile with no preview.
 - **The react flyer's target tile is off-screen or hidden by the filter.** The flyer fades where
   it is; the strip is never scrolled for it.
-- **A key during react → next's 850ms.** The pending move is dropped if the key moved somewhere
-  else first, the same rule `react()` already applies (`items[current] === item`).
+- **A reaction that fails after the player moved on.** Reactions wait in a queue told to
+  Instagram one at a time, never during a reply. A failed one is tried once more, then undone:
+  its tile rings red and shakes, and a pill names it by number.
 - **Open / close while loading older pages.** The rect is read once at the start of the motion. A
   row moving underneath only makes the motion land slightly off, never act on the wrong message.
 - **A non-quoted reply.** It isn't tied to the item in Instagram's data, so its bubble shows until
@@ -164,7 +165,7 @@ the order of the drawings.
 | 3 | Option / `?` show and hide the key tips | harness ✓ · hand check pending |
 | 4 | Volume slider: hover, wide hit target, level kept, `M` | harness ✓ · hand check pending |
 | 5 | W/S and A/D slides; holding S has no catch-up | harness ✓ · hand check pending |
-| 6 | React `6`: pop, burst, flyer, badge; next after 850 ms | harness ✓ · hand check pending |
+| 6 | React `6`: pop, burst, flyer, badge; next at once, reaction queued | harness ✓ (850 ms version) · queue: hand check pending |
 | 7 | Esc shrinks into the message, open grows from the card | harness ✓ · hand check pending |
 | 8 | Slow item: blurred thumbnail and bar | harness ✓ · hand check pending |
 | 9 | Reduce motion: every motion a crossfade | harness ✓ (emulated) · hand check pending |
