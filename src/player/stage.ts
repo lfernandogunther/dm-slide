@@ -42,6 +42,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   mute.className = 'reel-mute';
   // Not focusable: Space must keep pausing instead of pressing this button.
   mute.tabIndex = -1;
+  mute.dataset.kt = 'M';
   const photo = document.createElement('img');
   photo.alt = '';
   const dots = document.createElement('div');

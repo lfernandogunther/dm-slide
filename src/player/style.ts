@@ -13,22 +13,19 @@ export const STYLE = `
     --side-w: 320px;
   }
   .muted { color: #a8a8a8; }
-  kbd {
-    font: 11px ui-monospace, monospace; background: #262626; border: 1px solid #3a3a3a;
-    border-bottom-width: 2px; border-radius: 4px; padding: 0 5px;
-  }
 
   .p-head { display: flex; align-items: center; gap: 12px; height: 48px; padding: 9px 16px; flex-shrink: 0; }
   .p-title { font-weight: 600; }
   .p-pos { font: 600 12px ui-monospace, monospace; color: #a8a8a8; white-space: nowrap; }
-  .p-keys { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: #a8a8a8; }
+  .p-hold { font-size: 11px; color: #6b6b6b; white-space: nowrap; }
   .sp { flex: 1; }
-  .pill { background: transparent; border: 1px solid #3a3a3a; border-radius: 999px; padding: 3px 11px; font-size: 12px; white-space: nowrap; }
+  .pill { position: relative; background: transparent; border: 1px solid #3a3a3a; border-radius: 999px; padding: 3px 11px; font-size: 12px; white-space: nowrap; }
   .pill[aria-pressed="true"] { background: #f5f5f5; border-color: #f5f5f5; color: #000; }
   .circ {
-    width: 30px; height: 30px; border-radius: 50%; border: 0; padding: 0; flex-shrink: 0;
+    position: relative; width: 30px; height: 30px; border-radius: 50%; border: 0; padding: 0; flex-shrink: 0;
     display: grid; place-items: center; background: #1c1c1e; font-size: 14px;
   }
+  .circ[aria-pressed="true"] { background: #f5f5f5; color: #000; }
   .p-alert {
     position: absolute; z-index: 6; top: 48px; left: 0; right: 0;
     padding: 8px 16px; background: #3a1d1d; color: #ffb4b4; text-align: center;
@@ -65,7 +62,7 @@ export const STYLE = `
   .p-theatre { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
   .p-video { position: relative; height: var(--video-h); aspect-ratio: 9 / 16; flex-shrink: 0; }
   .nav {
-    position: absolute; z-index: 2; top: 50%; transform: translateY(-50%); width: 32px; height: 32px;
+    position: absolute; top: calc(50% - 16px); width: 32px; height: 32px;
     border-radius: 50%; border: 0; padding: 0; background: #1c1c1e; font-size: 18px; display: grid; place-items: center;
   }
   .nav.prev { left: -46px; }
@@ -120,13 +117,9 @@ export const STYLE = `
   }
   .emo:hover { background: #1c1c1e; }
   .emo.mine { background: #262626; box-shadow: 0 0 0 2px #fff inset; }
-  .emo::after {
-    content: attr(data-key); position: absolute; right: -4px; bottom: -4px; line-height: 1.3;
-    font: 10px ui-monospace, monospace; color: #a8a8a8; background: #262626; border: 1px solid #3a3a3a; border-radius: 4px; padding: 0 4px;
-  }
   .reacting .emo { opacity: 0.4; cursor: progress; }
   .p-box {
-    margin: 0; background: #000; border: 1px solid #3a3a3a; border-radius: 12px; padding: 8px 10px;
+    position: relative; margin: 0; background: #000; border: 1px solid #3a3a3a; border-radius: 12px; padding: 8px 10px;
     display: flex; flex-direction: column; gap: 10px;
   }
   .p-box:focus-within { border-color: #0095f6; }
@@ -142,10 +135,30 @@ export const STYLE = `
   .p-setting { display: flex; gap: 6px; align-items: center; font-size: 11px; color: #a8a8a8; cursor: pointer; }
   .p-setting input { margin: 0; }
 
+  /* Key tips: each control's key, shown while Option (Alt) is held or ? is on. */
+  .kt, [data-kt]::after {
+    position: absolute; z-index: 5; left: 50%; top: 50%; pointer-events: none; white-space: nowrap;
+    font: 700 12px/1 ui-monospace, monospace; color: #111; background: #ffd60a; border-radius: 5px; padding: 4px 6px;
+    box-shadow: 0 2px 0 #b38f00, 0 4px 14px rgba(0, 0, 0, 0.6);
+    opacity: 0; transform: translate(-50%, -50%) scale(0.7); transition: opacity 0.12s, transform 0.12s;
+  }
+  [data-kt]::after { content: attr(data-kt); }
+  [data-kt-at="t"]::after { top: 0; }
+  [data-kt-at="b"]::after { top: 100%; }
+  [data-kt-at="tl"]::after { left: 0; top: 0; }
+  [data-kt-at="br"]::after { left: 100%; top: 100%; }
+  .kt.w { left: 47px; top: 16px; }
+  .kt.s { left: 47px; top: auto; bottom: 22px; }
+  .tips .kt, .tips [data-kt]::after { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  /* A reaction's tip sits above the emoji, not on it. */
+  .tips .emo::after { transform: translate(-50%, -95%) scale(1); }
+  .p-dim { position: absolute; inset: 0; z-index: 4; background: rgba(0, 0, 0, 0.35); opacity: 0; transition: opacity 0.12s; pointer-events: none; }
+  .tips .p-dim { opacity: 1; }
+
   /* Narrow (half a Full HD): the arrows go onto the video and the panel slims. */
   @media (max-width: 1199px) {
     .player { --video-h: max(240px, min(calc(100vh - 64px), calc((100vw - 406px) * 16 / 9))); --side-w: 280px; }
-    .nav { width: 30px; height: 30px; font-size: 16px; background: rgba(0, 0, 0, 0.45); color: #fff; }
+    .nav { top: calc(50% - 15px); width: 30px; height: 30px; font-size: 16px; background: rgba(0, 0, 0, 0.45); color: #fff; }
     .nav.prev { left: 8px; }
     .nav.next { right: 8px; }
   }

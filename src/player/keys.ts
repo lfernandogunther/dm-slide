@@ -11,6 +11,8 @@ export interface KeyActions {
   react(slot: number): void; // 0 is ❤️, then the rest of the quick set
   focusReply(): void;
   blurReply(): void;
+  holdTips(held: boolean): void; // Option (Alt) shows the key tips while held
+  toggleTips(): void;
 }
 
 const KEY_EVENTS = ['keydown', 'keyup', 'keypress'] as const;
@@ -20,6 +22,13 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
   const onKey = (e: KeyboardEvent) => {
     // Keys the extension itself dispatches (Enter in Instagram's composer, to send) go through.
     if (!e.isTrusted) return;
+    if (e.key === 'Alt') {
+      // Option alone types nothing and has no browser shortcut, so the player can own it.
+      e.stopPropagation();
+      e.preventDefault();
+      if (e.type !== 'keypress') actions.holdTips(e.type === 'keydown');
+      return;
+    }
     // Browser shortcuts (⌘R, ⌘D…) stay the browser's.
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     e.stopPropagation();
@@ -47,12 +56,19 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
       m: actions.toggleMute,
       u: actions.toggleFilter,
       r: actions.focusReply,
+      '?': actions.toggleTips,
       escape: actions.close,
     }[e.key.toLowerCase()];
     if (!action) return;
     e.preventDefault();
     action();
   };
+  // A release can land in another window (⌥⇥), and its keyup then never comes here.
+  const onBlur = () => actions.holdTips(false);
   KEY_EVENTS.forEach((type) => window.addEventListener(type, onKey, true));
-  return () => KEY_EVENTS.forEach((type) => window.removeEventListener(type, onKey, true));
+  window.addEventListener('blur', onBlur);
+  return () => {
+    KEY_EVENTS.forEach((type) => window.removeEventListener(type, onKey, true));
+    window.removeEventListener('blur', onBlur);
+  };
 }

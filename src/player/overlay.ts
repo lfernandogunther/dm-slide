@@ -26,22 +26,20 @@ const LAYOUT = `
     <header class="p-head">
       <span class="p-title">DM Slide</span>
       <span class="p-pos" data-pos></span>
-      <button class="pill" data-filter tabindex="-1" aria-pressed="false" title="Only the ones without my reaction (U)">Not reacted</button>
+      <button class="pill" data-filter tabindex="-1" aria-pressed="false" title="Only the ones without my reaction (U)" data-kt="U" data-kt-at="br">Not reacted</button>
       <span class="sp"></span>
-      <div class="p-keys">
-        <span><kbd>W</kbd><kbd>S</kbd> or <kbd>↑</kbd><kbd>↓</kbd> prev / next</span><span><kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> slides</span>
-        <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>F</kbd> or <kbd>1</kbd>–<kbd>6</kbd> react</span><span><kbd>R</kbd> reply</span><span><kbd>U</kbd> not reacted</span><span><kbd>Esc</kbd> close</span>
-      </div>
-      <button class="circ" data-close tabindex="-1" title="Close (Esc)">✕</button>
+      <span class="p-hold" data-hold></span>
+      <button class="circ" data-tips tabindex="-1" aria-pressed="false" title="Key tips (?)">?</button>
+      <button class="circ" data-close tabindex="-1" title="Close (Esc)" data-kt="Esc" data-kt-at="b">✕</button>
     </header>
     <div class="p-alert" data-alert role="alert" hidden></div>
     <div class="p-body">
       <ol class="p-strip" data-strip></ol>
       <div class="p-theatre">
         <div class="p-video">
-          <div class="reel" data-reel></div>
-          <button class="nav prev" data-prev tabindex="-1" title="Previous (A / ←)">‹</button>
-          <button class="nav next" data-next tabindex="-1" title="Next (D / →)">›</button>
+          <div class="reel" data-reel data-kt="Space"></div>
+          <button class="nav prev" data-prev tabindex="-1" title="Previous (A / ←)" data-kt="A">‹</button>
+          <button class="nav next" data-next tabindex="-1" title="Next (D / →)" data-kt="D">›</button>
           <div class="p-empty" data-empty hidden><span data-empty-text></span><button type="button" data-show-all tabindex="-1">Show all (U)</button></div>
         </div>
       </div>
@@ -55,7 +53,7 @@ const LAYOUT = `
             <ul class="p-th" data-replies></ul>
           </div>
           <div class="p-emos" data-quick></div>
-          <form class="p-box" data-reply-form>
+          <form class="p-box" data-reply-form data-kt="R" data-kt-at="tl">
             <input type="text" data-reply autocomplete="off" placeholder="Reply…">
             <div class="p-row">
               <label class="p-quote" title="Quote the item in the reply"><input type="checkbox" data-quote tabindex="-1" checked>❝ Quote</label>
@@ -66,7 +64,10 @@ const LAYOUT = `
           <label class="p-setting"><input type="checkbox" data-next-after tabindex="-1" checked>Next after reacting</label>
         </div>
       </aside>
+      <span class="kt w">W ↑</span>
+      <span class="kt s">S ↓</span>
     </div>
+    <div class="p-dim"></div>
   </div>
 `;
 
@@ -149,6 +150,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let sending = false;
   let nextAfterReact = true;
   let onlyNotReacted = false;
+  let tipsHeld = false;
+  let tipsPinned = false;
   const nextAfter = $<HTMLInputElement>('data-next-after');
   const quote = $<HTMLInputElement>('data-quote');
   const send = $<HTMLButtonElement>('data-send');
@@ -166,7 +169,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     button.className = 'emo';
     button.tabIndex = -1;
     button.textContent = emoji;
-    button.dataset.key = String(i + 1);
+    button.dataset.kt = i === 0 ? 'F · 1' : String(i + 1);
+    button.dataset.ktAt = 't';
     button.title = i === 0 ? `React ${emoji} (F or 1)` : `React ${emoji} (${i + 1})`;
     button.addEventListener('click', () => void react(i));
     return button;
@@ -415,6 +419,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     player.focus();
   }
 
+  const tipsButton = $('data-tips');
+  $('data-hold').textContent = `hold ${/Mac/.test(navigator.platform) ? '⌥' : 'Alt'} for keys`;
+  function renderTips(): void {
+    player.classList.toggle('tips', tipsHeld || tipsPinned);
+    tipsButton.setAttribute('aria-pressed', String(tipsPinned));
+  }
+
   const unbindKeys = bindKeys((e) => e.composedPath()[0] === reply, {
     item,
     step,
@@ -425,7 +436,17 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     react: (slot) => void react(slot),
     focusReply: () => reply.focus(),
     blurReply: () => player.focus(),
+    holdTips: (held) => {
+      tipsHeld = held;
+      renderTips();
+    },
+    toggleTips,
   });
+
+  function toggleTips(): void {
+    tipsPinned = !tipsPinned;
+    renderTips();
+  }
 
   function close(): void {
     closed = true;
@@ -439,6 +460,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   $('data-prev').addEventListener('click', () => step(-1));
   $('data-next').addEventListener('click', () => step(1));
   $('data-filter').addEventListener('click', toggleFilter);
+  tipsButton.addEventListener('click', toggleTips);
   $('data-show-all').addEventListener('click', toggleFilter);
   $('data-strip').addEventListener('click', (e) => {
     const tile = (e.target as Element).closest<HTMLElement>('li[data-i]');
