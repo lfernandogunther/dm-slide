@@ -26,14 +26,14 @@
 - 2026-10-22 — `?` toggles the key card and the key tips together; dismissing the card clears both,
   or the tips stayed pinned (caught in the harness). -> stays
 - 2026-10-22 — Playwright's browser reports `prefers-reduced-motion: reduce` unless media is
-  emulated as `no-preference`, so every motion check first looked like a missing animation. -> lessons (proposed)
+  emulated as `no-preference`, so every motion check first looked like a missing animation. -> lessons
 - 2026-10-22 — The Playwright MCP blocks `file:` URLs: the harness is served on 127.0.0.1 instead.
   Headless Chrome also has no running AudioContext without a gesture. -> stays
 - 2026-10-22 — The fake adapter's shallow item copy shared `myReplies` with the player's items, so a
   reply looked recorded twice; deep-copy what the player mutates. -> stays
 - 2026-10-22 — A tick in `tasks.md` whose working copy also holds uncommitted spec edits is committed
   through the index alone (`git hash-object` of HEAD's file with the tick, `git update-index
-  --cacheinfo`), so the edits wait for their own commit. -> lessons (proposed)
+  --cacheinfo`), so the edits wait for their own commit. -> stays (a technique, not a lesson that cost)
 - 2026-10-22 — Instagram view (`I`) was written on faith: the layer is taken to be a media dialog or
   any non-thread path, closed with a synthetic Esc. Unconfirmed live; flags 3 and 5 of the
   self-review wait on that hand check (tasks 16, 17). -> NOTES.md (already there)
@@ -57,5 +57,5 @@
 - FLIP, the Web Animations API and `prefers-reduced-motion`, as in spec.md's glossary.
 
 ## Promoted
-- 7 entries -> NOTES.md (Reading Instagram, Keys, Playback, Failure, Player motion).
-- 2 entries proposed for lessons, waiting on the owner.
+- 11 entries -> NOTES.md (Reading Instagram, Keys, Playback, Failure, Player motion, Instagram view).
+- 1 entry -> lessons (Tooling traps); the other proposal stays here.

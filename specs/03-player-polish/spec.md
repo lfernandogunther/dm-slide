@@ -89,32 +89,32 @@ colour, F).
 
 ## Acceptance criteria
 Checked by hand on the real Instagram, per CLAUDE.md "Testing on the real Instagram".
-- [ ] Strip tiles show the item's thumbnail; a tile without one shows its number. The marks for
+- [x] Strip tiles show the item's thumbnail; a tile without one shows its number. The marks for
       kind, note, reaction and reply stay.
-- [ ] Layout matches `look-layout-c-v2.html` at 1280×720 and at half a Full HD (960 wide: arrows
+- [x] Layout matches `look-layout-c-v2.html` at 1280×720 and at half a Full HD (960 wide: arrows
       on the video, 280px panel). The panel never shows an empty section.
-- [ ] No key legend in the header. Holding Option, or pressing `?`, shows the key next to every
+- [x] No key legend in the header. Holding Option, or pressing `?`, shows the key next to every
       control. Releasing Option, or pressing `?` again, hides them.
-- [ ] The volume slider opens on hover and is easy to grab, with a hit target wider than the line
+- [x] The volume slider opens on hover and is easy to grab, with a hit target wider than the line
       drawn. The level carries across items and over a reload. `M` still mutes.
-- [ ] W/S slide items vertically, and A/D slide a carousel's slides sideways. The panel and the
+- [x] W/S slide items vertically, and A/D slide a carousel's slides sideways. The panel and the
       strip follow. Holding S moves at the key-repeat rate, and nothing plays catch-up after
       release.
-- [ ] Reacting with `6` (👍) shows pop, burst, flyer and badge. With "Next after reacting" on, the
+- [x] Reacting with `6` (👍) shows pop, burst, flyer and badge. With "Next after reacting" on, the
       next item comes in at once.
-- [ ] Esc shrinks the video into its message when the message is on screen, and fades otherwise.
+- [x] Esc shrinks the video into its message when the message is on screen, and fades otherwise.
       Opening from a card grows the video from that card.
-- [ ] A slow item shows its blurred thumbnail and a bar, not a black box or "Loading…".
-- [ ] With macOS "Reduce motion" on, every motion is a crossfade.
-- [ ] Each of the eight states shows as drawn in `states.html`. Nothing moves or retries by
+- [x] A slow item shows its blurred thumbnail and a bar, not a black box or "Loading…".
+- [x] With macOS "Reduce motion" on, every motion is a crossfade.
+- [x] Each of the eight states shows as drawn in `states.html`. Nothing moves or retries by
       itself.
-- [ ] The first open shows the key card once, and `?` brings it back.
-- [ ] `I` opens the item's Instagram layer. Instagram's ✕, Esc or `I` brings the player back,
+- [x] The first open shows the key card once, and `?` brings it back.
+- [x] `I` opens the item's Instagram layer. Instagram's ✕, Esc or `I` brings the player back,
       paused, on the same item. `I` typed in Instagram's comment box stays a letter. Checked by
       the owner by hand only.
-- [ ] The extension shows the icon on `chrome://extensions` (128) and pinned on the toolbar (16),
+- [x] The extension shows the icon on `chrome://extensions` (128) and pinned on the toolbar (16),
       on a light and a dark Chrome theme; the cards and the play read at 16px.
-- [ ] `npm run typecheck` and `npm run build` pass.
+- [x] `npm run typecheck` and `npm run build` pass.
 
 ## Approach
 See [plan.md](plan.md): three new player modules, three small adapter additions, then the work in
@@ -162,19 +162,19 @@ the order of the drawings.
 ## Outcome
 | # | Criterion | Result |
 |---|---|---|
-| 1 | Thumbnails on tiles, number fallback | harness ✓ · live data ✓ 2026-10-22 (10 of 10 items, 8 of 8 reels carry a thumb) · the tiles' look by hand pending |
-| 2 | Layout C v2 at 1280×720 and 960 wide | harness ✓ · hand check pending |
-| 3 | Option / `?` show and hide the key tips | harness ✓ · hand check pending |
-| 4 | Volume slider: hover, wide hit target, level kept, `M` | harness ✓ · hand check pending |
-| 5 | W/S and A/D slides; holding S has no catch-up | harness ✓ · hand check pending |
+| 1 | Thumbnails on tiles, number fallback | harness ✓ · live data ✓ 2026-10-22 (10 of 10 items, 8 of 8 reels carry a thumb) · the tiles' look by hand ✓ 2026-10-22 |
+| 2 | Layout C v2 at 1280×720 and 960 wide | harness ✓ · by hand ✓ 2026-10-22 |
+| 3 | Option / `?` show and hide the key tips | harness ✓ · by hand ✓ 2026-10-22 |
+| 4 | Volume slider: hover, wide hit target, level kept, `M` | harness ✓ · by hand ✓ 2026-10-22 |
+| 5 | W/S and A/D slides; holding S has no catch-up | harness ✓ · by hand ✓ 2026-10-22 · side arrows move items, ‹ › around the dots move slides: by hand ✓ 2026-10-22 |
 | 6 | React `6`: pop, burst, flyer, badge; next at once, reaction queued | harness ✓ (850 ms version) · next at once and queue: by hand ✓ 2026-10-22 |
-| 7 | Esc shrinks into the message, open grows from the card | harness ✓ · hand check pending |
-| 8 | Slow item: blurred thumbnail and bar | harness ✓ · hand check pending |
-| 9 | Reduce motion: every motion a crossfade | harness ✓ (emulated) · hand check pending |
-| 10 | Eight states as in `states.html` | harness ✓ · hand check pending |
-| 11 | Key card on first open, `?` brings it back | harness ✓ · hand check pending |
+| 7 | Esc shrinks into the message, open grows from the card | harness ✓ · by hand ✓ 2026-10-22 |
+| 8 | Slow item: blurred thumbnail and bar | harness ✓ · by hand ✓ 2026-10-22 |
+| 9 | Reduce motion: every motion a crossfade | harness ✓ (emulated) · by hand ✓ 2026-10-22 |
+| 10 | Eight states as in `states.html` | harness ✓ · by hand ✓ 2026-10-22 |
+| 11 | Key card on first open, `?` brings it back | harness ✓ · by hand ✓ 2026-10-22 |
 | 12 | `I`: Instagram's layer and back, same item, paused | Playwright on the real thread ✓ (2 of 2: opens at `/p/`, Back returns to the same item) · by hand ✓ 2026-10-22 |
-| 13 | Icon at 128 and 16, light and dark theme | rendered ✓ · toolbar check pending |
+| 13 | Icon at 128 and 16, light and dark theme | rendered ✓ · toolbar by hand ✓ 2026-10-22 |
 | 14 | `npm run typecheck` and `npm run build` | pass ✓ |
 | 15 | Carousel shows every slide | Playwright ✓ (7 of 7 carousels, 2–12 slides) · by hand ✓ 2026-10-22 |
 
