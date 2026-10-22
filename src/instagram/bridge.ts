@@ -57,6 +57,16 @@ export type OpResult = { ok: true } | { ok: false; reason: string };
 
 export type CardResult = { ok: true; messageId: string } | { ok: false; reason: string };
 
+/** A box on screen, in viewport pixels. */
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type RectResult = ({ ok: true } & Box) | { ok: false; reason: string };
+
 export type Request =
   | { op: 'scan' }
   | { op: 'reveal'; messageId: string }
@@ -67,7 +77,8 @@ export type Request =
   | { op: 'startReply'; messageId: string }
   | { op: 'typeReply'; text: string; focus: boolean }
   | { op: 'sendReply'; text: string }
-  | { op: 'mediaCard' };
+  | { op: 'mediaCard' }
+  | { op: 'rect'; messageId: string };
 
 /** Isolated side: ask the page script. dispatchEvent runs its listener synchronously. */
 function call<T extends { ok: boolean }>(request: Request, on: EventTarget = document): T | { ok: false; reason: string } {
@@ -104,3 +115,5 @@ export const requestSendReply = (text: string): OpResult => call<OpResult>({ op:
 
 /** The message whose media card holds `el`, asked of the page script about that very element. */
 export const requestMediaCard = (el: Element): CardResult => call<CardResult>({ op: 'mediaCard' }, el);
+
+export const requestRect = (messageId: string): RectResult => call<RectResult>({ op: 'rect', messageId });

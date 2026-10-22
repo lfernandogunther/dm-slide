@@ -67,7 +67,7 @@ export const STYLE = `
   }
 
   .p-theatre { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
-  .p-video { position: relative; height: var(--video-h); aspect-ratio: 9 / 16; flex-shrink: 0; }
+  .p-video { position: relative; height: var(--video-h); aspect-ratio: 9 / 16; flex-shrink: 0; transform-origin: 0 0; }
   .nav {
     position: absolute; top: calc(50% - 16px); width: 32px; height: 32px;
     border-radius: 50%; border: 0; padding: 0; background: #1c1c1e; font-size: 18px; display: grid; place-items: center;

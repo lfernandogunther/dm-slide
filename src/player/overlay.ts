@@ -1,6 +1,6 @@
 // The player: a full-window overlay in its own shadow root, with the strip on the left, the video
 // alone in the middle and a panel on the right. It talks only to the ThreadAdapter.
-import { CantRead, QUICK_REACTIONS, type Item, type ThreadAdapter } from '../instagram/adapter';
+import { CantRead, QUICK_REACTIONS, type Box, type Item, type ThreadAdapter } from '../instagram/adapter';
 import { bindKeys } from './keys';
 import { animate, finishAll, reduceMotion } from './motion';
 import { loadSettings, saveSettings } from './settings';
@@ -40,6 +40,23 @@ const BADGE_POP = [{ transform: 'scale(0)' }, { transform: 'scale(1.4)', offset:
 const BADGE_MS = 260;
 // Long enough to see the reaction land on its tile before the next item comes in.
 const REACT_NEXT_MS = 850;
+// Opening grows the video out of its message and closing shrinks it back in; the rest of the player fades.
+const GROW_MS = 440;
+const SHRINK_MS = 380;
+const SHRINK_EASE = 'cubic-bezier(.6,0,.3,1)';
+const MESSAGE_RADIUS_PX = 18;
+const BACKDROP_MS = 300;
+const CHROME_IN = { duration: 240, delay: 200 };
+const CHROME_OUT_MS = 140;
+// With the message off screen there is nothing to grow from: the player rises in and sinks out instead.
+const RISE_FROM = { opacity: 0, transform: 'translateY(18px) scale(.985)' };
+const RISE_IN_MS = 280;
+const BACKDROP_IN_MS = 220;
+const SINK_MS = 200;
+const BLACK = { backgroundColor: '#000' };
+const CLEAR = { backgroundColor: 'transparent' };
+const SHOW = { opacity: 1 };
+const HIDE = { opacity: 0 };
 
 const LAYOUT = `
   <div class="player" tabindex="-1">
@@ -157,8 +174,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   root.innerHTML = `<style>${STYLE}</style>${LAYOUT}`;
   const $ = <T extends HTMLElement>(attr: string) => root.querySelector<T>(`[${attr}]`)!;
   const player = root.querySelector<HTMLElement>('.player')!;
+  const head = root.querySelector<HTMLElement>('.p-head')!;
+  const body = root.querySelector<HTMLElement>('.p-body')!;
+  const video = root.querySelector<HTMLElement>('.p-video')!;
+  const reel = $('data-reel');
+  const chrome = [head, $('data-strip'), root.querySelector<HTMLElement>('.p-side')!];
   const reply = $<HTMLInputElement>('data-reply');
-  const stage = createStage($('data-reel'), adapter, renderNav);
+  const stage = createStage(reel, adapter, renderNav);
   const strip = createStrip($('data-strip'));
 
   let items = loaded;
@@ -518,13 +540,64 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     renderTips();
   }
 
+  /** The transform that lays the video, at rest, over `box`; its corners keep the message's radius. */
+  function onto(box: Box): { video: Keyframe; reel: Keyframe } {
+    const at = video.getBoundingClientRect();
+    const sx = box.width / at.width;
+    const sy = box.height / at.height;
+    return {
+      video: { transform: `translate(${box.x - at.x}px, ${box.y - at.y}px) scale(${sx}, ${sy})` },
+      reel: { borderRadius: `${MESSAGE_RADIUS_PX / sx}px / ${MESSAGE_RADIUS_PX / sy}px` },
+    };
+  }
+
+  function enter(from: Box | null): void {
+    const linear = { easing: 'linear' };
+    if (!from) {
+      animate(player, [CLEAR, BLACK], { ...linear, duration: BACKDROP_IN_MS });
+      for (const el of [head, body]) animate(el, [RISE_FROM, { opacity: 1, transform: 'none' }], { duration: RISE_IN_MS });
+      return;
+    }
+    const start = onto(from);
+    animate(player, [CLEAR, BLACK], { ...linear, duration: BACKDROP_MS });
+    animate(video, [start.video, { transform: 'none' }], { duration: GROW_MS });
+    if (!reduceMotion()) animate(reel, [start.reel, { borderRadius: '14px' }], { duration: GROW_MS });
+    for (const el of chrome) animate(el, [HIDE, SHOW], { ...linear, ...CHROME_IN, fill: 'backwards' });
+  }
+
+  function exit(to: Box | null): Animation[] {
+    const out = { fade: 'out' as const, fill: 'forwards' as const };
+    if (!to) {
+      return [
+        animate(player, [BLACK, CLEAR], { ...out, easing: 'linear', duration: SINK_MS }),
+        ...[head, body].map((el) => animate(el, [{ opacity: 1, transform: 'none' }, RISE_FROM], { ...out, easing: 'ease-in', duration: SINK_MS })),
+      ];
+    }
+    const end = onto(to);
+    const shrink = { ...out, easing: SHRINK_EASE, duration: SHRINK_MS };
+    return [
+      animate(player, [BLACK, CLEAR], { ...out, easing: 'linear', duration: BACKDROP_MS, delay: 60, fill: 'both' }),
+      animate(video, [{ transform: 'none' }, end.video], shrink),
+      ...(reduceMotion() ? [] : [animate(reel, [{ borderRadius: '14px' }, end.reel], shrink)]),
+      ...chrome.map((el) => animate(el, [SHOW, HIDE], { ...out, easing: 'linear', duration: CHROME_OUT_MS })),
+    ];
+  }
+
+  // The chat is back in charge at once; the player only finishes leaving, and lets clicks through meanwhile.
   function close(): void {
+    if (closed) return;
     closed = true;
     clearTimeout(reactNextTimer);
     unbindKeys();
-    stage.destroy();
-    host.remove();
+    finishAll();
+    const to = adapter.rectOf(items[current].id);
+    host.style.pointerEvents = 'none';
+    host.inert = true;
     onClose();
+    void Promise.allSettled(exit(to).map((a) => a.finished)).then(() => {
+      stage.destroy();
+      host.remove();
+    });
   }
 
   $('data-close').addEventListener('click', close);
@@ -563,10 +636,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     player.focus();
   });
 
+  // Read before go() moves the chat to the item.
+  const from = adapter.rectOf(items[start].id);
   // Instagram's composer may hold the focus; typed keys would land in it.
   (document.activeElement as HTMLElement | null)?.blur();
   document.body.append(host);
   player.focus();
   go(start);
+  enter(from);
   return { close };
 }

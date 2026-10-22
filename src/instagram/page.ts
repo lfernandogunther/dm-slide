@@ -7,6 +7,7 @@ import {
   REQUEST_EVENT,
   RESPONSE_EVENT,
   type OpResult,
+  type RectResult,
   type ItemKind,
   type ItemSource,
   type RawItem,
@@ -234,6 +235,24 @@ function reveal(messageId: string): OpResult {
   return { ok: true };
 }
 
+/** Where the message's media sits on screen, only when wholly in the thread's view: reading never scrolls. */
+function rect(messageId: string): RectResult {
+  const list = findMessageList();
+  if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
+  const row = findRow(list, messageId, true);
+  if (!row) return { ok: false, reason: `no row whose fiber carries message ${messageId}` };
+  const area = (el: Element) => el.getBoundingClientRect().width * el.getBoundingClientRect().height;
+  const media = [...row.querySelectorAll('img, video')].sort((a, b) => area(b) - area(a))[0];
+  if (!media) return { ok: false, reason: 'the row shows no media' };
+  const box = media.getBoundingClientRect();
+  const view = list.scroller.getBoundingClientRect();
+  if (!box.width || !box.height) return { ok: false, reason: 'the media has no size' };
+  if (box.top < view.top || box.bottom > view.bottom || box.left < view.left || box.right > view.right) {
+    return { ok: false, reason: 'the media is not wholly in view' };
+  }
+  return { ok: true, x: box.x, y: box.y, width: box.width, height: box.height };
+}
+
 /** Scrolls the thread to its oldest loaded message, which is what makes Instagram fetch the page before. */
 function loadOlder(): OpResult {
   const list = findMessageList();
@@ -349,7 +368,7 @@ function mediaCard(el: EventTarget | null): CardResult {
   return record?.id ? { ok: true, messageId: String(record.id) } : { ok: false, reason: 'the media card has no message record' };
 }
 
-function handle(request: Request, target: EventTarget | null): ScanResult | OpResult | CardResult {
+function handle(request: Request, target: EventTarget | null): ScanResult | OpResult | CardResult | RectResult {
   if (request.op === 'scan') return scan();
   if (request.op === 'reveal') return reveal(request.messageId);
   if (request.op === 'loadOlder') return loadOlder();
@@ -360,11 +379,12 @@ function handle(request: Request, target: EventTarget | null): ScanResult | OpRe
   if (request.op === 'typeReply') return typeReply(request.text, request.focus);
   if (request.op === 'sendReply') return sendReply(request.text);
   if (request.op === 'mediaCard') return mediaCard(target);
+  if (request.op === 'rect') return rect(request.messageId);
   return { ok: false, reason: `unknown op ${(request as { op: string }).op}` };
 }
 
 document.addEventListener(REQUEST_EVENT, (e) => {
-  let result: ScanResult | OpResult | CardResult;
+  let result: ScanResult | OpResult | CardResult | RectResult;
   try {
     result = handle(JSON.parse(String((e as CustomEvent).detail)) as Request, e.target);
   } catch (err) {

@@ -3,12 +3,14 @@ import {
   requestLoadOlder,
   requestOpenPicker,
   requestPickEmoji,
+  requestRect,
   requestReveal,
   requestScan,
   requestMediaCard,
   requestSendReply,
   requestStartReply,
   requestTypeReply,
+  type Box,
   type ItemKind,
   type ItemSource,
   type OpResult,
@@ -41,7 +43,7 @@ export interface Item {
 
 export type Media = Slide | { type: 'slides'; slides: Slide[] };
 
-export { QUICK_REACTIONS, type ItemKind, type Slide };
+export { QUICK_REACTIONS, type Box, type ItemKind, type Slide };
 
 export type Health = { ok: true } | { ok: false; reason: string };
 
@@ -57,6 +59,7 @@ export interface ThreadAdapter {
   link(item: Item): string; // the item on Instagram itself
   health(): Health;
   itemAt(el: Element): string | null; // the message of the chat's media card holding el
+  rectOf(id: string): Box | null; // where that message's media sits on screen; null when not wholly in view
 }
 
 /** The thread can't be read at all (Instagram's page changed, or this is no thread): nothing was done. */
@@ -193,6 +196,12 @@ export function createThreadAdapter(): ThreadAdapter {
     itemAt(el) {
       const card = requestMediaCard(el);
       return card.ok ? card.messageId : null;
+    },
+    rectOf(id) {
+      const result = requestRect(id);
+      if (!result.ok) return null;
+      const { x, y, width, height } = result;
+      return { x, y, width, height };
     },
   };
 }
