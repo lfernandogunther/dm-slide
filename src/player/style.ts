@@ -69,15 +69,15 @@ export const STYLE = `
   .p-frame { justify-content: center; }
   .p-frame .p-video { border-radius: 14px; background: #0d0d0f; }
   .p-video { position: relative; height: var(--video-h); aspect-ratio: 9 / 16; flex-shrink: 0; transform-origin: 0 0; }
-  .nav {
-    position: absolute; top: calc(50% - 16px); width: 32px; height: 32px;
-    border-radius: 50%; border: 0; padding: 0; background: #1c1c1e; font-size: 18px; display: grid; place-items: center;
+  .nav { position: absolute; top: calc(50% - 16px); }
+  .nav, .reel-dots button {
+    width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; background: #1c1c1e; font-size: 18px; display: grid; place-items: center;
   }
   /* Stacked on the right, pointing up and down like the strip they move along. */
   .nav.prev { right: -46px; top: calc(50% - 40px); }
   .nav.next { right: -46px; top: calc(50% + 8px); }
   .nav span { transform: rotate(90deg); }
-  .nav:disabled { opacity: 0.25; cursor: default; }
+  .nav:disabled, .reel-dots button:disabled { opacity: 0.25; cursor: default; }
   .p-video.caught .reel-media { filter: brightness(0.35); }
 
   .reel {
@@ -123,9 +123,11 @@ export const STYLE = `
   }
   .reel-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.25); }
   .reel-progress div { height: 100%; width: 0; background: #fff; }
-  .reel-dots { position: absolute; top: 4px; left: 0; right: 0; display: flex; justify-content: center; gap: 0; }
+  .reel-dots { position: absolute; top: 6px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 6px; }
+  .reel-dots button { position: relative; }
   .reel-dots span { width: 6px; height: 6px; margin: 4px 2.5px; cursor: pointer; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
   .reel-dots span.on { background: #fff; }
+  .reel-dots div { display: flex; }
 
   /* The panel is as tall as what it holds, its foot level with the video's; it grows upward. */
   .p-side { width: var(--side-w); flex-shrink: 0; align-self: center; height: var(--video-h); display: flex; flex-direction: column; justify-content: flex-end; }
@@ -193,7 +195,7 @@ export const STYLE = `
   /* Narrow (half a Full HD): the arrows go onto the video and the panel slims. */
   @media (max-width: 1199px) {
     .player { --video-h: max(240px, min(calc(100vh - 64px), calc((100vw - 406px) * 16 / 9))); --side-w: 280px; }
-    .nav { width: 30px; height: 30px; font-size: 16px; background: rgba(0, 0, 0, 0.45); color: #fff; }
+    .nav, .reel-dots button { width: 30px; height: 30px; font-size: 16px; background: rgba(0, 0, 0, 0.45); color: #fff; }
     .nav.prev { right: 8px; top: calc(50% - 37px); }
     .nav.next { right: 8px; top: calc(50% + 7px); }
   }

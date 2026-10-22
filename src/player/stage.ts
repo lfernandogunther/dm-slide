@@ -1,5 +1,5 @@
 // The current item: a video played by our own <video> so loop, pause and progress are ours, a
-// photo, or slides with dots. The next item's video loads in a second, hidden <video> and takes
+// photo, or slides with dots between two arrows. The next item's video loads in a second, hidden <video> and takes
 // over when the player moves to it.
 import type { Item, Slide, ThreadAdapter } from '../instagram/adapter';
 import { stateCard, type KeyAct } from './cards';
@@ -70,6 +70,22 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   photo.alt = '';
   const dots = document.createElement('div');
   dots.className = 'reel-dots';
+  const pips = document.createElement('div');
+  const slideButton = (delta: -1 | 1, glyph: string, key: string, name: string) => {
+    const button = document.createElement('button');
+    button.tabIndex = -1;
+    button.textContent = glyph;
+    button.title = `${name} slide (${key} / ${delta < 0 ? '←' : '→'})`;
+    button.dataset.kt = key;
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      slideBy(delta);
+    });
+    return button;
+  };
+  const prevSlide = slideButton(-1, '‹', 'A', 'Previous');
+  const nextSlide = slideButton(1, '›', 'D', 'Next');
+  dots.append(prevSlide, pips, nextSlide);
   // While the media loads: the item's thumbnail, blurred, with a running bar.
   const coverImg = document.createElement('img');
   coverImg.alt = '';
@@ -281,7 +297,9 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     const slide = slides[at];
     if (slide.type === 'video') play(shown, slide.url);
     else showPhoto(shown, slide);
-    dots.replaceChildren(
+    prevSlide.disabled = at === 0;
+    nextSlide.disabled = at === slides.length - 1;
+    pips.replaceChildren(
       ...slides.map((_, i) => {
         const dot = document.createElement('span');
         dot.classList.toggle('on', i === at);
@@ -323,6 +341,15 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
 
   const canSlide = (delta: -1 | 1) => item !== null && at + delta >= 0 && at + delta < slides.length;
 
+  function slideBy(delta: -1 | 1): boolean {
+    if (!item || !canSlide(delta)) return false;
+    move('X', delta, SLIDE_MS);
+    at += delta;
+    showSlide(item);
+    onSlides();
+    return true;
+  }
+
   return {
     async show(shown, next, dir = 0) {
       if (dir) move('Y', dir, ITEM_MS);
@@ -343,14 +370,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       }
       void preload(next);
     },
-    slide(delta) {
-      if (!item || !canSlide(delta)) return false;
-      move('X', delta, SLIDE_MS);
-      at += delta;
-      showSlide(item);
-      onSlides();
-      return true;
-    },
+    slide: slideBy,
     canSlide,
     togglePause() {
       if (current.hidden || !current.src) return;

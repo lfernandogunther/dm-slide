@@ -96,8 +96,8 @@ const LAYOUT = `
         <div class="p-video">
           <div class="reel" data-reel data-kt="Space"></div>
           <div class="p-burst" data-burst></div>
-          <button class="nav prev" data-prev tabindex="-1" title="Previous (A / ←)" data-kt="A"><span>‹</span></button>
-          <button class="nav next" data-next tabindex="-1" title="Next (D / →)" data-kt="D"><span>›</span></button>
+          <button class="nav prev" data-prev tabindex="-1" title="Previous (W / ↑)" data-kt="W"><span>‹</span></button>
+          <button class="nav next" data-next tabindex="-1" title="Next (S / ↓)" data-kt="S"><span>›</span></button>
           <div class="p-caught" data-caught hidden></div>
         </div>
       </div>
@@ -315,8 +315,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   }
 
   function renderNav(): void {
-    $<HTMLButtonElement>('data-prev').disabled = !stage.canSlide(-1) && neighbour(current, -1) < 0 && edge === 'start';
-    $<HTMLButtonElement>('data-next').disabled = !stage.canSlide(1) && neighbour(current, 1) < 0;
+    $<HTMLButtonElement>('data-prev').disabled = neighbour(current, -1) < 0 && edge === 'start';
+    $<HTMLButtonElement>('data-next').disabled = neighbour(current, 1) < 0;
   }
 
   function renderChrome(follow: Follow): void {
@@ -858,8 +858,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   }
 
   $('data-close').addEventListener('click', close);
-  $('data-prev').addEventListener('click', () => step(-1));
-  $('data-next').addEventListener('click', () => step(1));
+  $('data-prev').addEventListener('click', () => item(-1));
+  $('data-next').addEventListener('click', () => item(1));
   $('data-filter').addEventListener('click', toggleFilter);
   $('data-ig').addEventListener('click', () => void instagramView());
   back.addEventListener('click', () => adapter.closeLayer());
