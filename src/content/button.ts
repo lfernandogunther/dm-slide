@@ -41,5 +41,6 @@ export function renderButton(host: HTMLElement, state: ButtonState): void {
   // Rewriting identical text would still be a DOM write; skip it.
   if (button.textContent !== label) button.textContent = label;
   if (button.title !== title) button.title = title;
-  button.disabled = !('reels' in state) || state.reels.length === 0;
+  // In error the button stays clickable, to say why the player can't open.
+  button.disabled = 'reels' in state && state.reels.length === 0;
 }

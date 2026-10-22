@@ -1,6 +1,6 @@
 // The player: a full-window overlay in its own shadow root, laid out like the prototype
 // (specs/01-mvp/prototype/index.html). It talks only to the ThreadAdapter.
-import { QUICK_REACTIONS, type Reel, type ThreadAdapter } from '../instagram/adapter';
+import { CantRead, QUICK_REACTIONS, type Reel, type ThreadAdapter } from '../instagram/adapter';
 import { bindKeys } from './keys';
 import { loadSettings, saveSettings } from './settings';
 import { createStage } from './stage';
@@ -9,6 +9,8 @@ import { renderStrip, type StripEdge } from './strip';
 // Pages fetched for one press of A at the oldest reel, when the pages fetched hold no reels.
 const MAX_PAGES_PER_LOAD = 5;
 const STRIP_LOAD_MARGIN_PX = 40;
+// Long enough to read; the next action clears it sooner.
+const ALERT_MS = 6000;
 
 const STYLE = `
   * { box-sizing: border-box; }
@@ -27,6 +29,12 @@ const STYLE = `
   .p-title { flex: 1; min-width: 160px; }
   .p-keys { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #a8a8a8; }
   .icon-btn { background: transparent; border: 0; font-size: 18px; padding: 4px 8px; }
+  .p-alert { padding: 8px 16px; background: #3a1d1d; color: #ffb4b4; font-size: 13px; text-align: center; }
+  .p-alert[hidden] { display: none; }
+  .p-notice { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; }
+  .p-notice strong { font-size: 18px; }
+  .p-notice p { margin: 0; max-width: 480px; overflow-wrap: anywhere; }
+  .p-notice button { margin-top: 8px; border: 0; background: #262626; border-radius: 16px; padding: 6px 16px; }
   .p-body { flex: 1; display: flex; gap: 16px; padding: 16px; min-height: 0; }
   .p-strip {
     list-style: none; margin: 0; padding: 4px 12px 8px 0; width: 84px; flex-shrink: 0;
@@ -110,6 +118,7 @@ const LAYOUT = `
       </div>
       <button class="icon-btn" data-close title="Close (Esc)">✕</button>
     </header>
+    <div class="p-alert" data-alert role="alert" hidden></div>
     <div class="p-body">
       <ol class="p-strip" data-strip></ol>
       <div class="p-stage">
@@ -148,6 +157,48 @@ export interface Player {
 export function startIndex(reels: Reel[]): number {
   const unreacted = reels.findIndex((r) => r.myReaction === null);
   return unreacted >= 0 ? unreacted : reels.length - 1;
+}
+
+const NOTICE = `
+  <div class="player" tabindex="-1">
+    <header class="p-head">
+      <div class="p-title"><strong>Reel Queue</strong></div>
+      <button class="icon-btn" data-close title="Close (Esc)">✕</button>
+    </header>
+    <div class="p-notice">
+      <strong>Can't read this conversation</strong>
+      <p>Instagram's page may have changed, so Reel Queue does nothing here.</p>
+      <p class="muted" data-detail></p>
+      <button data-done>Close</button>
+    </div>
+  </div>
+`;
+
+/** In place of the player when the thread can't be read: says so, and does nothing else. */
+export function openNotice(detail: string, onClose: () => void): Player {
+  const host = document.createElement('div');
+  host.style.cssText = 'position: fixed; inset: 0; z-index: 2147483647;';
+  const root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = `<style>${STYLE}</style>${NOTICE}`;
+  const panel = root.querySelector<HTMLElement>('.player')!;
+  root.querySelector('[data-detail]')!.textContent = detail;
+
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
+  function close(): void {
+    window.removeEventListener('keydown', onKey, true);
+    host.remove();
+    onClose();
+  }
+  root.querySelector('[data-close]')!.addEventListener('click', close);
+  root.querySelector('[data-done]')!.addEventListener('click', close);
+  window.addEventListener('keydown', onKey, true);
+
+  (document.activeElement as HTMLElement | null)?.blur();
+  document.body.append(host);
+  panel.focus();
+  return { close };
 }
 
 export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number, onClose: () => void): Player {
@@ -210,6 +261,24 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     renderStrip($('data-strip'), reels, current, edge, follow);
   }
 
+  let alertTimer = 0;
+  /** Says an action did nothing: the thread can't be read at all, or that one action failed. */
+  function showFailure(what: string, e: unknown): void {
+    const reason = e instanceof Error ? e.message : String(e);
+    console.warn('[reel-queue]', reason);
+    const el = $('data-alert');
+    el.textContent = e instanceof CantRead ? "Can't read this conversation. Nothing was done." : `Couldn't ${what}.`;
+    el.title = reason;
+    el.hidden = false;
+    clearTimeout(alertTimer);
+    alertTimer = window.setTimeout(clearFailure, ALERT_MS);
+  }
+
+  function clearFailure(): void {
+    clearTimeout(alertTimer);
+    $('data-alert').hidden = true;
+  }
+
   // Following the chat is a convenience: if the row can't be found, the player carries on.
   function revealCurrent(): void {
     try {
@@ -249,7 +318,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
         added = mergeOlder(adapter.listReels());
       }
     } catch (e) {
-      console.warn('[reel-queue]', e instanceof Error ? e.message : e);
+      showFailure('load older messages', e);
     }
     if (edge === 'loading') edge = null;
     renderChrome(false);
@@ -279,6 +348,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     if (!emoji || reacting) return;
     const reel = reels[current];
     const removing = reel.myReaction === emoji;
+    clearFailure();
     reacting = true;
     renderChrome(false);
     let done = false;
@@ -287,8 +357,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
       reel.myReaction = removing ? null : emoji;
       done = true;
     } catch (e) {
-      // S01 #11 turns this into a visible message.
-      console.warn('[reel-queue]', e instanceof Error ? e.message : e);
+      showFailure(removing ? 'remove the reaction' : 'react', e);
     }
     reacting = false;
     // Instagram's picker took the focus (onto its ❤️); keys never reach it, but the player wants it back.
@@ -303,7 +372,6 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
   function replyStatus(text: string, fades = true): void {
     clearTimeout(statusTimer);
     $('data-reply-status').textContent = text;
-    $('data-reply-status').title = '';
     if (text && fades) statusTimer = window.setTimeout(() => replyStatus(''), 3000);
   }
 
@@ -318,6 +386,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     if (!text || sending) return;
     const reel = reels[current];
     const quoted = quote.checked;
+    clearFailure();
     sending = true;
     renderSend();
     replyStatus('Sending…', false);
@@ -327,10 +396,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
       reply.value = '';
       replyStatus('Sent');
     } catch (e) {
-      // S01 #11 turns this into a visible message.
-      console.warn('[reel-queue]', e instanceof Error ? e.message : e);
+      showFailure('send the reply', e);
       replyStatus('Not sent', false);
-      $('data-reply-status').title = e instanceof Error ? e.message : String(e);
     }
     sending = false;
     renderSend();

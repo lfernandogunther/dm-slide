@@ -12,5 +12,5 @@ One commit each. `feat [S01 #NN]: ...` (docs-only → `doc`).
 - [x] #07 — React: `adapter.react`/`unreact` with the row re-check; `F` and the ❤️ button, plus Instagram's quick set on `1`–`6`; "Next after react"; strip and counter update; settings in `chrome.storage.local` (acceptance #4)
 - [x] #08 — Reply: `adapter.reply` quoted or plain; `R`, `Enter`, the "Quote this reel" toggle; a sent status; a 💬 on replied reels in the strip; my earlier quoted replies to the reel under the box (find first which Relay field links a reply to its message) (acceptance #5)
 - [x] #10 — Groups (the sender on the video and in the placeholder), the send date on top of every reel, and a click on a reel card in the chat opening at that reel (acceptance #2, #7)
-- [ ] #11 — Fail visibly: `health()` on open and a row re-check failure → a clear message, no action (acceptance #9)
+- [x] #11 — Fail visibly: `health()` on open and a row re-check failure → a clear message, no action (acceptance #9)
 - [ ] #12 — Manual click-through of every acceptance criterion on the real Instagram (1:1 + group); fix rough edges; fill `learnings.md`

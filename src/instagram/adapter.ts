@@ -49,16 +49,24 @@ export interface ThreadAdapter {
   reelAt(el: Element): string | null; // the message of the chat's reel card holding el
 }
 
+/** The thread can't be read at all (Instagram's page changed, or this is no thread): nothing was done. */
+export class CantRead extends Error {}
+
 function scanThread(): ScanResult {
   if (!THREAD_PATH.test(location.pathname)) return { ok: false, reason: `not in a DM thread (${location.pathname})` };
   return requestScan();
 }
 
+function readThread(what: string): Extract<ScanResult, { ok: true }> {
+  const scan = scanThread();
+  if (!scan.ok) throw new CantRead(`${what}: ${scan.reason}`);
+  return scan;
+}
+
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
 async function loadOlderPage(): Promise<boolean> {
-  const before = scanThread();
-  if (!before.ok) throw new Error(`loadOlder: ${before.reason}`);
+  const before = readThread('loadOlder');
   if (!before.hasMoreAbove) return false;
   const scrolled = requestLoadOlder();
   if (!scrolled.ok) throw new Error(`loadOlder: ${scrolled.reason}`);
@@ -75,8 +83,7 @@ const plain = (emoji: string) => emoji.replace(/\uFE0F/g, '').trim();
 const canonical = (emoji: string) => QUICK_REACTIONS.find((q) => plain(q) === plain(emoji)) ?? emoji;
 
 function listOthersReels(): Reel[] {
-  const scan = scanThread();
-  if (!scan.ok) throw new Error(`listReels: ${scan.reason}`);
+  const scan = readThread('listReels');
   return scan.reels
     .filter((r) => r.senderId !== scan.viewerId)
     .map((r) => {
@@ -126,8 +133,7 @@ async function setReaction(id: string, target: string | null): Promise<void> {
 async function sendReply(id: string, text: string, quote: boolean): Promise<void> {
   const body = text.trim();
   if (!body) throw new Error('reply: nothing to send');
-  const before = scanThread();
-  if (!before.ok) throw new Error(`reply: ${before.reason}`);
+  const before = readThread('reply');
   if (!before.reels.some((r) => r.messageId === id && r.senderId !== before.viewerId)) {
     throw new Error(`reply: message ${id} is not a loaded reel from someone else`);
   }

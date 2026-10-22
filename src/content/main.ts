@@ -1,7 +1,7 @@
 import { createThreadAdapter } from '../instagram/adapter';
 import { findHeaderIcons } from '../instagram/header';
 import { THREAD_PATH } from '../instagram/selectors';
-import { openPlayer, startIndex, type Player } from '../player/overlay';
+import { openNotice, openPlayer, startIndex, type Player } from '../player/overlay';
 import { createButton, renderButton, type ButtonState } from './button';
 
 // Instagram is a SPA: the script loads on any page and acts only inside a DM thread.
@@ -16,6 +16,11 @@ const SYNC_DEBOUNCE_MS = 400;
 
 let player: { instance: Player; path: string } | null = null;
 
+const onClose = () => {
+  player = null;
+  sync();
+};
+
 /** Opens at the reel with message id `at`, else by the start rule; false when nothing opened. */
 function open(at?: string): boolean {
   if (player) return false;
@@ -23,17 +28,15 @@ function open(at?: string): boolean {
   try {
     reels = adapter.listReels();
   } catch (e) {
-    // S01 #11 turns this into a visible message.
-    console.error('[reel-queue]', e instanceof Error ? e.message : e);
+    const reason = e instanceof Error ? e.message : String(e);
+    console.error('[reel-queue]', reason);
+    // From a reel card the click goes on to Instagram; from the button, say why nothing opens.
+    if (at === undefined) player = { instance: openNotice(reason, onClose), path: location.pathname };
     return false;
   }
   const start = at === undefined ? startIndex(reels) : reels.findIndex((r) => r.id === at);
   if (start < 0) return false;
-  const instance = openPlayer(adapter, reels, start, () => {
-    player = null;
-    sync();
-  });
-  player = { instance, path: location.pathname };
+  player = { instance: openPlayer(adapter, reels, start, onClose), path: location.pathname };
   return true;
 }
 

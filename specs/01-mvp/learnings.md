@@ -270,3 +270,19 @@ typed without sending. End state verified clean: no reaction, empty composer, no
   is `column-reverse`, so scrolling up is a negative `scrollTop`.
 - Confirmed by the user in their own Chrome, in a 1:1 and in a group thread: names, dates and a
   click on someone else's reel card opening the player there.
+
+## #11 fail visibly (2026-10-21)
+- Two kinds of failure, told apart by type: `CantRead` (the scan itself fails, so nothing was
+  attempted) and any other error (one action failed partway). The player says "Can't read this
+  conversation. Nothing was done." for the first and "Couldn't <action>." for the second, with the
+  technical reason on hover; the banner clears on the next action or after 6 s.
+- From the header button, an unreadable thread opens a notice card in place of the player. From a
+  reel card click, nothing opens and the click goes on to Instagram, so the chat never goes dead.
+- Simulated by blocking only the `scan` request at window capture: the page script never answers,
+  which is the same path a broken selector takes. Checked in the automated Chrome: error button
+  clickable, notice card opens and closes (Esc and Close), `6` on a broken read shows the banner
+  with no picker request sent, a blocked React button shows "Couldn't react.", no reaction changed.
+- The button's sync runs only on page mutations, so on an idle page the state can lag until
+  Instagram changes something. Harmless in real use, misleading in a test.
+- A step that the page never answers is retried every ~100 ms until its timeout (~50 tries in
+  5 s). Each try clicks at most once, so it is safe, just chatty.
