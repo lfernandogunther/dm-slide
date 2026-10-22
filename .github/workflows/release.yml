@@ -12,12 +12,12 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     outputs:
       zip: ${{ steps.zip.outputs.name }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
@@ -43,10 +43,21 @@ jobs:
           name: extension
           path: ${{ steps.zip.outputs.name }}
           if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: extension
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          ZIP: ${{ steps.zip.outputs.name }}
+          GH_REPO: ${{ github.repository }}
+          ZIP: ${{ needs.build.outputs.zip }}
         # A re-run finds the release already there and only replaces its zip.
         run: |
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
@@ -56,9 +67,12 @@ jobs:
           fi
 
   store:
-    needs: build
-    # Only the owner's repo, and only once the store's ids are set as repository variables.
-    if: github.repository == 'lfernandogunther/dm-slide' && vars.CWS_EXTENSION_ID != ''
+    needs: [build, release]
+    # Only the owner's repo, and only once every store variable is set.
+    if: >-
+      github.repository == 'lfernandogunther/dm-slide' && vars.CWS_PUBLISHER_ID != '' &&
+      vars.CWS_EXTENSION_ID != '' && vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' &&
+      vars.GCP_SERVICE_ACCOUNT != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -79,6 +93,8 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/chromewebstore
       - name: Upload to the Chrome Web Store
+        # Explicit bash turns on pipefail, so a failed curl is not hidden behind jq.
+        shell: bash
         env:
           TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |

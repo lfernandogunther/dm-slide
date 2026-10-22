@@ -58,7 +58,7 @@ Keeps the player's own settings on the user's device: whether reacting moves to 
 
 **Permission justification — host permission (`https://www.instagram.com/*`):**
 ```
-The extension's only purpose is to play the media in the user's open Instagram DM conversation. It reads that conversation in the page and loads each item's media from www.instagram.com with the user's existing session. Instagram is a single-page app, so the content script must load on its pages to be present when the user navigates to a conversation; it acts only on /direct/t/ pages.
+The extension's only purpose is to play the media in the user's open Instagram DM conversation. It reads that conversation in the page and loads each item's media from Instagram's own servers and content network with the user's existing session, as Instagram's page already does; nothing else is contacted. Instagram is a single-page app, so the content script must load on its pages to be present when the user navigates to a conversation; it acts only on /direct/t/ pages.
 ```
 
 **Remote code:** No, I am not using remote code.

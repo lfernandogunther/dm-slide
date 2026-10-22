@@ -14,17 +14,26 @@ const fail = (why) => {
 if (!/^\d+\.\d+\.\d+$/.test(version ?? '')) fail(`expected a version like 0.1.0, got "${version ?? ''}"`);
 if (run('git', 'status', '--porcelain')) fail('the working tree has changes; commit or stash them first');
 if (run('git', 'branch', '--show-current') !== 'main') fail('releases are cut from main');
+run('git', 'fetch', '--quiet', 'origin', 'main', '--tags');
+if (run('git', 'rev-parse', 'HEAD') !== run('git', 'rev-parse', 'origin/main')) fail('main is not even with origin/main; pull or push first');
 if (run('git', 'tag', '--list', `v${version}`)) fail(`tag v${version} already exists`);
+if (run('git', 'ls-remote', '--tags', 'origin', `v${version}`)) fail(`tag v${version} already exists on origin`);
 
 const manifest = JSON.parse(await readFile('manifest.json', 'utf8'));
 const [a, b] = [manifest.version, version].map((v) => v.split('.').map(Number));
 const newer = a.findIndex((n, i) => n !== b[i]);
 if (newer < 0 || b[newer] < a[newer]) fail(`${version} is not newer than the manifest's ${manifest.version}`);
 
+// Before touching any file, so a type error leaves the tree clean.
+try {
+  execFileSync('npm', ['run', 'typecheck'], { stdio: 'inherit' });
+} catch {
+  fail('typecheck failed; nothing was changed');
+}
+
 manifest.version = version;
 await writeFile('manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
 run('npm', 'version', version, '--no-git-tag-version', '--allow-same-version');
-run('npm', 'run', 'typecheck');
 
 run('git', 'add', 'manifest.json', 'package.json', 'package-lock.json');
 run('git', 'commit', '-m', `chore: release v${version}`);
