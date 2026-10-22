@@ -27,7 +27,7 @@ See [constitution.md](../../constitution.md) for principles and non-goals.
   reaction from me only *marks* a reel (in the strip and the counter); it never hides it.
 - **Start position:** the button opens at the oldest loaded reel without my reaction (the newest
   reel if every one has a reaction). A clicked reel card opens at that reel.
-- **Navigate:** `A`/`D` or `←`/`→`, the ‹ › buttons, or a click on any item in the strip. At the
+- **Navigate:** `A`/`D`, `W`/`S` (up / down the strip) or `←`/`→`, the ‹ › buttons, or a click on any item in the strip. At the
   last reel, "next" stops. The strip follows the chat's order (oldest at the top, newest at the
   bottom) and numbers reels from the newest: 1 is the bottom tile, counting up, so loading older
   reels never renumbers the ones already there.

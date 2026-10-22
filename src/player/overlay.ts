@@ -92,7 +92,7 @@ const LAYOUT = `
     <header class="p-head">
       <div class="p-title"><strong>Reel Queue</strong> <span class="muted" data-pos></span></div>
       <div class="p-keys">
-        <span><kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> prev / next</span>
+        <span><kbd>A</kbd><kbd>D</kbd>, <kbd>W</kbd><kbd>S</kbd> or <kbd>←</kbd><kbd>→</kbd> prev / next</span>
         <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>F</kbd> or <kbd>1</kbd>–<kbd>6</kbd> react</span><span><kbd>R</kbd> reply</span><span><kbd>Esc</kbd> close</span>
       </div>
       <button class="icon-btn" data-close title="Close (Esc)">✕</button>
@@ -100,7 +100,7 @@ const LAYOUT = `
     <div class="p-body">
       <ol class="p-strip" data-strip></ol>
       <div class="p-stage">
-        <button class="nav" data-prev title="Previous (A / ←)">‹</button>
+        <button class="nav" data-prev title="Previous (A / W / ←)">‹</button>
         <div class="p-center">
           <div class="reel" data-reel></div>
           <form class="p-reply" data-reply-form>
@@ -112,7 +112,7 @@ const LAYOUT = `
           <div class="p-quick" data-quick></div>
           <label class="p-setting"><input type="checkbox" data-next-after tabindex="-1" checked>Next reel after reacting</label>
         </div>
-        <button class="nav" data-next title="Next (D / →)">›</button>
+        <button class="nav" data-next title="Next (D / S / →)">›</button>
       </div>
     </div>
   </div>

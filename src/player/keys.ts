@@ -33,8 +33,10 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
     if (slot !== null && e.repeat) return e.preventDefault();
     const action = slot !== null ? () => actions.react(slot) : {
       a: actions.prev,
+      w: actions.prev,
       arrowleft: actions.prev,
       d: actions.next,
+      s: actions.next,
       arrowright: actions.next,
       ' ': actions.togglePause,
       m: actions.toggleMute,
