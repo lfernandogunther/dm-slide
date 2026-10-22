@@ -78,7 +78,10 @@ export type Request =
   | { op: 'typeReply'; text: string; focus: boolean }
   | { op: 'sendReply'; text: string }
   | { op: 'mediaCard' }
-  | { op: 'rect'; messageId: string };
+  | { op: 'rect'; messageId: string }
+  | { op: 'openLayer'; messageId: string }
+  | { op: 'layerOpen' }
+  | { op: 'closeLayer' };
 
 /** Isolated side: ask the page script. dispatchEvent runs its listener synchronously. */
 function call<T extends { ok: boolean }>(request: Request, on: EventTarget = document): T | { ok: false; reason: string } {
@@ -117,3 +120,9 @@ export const requestSendReply = (text: string): OpResult => call<OpResult>({ op:
 export const requestMediaCard = (el: Element): CardResult => call<CardResult>({ op: 'mediaCard' }, el);
 
 export const requestRect = (messageId: string): RectResult => call<RectResult>({ op: 'rect', messageId });
+
+export const requestOpenLayer = (messageId: string): OpResult => call<OpResult>({ op: 'openLayer', messageId });
+
+export const requestLayerOpen = (): OpResult => call<OpResult>({ op: 'layerOpen' });
+
+export const requestCloseLayer = (): OpResult => call<OpResult>({ op: 'closeLayer' });

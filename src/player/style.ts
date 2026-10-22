@@ -227,4 +227,6 @@ export const STYLE = `
   .c-coach dd { margin: 0; color: #cfcfcf; }
   .c-coach .go { margin-top: 16px; color: #a8a8a8; text-align: center; }
   .c-coach .go b { font: 700 11px ui-monospace, monospace; background: #2a2a2a; color: #f5f5f5; border-radius: 4px; padding: 1px 5px; }
+  .p-back { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); pointer-events: auto; border: 0; background: #ffd60a; color: #111; font-weight: 600; font-size: 12.5px; border-radius: 999px; padding: 5px 14px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6); white-space: nowrap; }
+  .p-back b { font: 700 12px ui-monospace, monospace; background: #111; color: #ffd60a; border-radius: 4px; padding: 1px 6px; margin: 0 2px; }
 `;

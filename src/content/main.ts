@@ -67,8 +67,8 @@ function readState(): ButtonState {
 
 /** Keeps the button in the current thread's header with a fresh count, or out of the page. */
 function sync(): void {
-  // Switching conversation closes the player.
-  if (player && location.pathname !== player.path) player.instance.close();
+  // Switching conversation closes the player; Instagram's view of an item may change the path for a while.
+  if (player && location.pathname !== player.path && !player.instance.away()) player.instance.close();
   const icons = THREAD_PATH.test(location.pathname) ? findHeaderIcons() : null;
   if (!icons) {
     button.remove();

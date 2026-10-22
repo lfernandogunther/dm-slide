@@ -1,6 +1,6 @@
 # Tasks — S03
 
-**12 of 14 done · next: 13 — Instagram view**
+**13 of 14 done · next: 14 — extension icon**
 
 - [x] **01 — thumbnails: `thumb` on `Item` (page, bridge, adapter), strip tiles show it, number fallback; counts-only snippet for the owner**
 - [x] **02 — layout C v2: CSS to `style.ts`, vertical thumbnail strip, video alone, content-sized panel, slim header; arrows on the video and 280px panel below 1200px**
@@ -14,7 +14,7 @@
 - [x] **10 — can't read: the player frame with its card replaces `openNotice`**
 - [x] **11 — action states: failed control shakes with a red ring and a line; reply bubble sending / sent ✓ / not sent**
 - [x] **12 — first open: key card shown once (`seenKeys` setting), `?` brings it back**
-- [ ] **13 — Instagram view `I`: `openLayer` + `layerOpen` in the adapter, player hides and comes back paused; gated on the owner's hand check**
+- [x] **13 — Instagram view `I`: `openLayer` + `layerOpen` in the adapter, player hides and comes back paused; gated on the owner's hand check**
 - [ ] **14 — self-review, close learnings.md and promote**
 
 ---

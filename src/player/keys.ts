@@ -15,17 +15,32 @@ export interface KeyActions {
   holdTips(held: boolean): void; // Option (Alt) shows the key tips while held
   toggleTips(): void;
   dismissKeyCard(): boolean; // true when the key card was showing
+  instagramView(): void; // opens Instagram's own view of the item, or closes it while away
+  away(): boolean; // the player stepped aside for Instagram's view
 }
 
 const KEY_EVENTS = ['keydown', 'keyup', 'keypress'] as const;
 // Pressed on the way to another key (Shift for ?), so they never count as the key that dismisses the card.
 const MODIFIERS = new Set(['Shift', 'CapsLock']);
 
+function editable(e: KeyboardEvent): boolean {
+  const target = e.composedPath()[0];
+  return target instanceof HTMLElement && (target.isContentEditable || target.matches('input, textarea, select'));
+}
+
 /** Binds the shortcuts; `isTyping` says whether an event comes from the reply box. Returns the unbind. */
 export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyActions): () => void {
   const onKey = (e: KeyboardEvent) => {
     // Keys the extension itself dispatches (Enter in Instagram's composer, to send) go through.
     if (!e.isTrusted) return;
+    // Over Instagram's view every key is Instagram's (its Esc closes it), but I outside a text box.
+    if (actions.away()) {
+      if (e.type !== 'keydown' || e.key.toLowerCase() !== 'i' || e.metaKey || e.ctrlKey || e.altKey || editable(e)) return;
+      e.stopPropagation();
+      e.preventDefault();
+      actions.instagramView();
+      return;
+    }
     if (e.key === 'Alt') {
       // Option alone types nothing and has no browser shortcut, so the player can own it.
       e.stopPropagation();
@@ -62,6 +77,7 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
       m: actions.toggleMute,
       u: actions.toggleFilter,
       r: actions.focusReply,
+      i: actions.instagramView,
       '?': actions.toggleTips,
       escape: actions.close,
     }[e.key.toLowerCase()];

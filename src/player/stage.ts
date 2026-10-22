@@ -12,6 +12,7 @@ export interface Stage {
   slide(delta: -1 | 1): boolean; // false when there is no slide that way
   canSlide(delta: -1 | 1): boolean;
   togglePause(): void;
+  pause(): void;
   toggleMute(): void;
   destroy(): void;
 }
@@ -354,6 +355,9 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       if (current.hidden || !current.src) return;
       if (current.paused) void current.play().catch(() => undefined);
       else current.pause();
+    },
+    pause() {
+      current.pause();
     },
     toggleMute,
     destroy() {

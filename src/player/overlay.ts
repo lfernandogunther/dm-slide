@@ -34,6 +34,8 @@ const SHAKE = [
 const SHAKE_MS = 450;
 const SENT_MS = 3000;
 const CANT_READ = "Can't read this conversation · nothing was done";
+// How often the player, stepped aside, checks whether Instagram's view of the item is still up.
+const LAYER_POLL_MS = 250;
 // The sender and the reactions rise into place as a new item comes in.
 const PANEL_RISE = [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }];
 const PANEL_MS = 200;
@@ -82,6 +84,7 @@ const LAYOUT = `
       <span class="p-title">DM Slide</span>
       <span class="p-pos" data-pos></span>
       <button class="pill" data-filter tabindex="-1" aria-pressed="false" title="Only the ones without my reaction (U)" data-kt="U" data-kt-at="br">Not reacted</button>
+      <button class="pill" data-ig tabindex="-1" title="Instagram view (I)" data-kt="I" data-kt-at="br">◧ Instagram view</button>
       <span class="sp"></span>
       <span class="p-hold" data-hold></span>
       <button class="circ" data-tips tabindex="-1" aria-pressed="false" title="Key tips (?)">?</button>
@@ -125,6 +128,7 @@ const LAYOUT = `
     </div>
     <div class="p-dim"></div>
   </div>
+  <button class="p-back" data-back tabindex="-1" hidden>Back to DM Slide <b>I</b> or <b>Esc</b></button>
 `;
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
@@ -149,6 +153,7 @@ const SENT_AT = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeSt
 
 export interface Player {
   close(): void;
+  away(): boolean; // stepped aside for Instagram's view, which may change the page's path
 }
 
 /** The oldest loaded item without my reaction, or the newest one when every item has one. */
@@ -214,7 +219,7 @@ export function openNotice(detail: string, onClose: () => void): Player {
   (document.activeElement as HTMLElement | null)?.blur();
   document.body.append(host);
   panel.focus();
-  return { close };
+  return { close, away: () => false };
 }
 
 export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number, onClose: () => void): Player {
@@ -231,7 +236,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const chrome = [head, $('data-strip'), root.querySelector<HTMLElement>('.p-side')!];
   const reply = $<HTMLInputElement>('data-reply');
   const stage = createStage(reel, adapter, renderNav, [
-    { key: 'I', label: 'Instagram view', act: () => window.open(adapter.link(items[current]), '_blank', 'noopener') },
+    { key: 'I', label: 'Instagram view', act: () => void instagramView() },
     { key: 'S', label: 'Next', act: () => next() },
   ]);
   const pill = createPill(video);
@@ -244,6 +249,11 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let loading: Promise<void> | null = null;
   let pageWaiters: (() => void)[] = [];
   let closed = false;
+  // Stepped aside for Instagram's view of the item, from the thread at `path`.
+  let away = false;
+  let awayTimer: ReturnType<typeof setTimeout> | undefined;
+  const path = location.pathname;
+  const back = $('data-back');
   let reacting = false;
   let sending = false;
   // The reply being sent, or the last one sent or not, shown as a bubble on its item.
@@ -651,7 +661,55 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     },
     toggleTips,
     dismissKeyCard,
+    instagramView: () => void instagramView(),
+    away: () => away,
   });
+
+  /** Steps aside for Instagram's own view of the item; while away, closes that view instead. */
+  async function instagramView(): Promise<void> {
+    if (away) {
+      adapter.closeLayer();
+      return;
+    }
+    // The view could cover a picker or composer the extension is driving.
+    if (closed || reacting || sending) return;
+    finishAll();
+    stage.pause();
+    setAway(true);
+    try {
+      await adapter.openLayer(items[current].id);
+    } catch (e) {
+      console.warn('[dm-slide]', e);
+      comeBack();
+      pill.show(e instanceof CantRead ? CANT_READ : "Instagram view didn't open · I to try again", FAIL_MS, true);
+      return;
+    }
+    watchLayer();
+  }
+
+  function watchLayer(): void {
+    awayTimer = setTimeout(() => {
+      if (closed) return;
+      if (adapter.layerOpen()) watchLayer();
+      else comeBack();
+    }, LAYER_POLL_MS);
+  }
+
+  /** Back, paused, on the same item; unless the view led to another conversation, which closes the player. */
+  function comeBack(): void {
+    setAway(false);
+    if (location.pathname !== path) return close();
+    (document.activeElement as HTMLElement | null)?.blur();
+    player.focus();
+  }
+
+  function setAway(on: boolean): void {
+    away = on;
+    player.hidden = on;
+    back.hidden = !on;
+    // Only the Back chip stays clickable; the rest of the page is Instagram's.
+    host.style.pointerEvents = on ? 'none' : '';
+  }
 
   /** `?` shows the key card with the tips, or hides whichever is showing. */
   function toggleTips(): void {
@@ -724,6 +782,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (closed) return;
     closed = true;
     clearTimeout(reactNextTimer);
+    clearTimeout(awayTimer);
     unbindKeys();
     finishAll();
     const to = adapter.rectOf(items[current].id);
@@ -740,6 +799,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   $('data-prev').addEventListener('click', () => step(-1));
   $('data-next').addEventListener('click', () => step(1));
   $('data-filter').addEventListener('click', toggleFilter);
+  $('data-ig').addEventListener('click', () => void instagramView());
+  back.addEventListener('click', () => adapter.closeLayer());
   tipsButton.addEventListener('click', toggleTips);
   coach.addEventListener('click', dismissKeyCard);
   $('data-strip').addEventListener('click', (e) => {
@@ -780,5 +841,5 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   player.focus();
   go(start);
   enter(from);
-  return { close };
+  return { close, away: () => away };
 }

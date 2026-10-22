@@ -103,3 +103,9 @@ export const MEDIA_CARD = '[role=button], a[href*="/stories/"]';
 export const MEDIA_CARD_MIN_PHOTO_PX = 100;
 export const CARD_MESSAGE_PROP = 'slideMessageRef';
 export const MAX_CARD_FIBER_DEPTH = 32;
+
+// Instagram view: clicking a media card opens Instagram's own view of it, a dialog over the chat
+// showing the media (the reaction picker is a dialog too, of emoji only). Not yet confirmed live;
+// a story opens as a page of its own instead, so any page but a thread counts as that view.
+export const LAYER = '[role=dialog]';
+export const LAYER_MIN_MEDIA_PX = 200;

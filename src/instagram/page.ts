@@ -1,7 +1,7 @@
 // Runs in the page's MAIN world: reads the loaded messages from React and the Relay store, and
 // answers the isolated content script over the bridge. Besides the thread's scroll position (to
 // follow the player and load older messages), it only ever drives Instagram's own React picker,
-// Reply button and composer.
+// Reply button, composer and its view of a media card.
 import {
   type CardResult,
   REQUEST_EVENT,
@@ -349,11 +349,42 @@ function pickEmoji(emoji: string): OpResult {
   return { ok: false, reason: `no open picker offering ${emoji}` };
 }
 
-const showsMedia = (card: Element) =>
+const showsMedia = (card: Element, minPx = S.MEDIA_CARD_MIN_PHOTO_PX) =>
   [...card.querySelectorAll('img, video')].some((m) => {
     const box = m.getBoundingClientRect();
-    return Math.min(box.width, box.height) >= S.MEDIA_CARD_MIN_PHOTO_PX;
+    return Math.min(box.width, box.height) >= minPx;
   });
+
+/** Clicks the message's media card once, the way a person opens Instagram's own view of it. */
+function openLayer(messageId: string): OpResult {
+  const list = findMessageList();
+  if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
+  const row = findRow(list, messageId, true);
+  if (!row) return { ok: false, reason: `no row whose fiber carries message ${messageId}` };
+  row.scrollIntoView({ block: 'center' });
+  const area = (el: Element) => el.getBoundingClientRect().width * el.getBoundingClientRect().height;
+  const media = [...row.querySelectorAll('img, video')].sort((a, b) => area(b) - area(a))[0];
+  const card = media?.closest<HTMLElement>(S.MEDIA_CARD);
+  if (!card || !showsMedia(card)) return { ok: false, reason: 'the row shows no media card' };
+  card.click();
+  return { ok: true };
+}
+
+const openLayerDialog = () => [...document.querySelectorAll(S.LAYER)].find((d) => showsMedia(d, S.LAYER_MIN_MEDIA_PX));
+
+function layerOpen(): OpResult {
+  return openLayerDialog() ? { ok: true } : { ok: false, reason: 'no dialog showing media' };
+}
+
+/** Presses Esc in Instagram's view, as its own close key. */
+function closeLayer(): OpResult {
+  const dialog = openLayerDialog();
+  if (!dialog) return { ok: false, reason: 'no dialog showing media' };
+  const init = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true };
+  dialog.dispatchEvent(new KeyboardEvent('keydown', init));
+  dialog.dispatchEvent(new KeyboardEvent('keyup', init));
+  return { ok: true };
+}
 
 /** The message of the media card holding `el`: a pressable showing a photo, then the message ref above it. */
 function mediaCard(el: EventTarget | null): CardResult {
@@ -380,6 +411,9 @@ function handle(request: Request, target: EventTarget | null): ScanResult | OpRe
   if (request.op === 'sendReply') return sendReply(request.text);
   if (request.op === 'mediaCard') return mediaCard(target);
   if (request.op === 'rect') return rect(request.messageId);
+  if (request.op === 'openLayer') return openLayer(request.messageId);
+  if (request.op === 'layerOpen') return layerOpen();
+  if (request.op === 'closeLayer') return closeLayer();
   return { ok: false, reason: `unknown op ${(request as { op: string }).op}` };
 }
 

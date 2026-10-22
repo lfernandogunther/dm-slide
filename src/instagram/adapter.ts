@@ -1,6 +1,9 @@
 import {
+  requestCloseLayer,
   requestComposerEmpty,
+  requestLayerOpen,
   requestLoadOlder,
+  requestOpenLayer,
   requestOpenPicker,
   requestPickEmoji,
   requestRect,
@@ -60,6 +63,9 @@ export interface ThreadAdapter {
   health(): Health;
   itemAt(el: Element): string | null; // the message of the chat's media card holding el
   rectOf(id: string): Box | null; // where that message's media sits on screen; null when not wholly in view
+  openLayer(id: string): Promise<void>; // Instagram's own view of that message, open once this resolves
+  layerOpen(): boolean; // Instagram's view of an item is up: its layer over the chat, or a page of its own
+  closeLayer(): boolean; // false when that view has no close key of ours to press
 }
 
 /** The thread can't be read at all (Instagram's page changed, or this is no thread): nothing was done. */
@@ -174,6 +180,15 @@ async function sendReply(id: string, text: string, quote: boolean): Promise<void
   );
 }
 
+const layerOpen = () => !THREAD_PATH.test(location.pathname) || requestLayerOpen().ok;
+
+async function openLayer(id: string): Promise<void> {
+  if (!listOthersItems().some((r) => r.id === id)) throw new Error(`openLayer: message ${id} is not a loaded item from someone else`);
+  const clicked = requestOpenLayer(id);
+  if (!clicked.ok) throw new Error(`openLayer: ${clicked.reason}`);
+  await retry(() => layerOpen() || 'no view of the item yet', "openLayer: Instagram's view did not open");
+}
+
 export function createThreadAdapter(): ThreadAdapter {
   return {
     listItems: listOthersItems,
@@ -203,5 +218,8 @@ export function createThreadAdapter(): ThreadAdapter {
       const { x, y, width, height } = result;
       return { x, y, width, height };
     },
+    openLayer,
+    layerOpen,
+    closeLayer: () => requestCloseLayer().ok,
   };
 }

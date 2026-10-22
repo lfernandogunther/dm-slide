@@ -54,6 +54,13 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   the send (a ~1 s window, unguarded).
 - The bridge can ask about one element: dispatch the request on it (bubbling) and the page script
   reads `e.target`, a node both worlds share.
+- **Instagram view (`I`)** clicks the row's media card once (the pressable around its largest
+  img/video, exact row only) and waits for Instagram's view: a `[role=dialog]` showing media
+  ≥ 200 px (the picker is a dialog of emoji only), or any page but a thread, which is how a story
+  opens. The player hides, lets every key through but `I` outside a text box, and polls every
+  250 ms; once the view is gone it comes back paused, or closes if the path is another thread.
+  `I` closes the view with a synthetic Esc on the dialog. **Unconfirmed live** (written on faith,
+  2026-10-22): the dialog shape, whether the path changes, and whether a synthetic Esc closes it.
 - The header button's anchor is found from the message scroller, not from labels or
   `data-pagelet`; a `MutationObserver` with a 400 ms debounce puts it back when React drops it.
 
