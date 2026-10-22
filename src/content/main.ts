@@ -8,7 +8,7 @@ import { createButton, renderButton, type ButtonState } from './button';
 
 const adapter = createThreadAdapter();
 
-// Debug handle, reachable from the console's "Reel Queue" context: __rq.listReels(), __rq.health().
+// Debug handle, reachable from the console's "Reel Queue" context: __rq.listItems(), __rq.health().
 (globalThis as unknown as { __rq: typeof adapter }).__rq = adapter;
 
 // Instagram mutates the page constantly (typing, presence); a burst becomes one sync.
@@ -21,12 +21,12 @@ const onClose = () => {
   sync();
 };
 
-/** Opens at the reel with message id `at`, else by the start rule; false when nothing opened. */
+/** Opens at the item with message id `at`, else by the start rule; false when nothing opened. */
 function open(at?: string): boolean {
   if (player) return false;
-  let reels;
+  let items;
   try {
-    reels = adapter.listReels();
+    items = adapter.listItems();
   } catch (e) {
     const reason = e instanceof Error ? e.message : String(e);
     console.error('[reel-queue]', reason);
@@ -34,9 +34,9 @@ function open(at?: string): boolean {
     if (at === undefined) player = { instance: openNotice(reason, onClose), path: location.pathname };
     return false;
   }
-  const start = at === undefined ? startIndex(reels) : reels.findIndex((r) => r.id === at);
+  const start = at === undefined ? startIndex(items) : items.findIndex((r) => r.id === at);
   if (start < 0) return false;
-  player = { instance: openPlayer(adapter, reels, start, onClose), path: location.pathname };
+  player = { instance: openPlayer(adapter, items, start, onClose), path: location.pathname };
   return true;
 }
 
@@ -49,7 +49,7 @@ window.addEventListener(
   (e) => {
     if (player || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     if (!THREAD_PATH.test(location.pathname) || !(e.target instanceof Element)) return;
-    const id = adapter.reelAt(e.target);
+    const id = adapter.itemAt(e.target);
     if (id === null || !open(id)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -59,7 +59,7 @@ window.addEventListener(
 
 function readState(): ButtonState {
   try {
-    return { reels: adapter.listReels() };
+    return { items: adapter.listItems() };
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) };
   }

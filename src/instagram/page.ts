@@ -7,7 +7,7 @@ import {
   REQUEST_EVENT,
   RESPONSE_EVENT,
   type OpResult,
-  type RawReel,
+  type RawItem,
   type Request,
   type ScanResult,
   type SentMessage,
@@ -78,8 +78,8 @@ function senderNameOf(src: RecordSource, senderId: string): string | null {
   return typeof name === 'string' && name ? name : null;
 }
 
-function reelOf(src: RecordSource, item: any, myReplies: Map<string, string[]>): RawReel | null {
-  const message = item?.currentMessage;
+function itemOf(src: RecordSource, element: any, myReplies: Map<string, string[]>): RawItem | null {
+  const message = element?.currentMessage;
   const record = message?.__id && src.get(message.__id);
   if (!record) return null;
   const xma = deref(src, deref(src, record.content)?.xma);
@@ -91,6 +91,7 @@ function reelOf(src: RecordSource, item: any, myReplies: Map<string, string[]>):
     .map((r) => ({ emoji: String(r.reaction), senderId: String(r.sender_fbid) }));
   return {
     messageId: String(message.id),
+    kind: 'reel',
     shortcode,
     senderId: String(message.sender_fbid),
     senderName: senderNameOf(src, String(message.sender_fbid)),
@@ -122,11 +123,11 @@ function scan(): ScanResult {
   if (!src) return { ok: false, reason: 'no Relay store above the message list' };
   const viewerId = viewerIdOf(src);
   if (!viewerId) return { ok: false, reason: 'no viewer id in the Relay store' };
-  const items: unknown[] = list.fiber.memoizedProps[S.LOADED_MESSAGES_PROP];
-  const mine = readMine(src, items, viewerId);
-  const reels = items.map((item) => reelOf(src, item, mine.replies)).filter((r): r is RawReel => r !== null);
+  const loaded: unknown[] = list.fiber.memoizedProps[S.LOADED_MESSAGES_PROP];
+  const mine = readMine(src, loaded, viewerId);
+  const items = loaded.map((element) => itemOf(src, element, mine.replies)).filter((r): r is RawItem => r !== null);
   const hasMoreAbove = Boolean(list.fiber.memoizedProps[S.HAS_MORE_ABOVE_PROP]);
-  return { ok: true, viewerId, hasMoreAbove, messageCount: items.length, reels, lastMine: mine.last };
+  return { ok: true, viewerId, hasMoreAbove, messageCount: loaded.length, items, lastMine: mine.last };
 }
 
 /** The row of a message: by the row's own fiber key or, unless `exact`, by position when the counts line up. */

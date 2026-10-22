@@ -9,8 +9,12 @@ export interface RawReaction {
   senderId: string;
 }
 
-export interface RawReel {
+// Each kind of item someone can send to watch.
+export type ItemKind = 'reel' | 'post' | 'carousel' | 'story' | 'gallery';
+
+export interface RawItem {
   messageId: string;
+  kind: ItemKind;
   shortcode: string;
   senderId: string;
   senderName: string | null; // display name, else username
@@ -31,7 +35,7 @@ export type ScanResult =
       viewerId: string;
       hasMoreAbove: boolean;
       messageCount: number;
-      reels: RawReel[];
+      items: RawItem[];
       lastMine: SentMessage | null; // my newest loaded message
     }
   | { ok: false; reason: string };
@@ -85,5 +89,5 @@ export const requestTypeReply = (text: string, focus: boolean): OpResult =>
 
 export const requestSendReply = (text: string): OpResult => call<OpResult>({ op: 'sendReply', text });
 
-/** The message whose reel card holds `el`, asked of the page script about that very element. */
+/** The message whose media card holds `el`, asked of the page script about that very element. */
 export const requestReelCard = (el: Element): CardResult => call<CardResult>({ op: 'reelCard' }, el);

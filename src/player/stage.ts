@@ -1,10 +1,10 @@
 // The current reel, played by our own <video> so loop, pause and progress are ours. The next
 // reel loads in a second, hidden <video> and takes over when the player moves to it.
-import type { Reel, ThreadAdapter } from '../instagram/adapter';
+import type { Item, ThreadAdapter } from '../instagram/adapter';
 import { reelUrl } from '../instagram/selectors';
 
 export interface Stage {
-  show(reel: Reel, next: Reel | undefined): void;
+  show(reel: Item, next: Item | undefined): void;
   togglePause(): void;
   toggleMute(): void;
   destroy(): void;
@@ -78,7 +78,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter): Stage {
     status.hidden = content === null;
   }
 
-  function unavailable(reel: Reel, reason: string): void {
+  function unavailable(reel: Item, reason: string): void {
     console.info('[reel-queue] reel unavailable:', reason);
     current.pause();
     current.removeAttribute('src');
@@ -96,7 +96,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter): Stage {
     setStatus(card);
   }
 
-  function play(reel: Reel, url: string): void {
+  function play(reel: Item, url: string): void {
     if (current.src !== url) current.src = url;
     // A swapped-in spare may be a reel watched earlier, paused midway: every reel starts over.
     current.currentTime = 0;
@@ -110,7 +110,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter): Stage {
     current.play().catch(() => el.classList.add('paused'));
   }
 
-  async function preload(reel: Reel | undefined): Promise<void> {
+  async function preload(reel: Item | undefined): Promise<void> {
     const url = reel && (await adapter.videoUrl(reel.shortcode));
     if (url && spare.src !== url) spare.src = url;
   }

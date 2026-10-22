@@ -1,6 +1,6 @@
 // The "▶ Reel Queue" entry button in the thread header. It lives in its own shadow root so
 // Instagram's CSS never reaches it; color and font are inherited from the header.
-import type { Reel } from '../instagram/adapter';
+import type { Item } from '../instagram/adapter';
 
 export const BUTTON_HOST_ATTR = 'data-reel-queue';
 
@@ -13,7 +13,7 @@ const STYLE = `
   button:disabled { opacity: 0.5; cursor: default; }
 `;
 
-export type ButtonState = { reels: Reel[] } | { error: string };
+export type ButtonState = { items: Item[] } | { error: string };
 
 export function createButton(onOpen: () => void): HTMLElement {
   const host = document.createElement('span');
@@ -33,14 +33,14 @@ export function renderButton(host: HTMLElement, state: ButtonState): void {
   if ('error' in state) {
     label = "Reel Queue · can't read";
     title = state.error;
-  } else if (state.reels.length === 0) {
+  } else if (state.items.length === 0) {
     label = 'No reels';
   } else {
-    label = `▶ Reel Queue · ${state.reels.filter((r) => r.myReaction === null).length} to react`;
+    label = `▶ Reel Queue · ${state.items.filter((r) => r.myReaction === null).length} to react`;
   }
   // Rewriting identical text would still be a DOM write; skip it.
   if (button.textContent !== label) button.textContent = label;
   if (button.title !== title) button.title = title;
   // In error the button stays clickable, to say why the player can't open.
-  button.disabled = 'reels' in state && state.reels.length === 0;
+  button.disabled = 'items' in state && state.items.length === 0;
 }

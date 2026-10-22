@@ -1,12 +1,12 @@
 // The player: a full-window overlay in its own shadow root, laid out like the prototype
 // (specs/01-mvp/prototype/index.html). It talks only to the ThreadAdapter.
-import { CantRead, QUICK_REACTIONS, type Reel, type ThreadAdapter } from '../instagram/adapter';
+import { CantRead, QUICK_REACTIONS, type Item, type ThreadAdapter } from '../instagram/adapter';
 import { bindKeys } from './keys';
 import { loadSettings, saveSettings } from './settings';
 import { createStage } from './stage';
 import { renderStrip, type StripEdge } from './strip';
 
-// Pages fetched for one press of A at the oldest reel, when the pages fetched hold no reels.
+// Pages fetched for one press of A at the oldest item, when the pages fetched hold no items.
 const MAX_PAGES_PER_LOAD = 5;
 const STRIP_LOAD_MARGIN_PX = 40;
 // Long enough to read; the next action clears it sooner.
@@ -153,10 +153,10 @@ export interface Player {
   close(): void;
 }
 
-/** The oldest loaded reel without my reaction, or the newest one when every reel has one. */
-export function startIndex(reels: Reel[]): number {
-  const unreacted = reels.findIndex((r) => r.myReaction === null);
-  return unreacted >= 0 ? unreacted : reels.length - 1;
+/** The oldest loaded item without my reaction, or the newest one when every item has one. */
+export function startIndex(items: Item[]): number {
+  const unreacted = items.findIndex((r) => r.myReaction === null);
+  return unreacted >= 0 ? unreacted : items.length - 1;
 }
 
 const NOTICE = `
@@ -201,7 +201,7 @@ export function openNotice(detail: string, onClose: () => void): Player {
   return { close };
 }
 
-export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number, onClose: () => void): Player {
+export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number, onClose: () => void): Player {
   const host = document.createElement('div');
   host.style.cssText = 'position: fixed; inset: 0; z-index: 2147483647;';
   const root = host.attachShadow({ mode: 'open' });
@@ -211,7 +211,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
   const reply = $<HTMLInputElement>('data-reply');
   const stage = createStage($('data-reel'), adapter);
 
-  let reels = loaded;
+  let items = loaded;
   let current = start;
   let edge: StripEdge = null;
   let loading: Promise<number> | null = null;
@@ -241,24 +241,24 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
   $('data-quick').append(...quick);
 
   function renderChrome(follow: boolean): void {
-    const reel = reels[current];
-    const left = reels.filter((r) => r.myReaction === null).length;
-    $('data-pos').textContent = `· ${reels.length - current} of ${reels.length} loaded · ${left} to react`;
+    const item = items[current];
+    const left = items.filter((r) => r.myReaction === null).length;
+    $('data-pos').textContent = `· ${items.length - current} of ${items.length} loaded · ${left} to react`;
     $<HTMLButtonElement>('data-prev').disabled = current === 0 && edge === 'start';
-    $<HTMLButtonElement>('data-next').disabled = current === reels.length - 1;
-    quick.forEach((b) => b.classList.toggle('mine', b.textContent === reel.myReaction));
-    $('data-sender').textContent = reel.senderName ?? '';
-    $('data-sent').textContent = `${reel.senderName ? '· ' : ''}${SENT_AT.format(reel.timestampMs)}`;
-    reply.placeholder = reel.senderName ? `Reply to ${reel.senderName}…` : 'Reply…';
+    $<HTMLButtonElement>('data-next').disabled = current === items.length - 1;
+    quick.forEach((b) => b.classList.toggle('mine', b.textContent === item.myReaction));
+    $('data-sender').textContent = item.senderName ?? '';
+    $('data-sent').textContent = `${item.senderName ? '· ' : ''}${SENT_AT.format(item.timestampMs)}`;
+    reply.placeholder = item.senderName ? `Reply to ${item.senderName}…` : 'Reply…';
     player.classList.toggle('reacting', reacting);
     $('data-replies').replaceChildren(
-      ...reel.myReplies.map((text) => {
+      ...item.myReplies.map((text) => {
         const li = document.createElement('li');
         li.textContent = text;
         return li;
       }),
     );
-    renderStrip($('data-strip'), reels, current, edge, follow);
+    renderStrip($('data-strip'), items, current, edge, follow);
   }
 
   let alertTimer = 0;
@@ -282,25 +282,25 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
   // Following the chat is a convenience: if the row can't be found, the player carries on.
   function revealCurrent(): void {
     try {
-      adapter.reveal(reels[current].id);
+      adapter.reveal(items[current].id);
     } catch (e) {
       console.warn('[reel-queue]', e instanceof Error ? e.message : e);
     }
   }
 
   function go(index: number): void {
-    if (index < 0 || index >= reels.length) return;
+    if (index < 0 || index >= items.length) return;
     current = index;
     renderChrome(true);
-    stage.show(reels[current], reels[current + 1]);
+    stage.show(items[current], items[current + 1]);
     revealCurrent();
   }
 
-  /** Puts the reels older than the first one in front; newer arrivals wait for the next open. */
-  function mergeOlder(found: Reel[]): number {
-    const known = new Set(reels.map((r) => r.id));
-    const older = found.filter((r) => !known.has(r.id) && r.timestampMs <= reels[0].timestampMs);
-    reels = [...older, ...reels];
+  /** Puts the items older than the first one in front; newer arrivals wait for the next open. */
+  function mergeOlder(found: Item[]): number {
+    const known = new Set(items.map((r) => r.id));
+    const older = found.filter((r) => !known.has(r.id) && r.timestampMs <= items[0].timestampMs);
+    items = [...older, ...items];
     current += older.length;
     return older.length;
   }
@@ -315,14 +315,14 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
           edge = 'start';
           break;
         }
-        added = mergeOlder(adapter.listReels());
+        added = mergeOlder(adapter.listItems());
       }
     } catch (e) {
       showFailure('load older messages', e);
     }
     if (edge === 'loading') edge = null;
     renderChrome(false);
-    // Loading scrolled the thread to its top: bring it back to the reel on screen.
+    // Loading scrolled the thread to its top: bring it back to the item on screen.
     revealCurrent();
     return added;
   }
@@ -336,25 +336,25 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
 
   async function prev(): Promise<void> {
     if (current > 0) return go(current - 1);
-    const from = reels[current].id;
+    const from = items[current].id;
     await loadOlder();
-    // Only if the player is still on the reel A was pressed on.
-    if (reels[current].id === from && current > 0) go(current - 1);
+    // Only if the player is still on the item A was pressed on.
+    if (items[current].id === from && current > 0) go(current - 1);
   }
 
   /** Reacts with the quick reaction in `slot`, or removes it when it is already mine. One at a time. */
   async function react(slot: number): Promise<void> {
     const emoji = QUICK_REACTIONS[slot];
     if (!emoji || reacting) return;
-    const reel = reels[current];
-    const removing = reel.myReaction === emoji;
+    const item = items[current];
+    const removing = item.myReaction === emoji;
     clearFailure();
     reacting = true;
     renderChrome(false);
     let done = false;
     try {
-      await (removing ? adapter.unreact(reel.id) : adapter.react(reel.id, emoji));
-      reel.myReaction = removing ? null : emoji;
+      await (removing ? adapter.unreact(item.id) : adapter.react(item.id, emoji));
+      item.myReaction = removing ? null : emoji;
       done = true;
     } catch (e) {
       showFailure(removing ? 'remove the reaction' : 'react', e);
@@ -362,8 +362,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     reacting = false;
     // Instagram's picker took the focus (onto its ❤️); keys never reach it, but the player wants it back.
     player.focus();
-    // Only if the player is still on the reel the reaction was for.
-    if (done && !removing && nextAfterReact && reels[current] === reel && current < reels.length - 1) go(current + 1);
+    // Only if the player is still on the item the reaction was for.
+    if (done && !removing && nextAfterReact && items[current] === item && current < items.length - 1) go(current + 1);
     else renderChrome(false);
   }
 
@@ -380,19 +380,19 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     send.disabled = sending || reply.value.trim() === '';
   }
 
-  /** Sends the box's text about the current reel; the text stays in the box when it fails. */
+  /** Sends the box's text about the current item; the text stays in the box when it fails. */
   async function sendReply(): Promise<void> {
     const text = reply.value.trim();
     if (!text || sending) return;
-    const reel = reels[current];
+    const item = items[current];
     const quoted = quote.checked;
     clearFailure();
     sending = true;
     renderSend();
     replyStatus('Sending…', false);
     try {
-      await adapter.reply(reel.id, text, quoted);
-      if (quoted) reel.myReplies.push(text);
+      await adapter.reply(item.id, text, quoted);
+      if (quoted) item.myReplies.push(text);
       reply.value = '';
       replyStatus('Sent');
     } catch (e) {

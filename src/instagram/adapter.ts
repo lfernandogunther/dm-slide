@@ -9,6 +9,7 @@ import {
   requestSendReply,
   requestStartReply,
   requestTypeReply,
+  type ItemKind,
   type OpResult,
   type ScanResult,
 } from './bridge';
@@ -23,8 +24,9 @@ import {
 } from './selectors';
 import { videoUrl } from './video';
 
-export interface Reel {
+export interface Item {
   id: string; // the DM message id
+  kind: ItemKind;
   shortcode: string;
   senderId: string;
   senderName: string | null; // display name, else username
@@ -33,12 +35,12 @@ export interface Reel {
   myReplies: string[]; // my loaded replies quoting it
 }
 
-export { QUICK_REACTIONS };
+export { QUICK_REACTIONS, type ItemKind };
 
 export type Health = { ok: true } | { ok: false; reason: string };
 
 export interface ThreadAdapter {
-  listReels(): Reel[]; // others' reels, send order, with myReaction
+  listItems(): Item[]; // others' items, send order, with myReaction
   react(id: string, emoji: string): Promise<void>; // replaces any reaction of mine
   unreact(id: string): Promise<void>;
   reply(id: string, text: string, quote: boolean): Promise<void>;
@@ -46,7 +48,7 @@ export interface ThreadAdapter {
   reveal(id: string): void; // scrolls Instagram's thread to that message
   videoUrl(shortcode: string): Promise<string | null>; // null = unavailable
   health(): Health;
-  reelAt(el: Element): string | null; // the message of the chat's reel card holding el
+  itemAt(el: Element): string | null; // the message of the chat's media card holding el
 }
 
 /** The thread can't be read at all (Instagram's page changed, or this is no thread): nothing was done. */
@@ -82,14 +84,15 @@ async function loadOlderPage(): Promise<boolean> {
 const plain = (emoji: string) => emoji.replace(/\uFE0F/g, '').trim();
 const canonical = (emoji: string) => QUICK_REACTIONS.find((q) => plain(q) === plain(emoji)) ?? emoji;
 
-function listOthersReels(): Reel[] {
-  const scan = readThread('listReels');
-  return scan.reels
+function listOthersItems(): Item[] {
+  const scan = readThread('listItems');
+  return scan.items
     .filter((r) => r.senderId !== scan.viewerId)
     .map((r) => {
       const mine = r.reactions.find((x) => x.senderId === scan.viewerId);
       return {
         id: r.messageId,
+        kind: r.kind,
         shortcode: r.shortcode,
         senderId: r.senderId,
         senderName: r.senderName,
@@ -115,11 +118,11 @@ const answered = (r: OpResult) => r.ok || r.reason;
 
 /** One reaction per person per message, so picking my own emoji again removes it. */
 async function setReaction(id: string, target: string | null): Promise<void> {
-  const reactionOf = () => listOthersReels().find((r) => r.id === id);
-  const reel = reactionOf();
-  if (!reel) throw new Error(`react: message ${id} is not a loaded reel from someone else`);
-  if (reel.myReaction === target) return;
-  const emoji = target ?? reel.myReaction!;
+  const reactionOf = () => listOthersItems().find((r) => r.id === id);
+  const item = reactionOf();
+  if (!item) throw new Error(`react: message ${id} is not a loaded item from someone else`);
+  if (item.myReaction === target) return;
+  const emoji = target ?? item.myReaction!;
   // Each step clicks at most once: a step that clicked returns true and is not called again.
   await retry(() => answered(requestOpenPicker(id)), 'react: the React button did not answer');
   await retry(() => answered(requestPickEmoji(emoji)), 'react: the picker did not open');
@@ -134,8 +137,8 @@ async function sendReply(id: string, text: string, quote: boolean): Promise<void
   const body = text.trim();
   if (!body) throw new Error('reply: nothing to send');
   const before = readThread('reply');
-  if (!before.reels.some((r) => r.messageId === id && r.senderId !== before.viewerId)) {
-    throw new Error(`reply: message ${id} is not a loaded reel from someone else`);
+  if (!before.items.some((r) => r.messageId === id && r.senderId !== before.viewerId)) {
+    throw new Error(`reply: message ${id} is not a loaded item from someone else`);
   }
   // A draft of mine in Instagram's composer is never sent along or overwritten.
   const empty = requestComposerEmpty();
@@ -160,7 +163,7 @@ async function sendReply(id: string, text: string, quote: boolean): Promise<void
 
 export function createThreadAdapter(): ThreadAdapter {
   return {
-    listReels: listOthersReels,
+    listItems: listOthersItems,
     health() {
       const scan = scanThread();
       return scan.ok ? { ok: true } : { ok: false, reason: scan.reason };
@@ -174,7 +177,7 @@ export function createThreadAdapter(): ThreadAdapter {
     unreact: (id) => setReaction(id, null),
     reply: sendReply,
     loadOlder: loadOlderPage,
-    reelAt(el) {
+    itemAt(el) {
       const card = requestReelCard(el);
       return card.ok ? card.messageId : null;
     },
