@@ -1,7 +1,8 @@
 // The player: a full-window overlay in its own shadow root, laid out like the prototype
 // (specs/01-mvp/prototype/index.html). It talks only to the ThreadAdapter.
-import type { Reel, ThreadAdapter } from '../instagram/adapter';
+import { QUICK_REACTIONS, type Reel, type ThreadAdapter } from '../instagram/adapter';
 import { bindKeys } from './keys';
+import { loadSettings, saveSettings } from './settings';
 import { createStage } from './stage';
 import { renderStrip, type StripEdge } from './strip';
 
@@ -71,9 +72,19 @@ const STYLE = `
   .p-reply input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; padding: 8px 0; color: inherit; font: inherit; }
   .p-reply button { border: 0; background: #0095f6; border-radius: 16px; padding: 6px 12px; font-weight: 600; }
   .p-reply button:disabled { opacity: 0.4; cursor: default; }
-  .p-actions { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .heart { width: 60px; height: 60px; border-radius: 50%; border: 0; background: #262626; font-size: 28px; }
-  .heart:disabled { cursor: default; }
+  .p-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 76px; }
+  .p-quick { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .quick { width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; background: transparent; font-size: 20px; padding: 0; }
+  .quick:hover { background: #262626; }
+  .quick.mine { border-color: #fff; background: #262626; }
+  .quick { position: relative; }
+  .quick::after {
+    content: attr(data-key); position: absolute; right: -4px; bottom: -4px; line-height: 1.3;
+    font: 10px ui-monospace, monospace; color: #a8a8a8; background: #262626; border: 1px solid #3a3a3a; border-radius: 4px; padding: 0 4px;
+  }
+  .reacting .quick { opacity: 0.4; cursor: progress; }
+  .p-setting { display: flex; flex-direction: column; gap: 4px; align-items: center; font-size: 11px; line-height: 1.3; color: #a8a8a8; text-align: center; cursor: pointer; }
+  .p-setting input { margin: 0; }
 `;
 
 const LAYOUT = `
@@ -82,7 +93,7 @@ const LAYOUT = `
       <div class="p-title"><strong>Reel Queue</strong> <span class="muted" data-pos></span></div>
       <div class="p-keys">
         <span><kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> prev / next</span>
-        <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>R</kbd> reply</span><span><kbd>Esc</kbd> close</span>
+        <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>F</kbd> or <kbd>1</kbd>–<kbd>6</kbd> react</span><span><kbd>R</kbd> reply</span><span><kbd>Esc</kbd> close</span>
       </div>
       <button class="icon-btn" data-close title="Close (Esc)">✕</button>
     </header>
@@ -98,7 +109,8 @@ const LAYOUT = `
           </form>
         </div>
         <div class="p-actions">
-          <button class="heart" data-heart disabled title="Reacting comes in S01 #07"></button>
+          <div class="p-quick" data-quick></div>
+          <label class="p-setting"><input type="checkbox" data-next-after tabindex="-1" checked>Next reel after reacting</label>
         </div>
         <button class="nav" data-next title="Next (D / →)">›</button>
       </div>
@@ -130,6 +142,24 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
   let current = start;
   let edge: StripEdge = null;
   let loading: Promise<number> | null = null;
+  let reacting = false;
+  let nextAfterReact = true;
+  const nextAfter = $<HTMLInputElement>('data-next-after');
+  void loadSettings().then((s) => (nextAfter.checked = nextAfterReact = s.nextAfterReact));
+
+  // Not focusable: Space must keep pausing instead of pressing a button.
+  const quick = QUICK_REACTIONS.map((emoji, i) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'quick';
+    button.tabIndex = -1;
+    button.textContent = emoji;
+    button.dataset.key = String(i + 1);
+    button.title = i === 0 ? `React ${emoji} (F or 1)` : `React ${emoji} (${i + 1})`;
+    button.addEventListener('click', () => void react(i));
+    return button;
+  });
+  $('data-quick').append(...quick);
 
   function renderChrome(follow: boolean): void {
     const reel = reels[current];
@@ -137,7 +167,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     $('data-pos').textContent = `· ${reels.length - current} of ${reels.length} loaded · ${left} without ❤️`;
     $<HTMLButtonElement>('data-prev').disabled = current === 0 && edge === 'start';
     $<HTMLButtonElement>('data-next').disabled = current === reels.length - 1;
-    $('data-heart').textContent = reel.myReaction ?? '♡';
+    quick.forEach((b) => b.classList.toggle('mine', b.textContent === reel.myReaction));
+    player.classList.toggle('reacting', reacting);
     renderStrip($('data-strip'), reels, current, edge, follow);
   }
 
@@ -204,12 +235,38 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
     if (reels[current].id === from && current > 0) go(current - 1);
   }
 
+  /** Reacts with the quick reaction in `slot`, or removes it when it is already mine. One at a time. */
+  async function react(slot: number): Promise<void> {
+    const emoji = QUICK_REACTIONS[slot];
+    if (!emoji || reacting) return;
+    const reel = reels[current];
+    const removing = reel.myReaction === emoji;
+    reacting = true;
+    renderChrome(false);
+    let done = false;
+    try {
+      await (removing ? adapter.unreact(reel.id) : adapter.react(reel.id, emoji));
+      reel.myReaction = removing ? null : emoji;
+      done = true;
+    } catch (e) {
+      // S01 #11 turns this into a visible message.
+      console.warn('[reel-queue]', e instanceof Error ? e.message : e);
+    }
+    reacting = false;
+    // Instagram's picker took the focus (onto its ❤️); keys never reach it, but the player wants it back.
+    player.focus();
+    // Only if the player is still on the reel the reaction was for.
+    if (done && !removing && nextAfterReact && reels[current] === reel && current < reels.length - 1) go(current + 1);
+    else renderChrome(false);
+  }
+
   const unbindKeys = bindKeys((e) => e.composedPath()[0] === reply, {
     prev: () => void prev(),
     next: () => go(current + 1),
     close,
     togglePause: () => stage.togglePause(),
     toggleMute: () => stage.toggleMute(),
+    react: (slot) => void react(slot),
     focusReply: () => reply.focus(),
     blurReply: () => player.focus(),
   });
@@ -238,6 +295,11 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
   );
   $('data-reel').addEventListener('click', (e) => {
     if (!(e.target as Element).closest('a')) stage.togglePause();
+  });
+  nextAfter.addEventListener('change', () => {
+    nextAfterReact = nextAfter.checked;
+    saveSettings({ nextAfterReact });
+    player.focus();
   });
   $('data-reply-form').addEventListener('submit', (e) => e.preventDefault());
 

@@ -210,3 +210,17 @@ typed without sending. End state verified clean: no reaction, empty composer, no
 - Checked by injecting the build in the automated Chrome: `A` at the top tile loaded 4 → 6 tiles
   and moved one older; a wheel-up at the top of the strip loaded 6 → 9, current unchanged.
   "Start of chat" not reached (long thread).
+
+## #07 react (2026-10-21)
+- Instagram's own picker works when driven by script: dispatched `pointerover`/`mouseover` on the
+  row's largest `img` renders the hover toolbar, then `.click()` on React (`aria-haspopup=dialog`)
+  and `.click()` on the emoji found by its text. No real mouse needed.
+- **Choosing my current emoji again in the picker removes it.** The Reactions dialog fallback was
+  not needed.
+- Relay reflects the change almost immediately: the confirming re-read succeeded on the first poll,
+  both for adding and removing. No picker dialog is left open afterwards.
+- Actions only use a row matched by its own fiber key (`findRow(..., exact)`), never by position.
+- Checked in the test thread with 👍 only (key `6`): react, next after react, back, remove, no
+  advance on removal, setting toggle, clean end state. ❤️ via `F` is for the user's own Chrome.
+- A reaction picked from the full emoji picker (not the quick set) cannot be removed by the player:
+  the quick picker does not offer it. Untested; #11 should surface the timeout.

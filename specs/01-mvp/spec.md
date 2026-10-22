@@ -37,7 +37,9 @@ See [constitution.md](../../constitution.md) for principles and non-goals.
   pause it. A speaker button (and `M`) mutes and unmutes. Only the current reel loads, and the next
   one is preloaded. The top of the video shows when the reel was sent.
 - **React:** `F` or the ❤️ button reacts ❤️ to that **DM message**, and pressing again removes it.
-  "Next after ❤️" (on by default) advances automatically.
+  Instagram's whole quick set (❤️ 😂 😮 😢 😡 👍) sits beside the video as equal buttons, numbered
+  `1`–`6`; choosing my current reaction again removes it, and another one replaces it. "Next reel after reacting"
+  (on by default) advances automatically after adding a reaction, never after removing one.
 - **Reply:** `R` focuses the box under the video and `Enter` sends to the conversation. With
   "Quote this reel" on (the default), the message is a reply to that reel's message; off, it is a
   plain message. Shortcuts are off while typing, and `Esc` leaves the box. Under the box, the
@@ -59,7 +61,8 @@ Checked by hand on the real Instagram, in one 1:1 and one group conversation:
 3. The player lists only reels from others, in send order. `A`/`D`, `←`/`→`, ‹ › and the strip
    all move; next stops at the last reel; the video plays with sound, loops, and pauses on `Space`.
 4. `F` reacts ❤️ to the message, which shows in Instagram's own thread after closing, and a second
-   `F` removes it. With "Next after ❤️" on, the player advances.
+   `F` removes it; `2`–`6` do the same with the other quick reactions. With "Next reel after reacting" on,
+   the player advances.
 5. A reply sent with "Quote this reel" on appears in the thread as a reply to that reel; with it
    off, it appears as a plain message. A reel I had replied to with a quote shows that reply under
    the box.

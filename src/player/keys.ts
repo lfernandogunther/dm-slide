@@ -7,6 +7,7 @@ export interface KeyActions {
   close(): void;
   togglePause(): void;
   toggleMute(): void;
+  react(slot: number): void; // 0 is ❤️, then the rest of the quick set
   focusReply(): void;
   blurReply(): void;
 }
@@ -27,7 +28,10 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
       }
       return;
     }
-    const action = {
+    // F is ❤️; 1–9 pick a quick reaction by its place in the set. A held key reacts once.
+    const slot = e.key.toLowerCase() === 'f' ? 0 : /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : null;
+    if (slot !== null && e.repeat) return e.preventDefault();
+    const action = slot !== null ? () => actions.react(slot) : {
       a: actions.prev,
       arrowleft: actions.prev,
       d: actions.next,

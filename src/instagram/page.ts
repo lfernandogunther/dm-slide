@@ -1,7 +1,7 @@
 // Runs in the page's MAIN world: reads the loaded messages from React and the Relay store, and
-// answers the isolated content script over the bridge. It never clicks; the one thing it changes
-// is the thread's scroll position, to follow the player and to load older messages.
-import { REQUEST_EVENT, RESPONSE_EVENT, type RawReel, type Request, type ScanResult, type ScrollResult } from './bridge';
+// answers the isolated content script over the bridge. Besides the thread's scroll position (to
+// follow the player and load older messages), it only ever clicks Instagram's own React picker.
+import { REQUEST_EVENT, RESPONSE_EVENT, type RawReel, type Request, type ScanResult, type OpResult } from './bridge';
 import * as S from './selectors';
 
 // React and Relay internals are untyped, hence the `any`s.
@@ -93,13 +93,13 @@ function scan(): ScanResult {
   return { ok: true, viewerId, hasMoreAbove, messageCount: items.length, reels };
 }
 
-/** The row of a message: by the row's own fiber key, or by position when the counts line up. */
-function findRow(list: MessageList, messageId: string): Element | null {
+/** The row of a message: by the row's own fiber key or, unless `exact`, by position when the counts line up. */
+function findRow(list: MessageList, messageId: string, exact = false): Element | null {
   const rows = [...list.el.children];
   const byKey = rows.find((row) =>
     findUp(fiberOf(row), (f) => f.key === messageId || f.memoizedProps?.messageId === messageId, S.MAX_ROW_FIBER_DEPTH),
   );
-  if (byKey) return byKey;
+  if (byKey || exact) return byKey ?? null;
   const items: any[] = list.fiber.memoizedProps[S.LOADED_MESSAGES_PROP];
   const index = items.findIndex((item) => String(item?.currentMessage?.id) === messageId);
   // Rows above the messages (a progressbar while older pages exist) shift the DOM index.
@@ -109,7 +109,7 @@ function findRow(list: MessageList, messageId: string): Element | null {
 }
 
 /** Scrolls the thread so the message's row sits in the middle, so closing the player lands there. */
-function reveal(messageId: string): ScrollResult {
+function reveal(messageId: string): OpResult {
   const list = findMessageList();
   if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
   const row = findRow(list, messageId);
@@ -119,7 +119,7 @@ function reveal(messageId: string): ScrollResult {
 }
 
 /** Scrolls the thread to its oldest loaded message, which is what makes Instagram fetch the page before. */
-function loadOlder(): ScrollResult {
+function loadOlder(): OpResult {
   const list = findMessageList();
   if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
   // The list is column-reverse (its top is a negative scrollTop); the browser clamps to the top either way.
@@ -127,15 +127,73 @@ function loadOlder(): ScrollResult {
   return { ok: true };
 }
 
-function handle(request: Request): ScanResult | ScrollResult {
+const plain = (emoji: string) => emoji.replace(/\uFE0F/g, '').trim();
+
+/** The row's own toolbar: the group of exactly React, Reply and More, not an outer group around it. */
+function findReactButton(row: Element): HTMLElement | null {
+  for (const group of row.querySelectorAll('[role=group]')) {
+    if (group.querySelectorAll('[role=button]').length !== S.ROW_ACTION_COUNT) continue;
+    const button = group.querySelector<HTMLElement>(S.REACT_BUTTON);
+    if (button) return button;
+  }
+  return null;
+}
+
+/** A pointer arriving on the row's reel card from outside the window: React fires enter on all its ancestors. */
+function hover(row: Element): void {
+  const area = (el: Element) => el.getBoundingClientRect().width * el.getBoundingClientRect().height;
+  let target: Element | undefined = [...row.querySelectorAll('img')].sort((a, b) => area(b) - area(a))[0];
+  if (!target) for (target = row; target.firstElementChild; ) target = target.firstElementChild;
+  const box = target.getBoundingClientRect();
+  const init = { bubbles: true, composed: true, clientX: box.x + box.width / 2, clientY: box.y + box.height / 2 };
+  target.dispatchEvent(new PointerEvent('pointerover', init));
+  target.dispatchEvent(new MouseEvent('mouseover', init));
+  target.dispatchEvent(new PointerEvent('pointermove', init));
+  target.dispatchEvent(new MouseEvent('mousemove', init));
+}
+
+/** Clicks the row's React button once; the toolbar renders a moment after the hover, so the caller retries. */
+function openPicker(messageId: string): OpResult {
+  const list = findMessageList();
+  if (!list) return { ok: false, reason: 'no scroll container whose fiber holds the loaded messages' };
+  // A row matched by position is a guess, and a guess would react to the wrong message.
+  const row = findRow(list, messageId, true);
+  if (!row) return { ok: false, reason: `no row whose fiber carries message ${messageId}` };
+  row.scrollIntoView({ block: 'center' });
+  const button = findReactButton(row);
+  if (!button) {
+    hover(row);
+    return { ok: false, reason: "no React button in the row's toolbar after hovering it" };
+  }
+  button.click();
+  return { ok: true };
+}
+
+/** Clicks the emoji in the open picker, by its text. */
+function pickEmoji(emoji: string): OpResult {
+  for (const dialog of document.querySelectorAll(S.PICKER)) {
+    const button = [...dialog.querySelectorAll<HTMLElement>(S.PICKER_BUTTON)].find(
+      (b) => plain(b.textContent ?? '') === plain(emoji),
+    );
+    if (button) {
+      button.click();
+      return { ok: true };
+    }
+  }
+  return { ok: false, reason: `no open picker offering ${emoji}` };
+}
+
+function handle(request: Request): ScanResult | OpResult {
   if (request.op === 'scan') return scan();
   if (request.op === 'reveal') return reveal(request.messageId);
   if (request.op === 'loadOlder') return loadOlder();
+  if (request.op === 'openPicker') return openPicker(request.messageId);
+  if (request.op === 'pickEmoji') return pickEmoji(request.emoji);
   return { ok: false, reason: `unknown op ${(request as { op: string }).op}` };
 }
 
 document.addEventListener(REQUEST_EVENT, (e) => {
-  let result: ScanResult | ScrollResult;
+  let result: ScanResult | OpResult;
   try {
     result = handle(JSON.parse(String((e as CustomEvent).detail)) as Request);
   } catch (err) {

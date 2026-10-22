@@ -3,6 +3,9 @@
   "name": "Reel Queue",
   "version": "0.0.1",
   "description": "Watch, react to and reply to the reels sent in an Instagram DM conversation, one after another.",
+  "permissions": [
+    "storage"
+  ],
   "content_scripts": [
     {
       "matches": [

@@ -49,3 +49,14 @@ export const WEB_APP_ID_HEADER = { 'X-IG-App-ID': '936619743392459' };
 export const SHORTCODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 export const SHORTCODE_ID_LENGTH = 11;
 export const EMBED_POLL_MS = 200;
+
+// Reacting goes through Instagram's own picker. A row's hover toolbar is the group of exactly React
+// (aria-haspopup=dialog), Reply and More; it renders on hover. The picker's emoji buttons carry no
+// label, only the emoji as text, and focus starts on ❤️: click by text, never confirm with Enter.
+export const QUICK_REACTIONS = ['❤️', '😂', '😮', '😢', '😡', '👍'];
+export const ROW_ACTION_COUNT = 3;
+export const REACT_BUTTON = '[role=button][aria-haspopup="dialog"]';
+export const PICKER = '[role=dialog]';
+export const PICKER_BUTTON = '[role=button], button';
+export const REACT_TIMEOUT_MS = 5000;
+export const REACT_POLL_MS = 100;
