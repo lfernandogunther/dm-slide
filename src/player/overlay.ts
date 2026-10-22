@@ -243,7 +243,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Reel[], start: number
   function renderChrome(follow: boolean): void {
     const reel = reels[current];
     const left = reels.filter((r) => r.myReaction === null).length;
-    $('data-pos').textContent = `· ${reels.length - current} of ${reels.length} loaded · ${left} without ❤️`;
+    $('data-pos').textContent = `· ${reels.length - current} of ${reels.length} loaded · ${left} to react`;
     $<HTMLButtonElement>('data-prev').disabled = current === 0 && edge === 'start';
     $<HTMLButtonElement>('data-next').disabled = current === reels.length - 1;
     quick.forEach((b) => b.classList.toggle('mine', b.textContent === reel.myReaction));

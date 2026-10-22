@@ -55,7 +55,7 @@ See [constitution.md](../../constitution.md) for principles and non-goals.
 
 ## Acceptance criteria
 Checked by hand on the real Instagram, in one 1:1 and one group conversation:
-1. A thread with reels from others shows "▶ Reel Queue · N without ❤️", where N matches the
+1. A thread with reels from others shows "▶ Reel Queue · N to react", where N matches the
    loaded reels I haven't reacted to. A thread without such reels shows a disabled "No reels".
 2. The button opens the player at the oldest loaded reel without my reaction, and a click on a
    reel card opens it at that reel.

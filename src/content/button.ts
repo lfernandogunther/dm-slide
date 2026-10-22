@@ -36,7 +36,7 @@ export function renderButton(host: HTMLElement, state: ButtonState): void {
   } else if (state.reels.length === 0) {
     label = 'No reels';
   } else {
-    label = `▶ Reel Queue · ${state.reels.filter((r) => r.myReaction === null).length} without ❤️`;
+    label = `▶ Reel Queue · ${state.reels.filter((r) => r.myReaction === null).length} to react`;
   }
   // Rewriting identical text would still be a DOM write; skip it.
   if (button.textContent !== label) button.textContent = label;
