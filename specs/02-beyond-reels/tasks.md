@@ -1,11 +1,11 @@
 # Tasks — S02
 
-**8 of 12 done · next: 04 — list every kind**
+**9 of 12 done · next: 05 — media resolution**
 
 - [x] **01 — spike, read only: each kind's Relay record, card flag, availability and media lookup**
 - [x] **02 — doc: amend the constitution (dated, with my ok) and move the roadmap to phase 04**
 - [x] **03 — refactor: `Reel` → `Item` with `kind`, `listItems`, `itemAt` (reels only, no behaviour change)**
-- [ ] **04 — list every kind: posts, carousels, stories, gallery photos and videos; drop known-unavailable**
+- [x] **04 — list every kind: posts, carousels, stories, gallery photos and videos; drop known-unavailable**
 - [ ] **05 — media resolution: video, photo or slides per item**
 - [x] **06 — stage: photos, slides with dots, the current slide's video**
 - [x] **07 — keys: `W`/`S` and `↑`/`↓` for items; `A`/`D` and `←`/`→` for slides, then items**

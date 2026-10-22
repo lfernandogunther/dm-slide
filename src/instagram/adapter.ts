@@ -10,7 +10,9 @@ import {
   requestStartReply,
   requestTypeReply,
   type ItemKind,
+  type ItemSource,
   type OpResult,
+  type Slide,
   type ScanResult,
 } from './bridge';
 import {
@@ -21,14 +23,13 @@ import {
   QUICK_REACTIONS,
   SEND_TIMEOUT_MS,
   THREAD_PATH,
-  reelUrl,
 } from './selectors';
 import { videoUrl } from './video';
 
 export interface Item {
   id: string; // the DM message id
   kind: ItemKind;
-  shortcode: string;
+  source: ItemSource; // only the adapter reads it
   senderId: string;
   senderName: string | null; // display name, else username
   timestampMs: number;
@@ -36,10 +37,9 @@ export interface Item {
   myReplies: string[]; // my loaded replies quoting it
 }
 
-export type Slide = { type: 'video' | 'photo'; url: string };
 export type Media = Slide | { type: 'slides'; slides: Slide[] };
 
-export { QUICK_REACTIONS, type ItemKind };
+export { QUICK_REACTIONS, type ItemKind, type Slide };
 
 export type Health = { ok: true } | { ok: false; reason: string };
 
@@ -99,7 +99,7 @@ function listOthersItems(): Item[] {
       return {
         id: r.messageId,
         kind: r.kind,
-        shortcode: r.shortcode,
+        source: r.source,
         senderId: r.senderId,
         senderName: r.senderName,
         timestampMs: r.timestampMs,
@@ -179,10 +179,13 @@ export function createThreadAdapter(): ThreadAdapter {
       if (!result.ok) throw new Error(`reveal: ${result.reason}`);
     },
     async media(item) {
-      const url = await videoUrl(item.shortcode);
+      const { shortcode, stored } = item.source;
+      if (item.kind !== 'reel') return stored.length > 1 ? { type: 'slides', slides: stored } : (stored[0] ?? null);
+      const url = shortcode && (await videoUrl(shortcode));
       return url ? { type: 'video', url } : null;
     },
-    link: (item) => reelUrl(item.shortcode),
+    // A gallery item has no page of its own: the thread is where Instagram shows it.
+    link: (item) => (item.source.path ? `https://www.instagram.com${item.source.path}` : location.href),
     react: (id, emoji) => setReaction(id, emoji),
     unreact: (id) => setReaction(id, null),
     reply: sendReply,

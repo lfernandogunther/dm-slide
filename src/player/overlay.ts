@@ -93,8 +93,8 @@ const STYLE = `
     border: 0; padding: 0; background: rgba(38, 38, 38, 0.8); color: #fff; display: grid; place-items: center;
   }
   .reel-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, 0.25); }
-  .reel-dots { position: absolute; top: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; pointer-events: none; }
-  .reel-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
+  .reel-dots { position: absolute; top: 6px; left: 0; right: 0; display: flex; justify-content: center; gap: 2px; }
+  .reel-dots span { width: 6px; height: 6px; margin: 4px; cursor: pointer; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
   .reel-dots span.on { background: #fff; }
   .reel-progress div { height: 100%; width: 0; background: #fff; }
   .p-reply { display: flex; gap: 8px; align-items: center; background: #121212; border: 1px solid #3a3a3a; border-radius: 22px; padding: 4px 6px 4px 14px; }
@@ -151,14 +151,14 @@ const LAYOUT = `
             <button type="submit" data-send disabled title="Send (Enter)">Send</button>
           </form>
           <div class="p-reply-opts">
-            <label><input type="checkbox" data-quote tabindex="-1" checked>Quote this reel</label>
+            <label><input type="checkbox" data-quote tabindex="-1" checked>Quote it</label>
             <span data-reply-status></span>
           </div>
           <ul class="p-replies" data-replies></ul>
         </div>
         <div class="p-actions">
           <div class="p-quick" data-quick></div>
-          <label class="p-setting"><input type="checkbox" data-next-after tabindex="-1" checked>Next reel after reacting</label>
+          <label class="p-setting"><input type="checkbox" data-next-after tabindex="-1" checked>Next after reacting</label>
         </div>
         <button class="nav" data-next title="Next (D / →)">›</button>
       </div>

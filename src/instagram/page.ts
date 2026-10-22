@@ -7,7 +7,10 @@ import {
   REQUEST_EVENT,
   RESPONSE_EVENT,
   type OpResult,
+  type ItemKind,
+  type ItemSource,
   type RawItem,
+  type Slide,
   type Request,
   type ScanResult,
   type SentMessage,
@@ -78,21 +81,72 @@ function senderNameOf(src: RecordSource, senderId: string): string | null {
   return typeof name === 'string' && name ? name : null;
 }
 
+/** A linked record, or an object stored inline. */
+function recordOf(src: RecordSource, value: any): any {
+  return value?.__ref || value?.__refs ? deref(src, value) : value && typeof value === 'object' ? value : undefined;
+}
+
+function listOf(src: RecordSource, value: any): any[] {
+  if (Array.isArray(value?.__refs)) return value.__refs.map((id: string) => src.get(id)).filter(Boolean);
+  return Array.isArray(value) ? value.map((v) => recordOf(src, v)).filter(Boolean) : [];
+}
+
+const httpsUrl = (url: unknown) => (typeof url === 'string' && url.startsWith('https://') ? url : undefined);
+
+function photoOf(preview: any): Slide[] {
+  const url = httpsUrl(preview?.url);
+  return url ? [{ type: 'photo', url, fallbackUrl: httpsUrl(preview?.fallback_url) }] : [];
+}
+
+const NO_SHARE = { shortcode: null, path: null, isVideo: false };
+
+/** What the record holds to watch, or null for text, voice, links, stickers and unavailable shares. */
+function sourceOf(src: RecordSource, record: any): { kind: ItemKind; source: ItemSource } | null {
+  const content = recordOf(src, record.content);
+  const xma = recordOf(src, content?.xma);
+  const target = typeof xma?.target_url === 'string' ? xma.target_url : '';
+  const preview = recordOf(src, xma?.[S.XMA_PREVIEW_FIELD]);
+  const stored = photoOf(preview);
+  const reel = target.match(S.REEL_URL)?.[1];
+  if (reel) return { kind: 'reel', source: { shortcode: reel, path: `/reel/${reel}/`, isVideo: true, stored: [] } };
+  const post = target.match(S.POST_URL)?.[1];
+  if (post) {
+    const decoration = preview?.[S.XMA_DECORATION_FIELD];
+    const isVideo = decoration === S.VIDEO_DECORATION;
+    const kind = decoration === S.CAROUSEL_DECORATION ? 'carousel' : 'post';
+    return { kind, source: { shortcode: post, path: `/p/${post}/`, isVideo, stored } };
+  }
+  const story = target.match(S.STORY_URL)?.[1];
+  if (story) {
+    if (xma[S.STORY_REPLY_TEXT_FIELD] || !stored.length) return null;
+    return { kind: 'story', source: { ...NO_SHARE, path: story, stored } };
+  }
+  if (xma) return null;
+  for (const field of S.GALLERY_FIELDS) {
+    const slides = listOf(src, content?.[field]).flatMap((a): Slide[] => {
+      const isVideo = field === S.GALLERY_VIDEO_FIELD || Number(a?.attachment_type) === S.VIDEO_ATTACHMENT_TYPE;
+      const url = httpsUrl(a?.[S.GALLERY_URL_FIELD]) ?? (isVideo ? undefined : httpsUrl(a?.[S.GALLERY_PREVIEW_FIELD]));
+      return url ? [{ type: isVideo ? 'video' : 'photo', url }] : [];
+    });
+    if (slides.length) return { kind: 'gallery', source: { ...NO_SHARE, stored: slides } };
+  }
+  return null;
+}
+
 function itemOf(src: RecordSource, element: any, myReplies: Map<string, string[]>): RawItem | null {
   const message = element?.currentMessage;
   const record = message?.__id && src.get(message.__id);
   if (!record) return null;
-  const xma = deref(src, deref(src, record.content)?.xma);
-  const shortcode = typeof xma?.target_url === 'string' ? xma.target_url.match(S.REEL_URL)?.[1] : undefined;
-  if (!shortcode) return null;
+  const found = sourceOf(src, record);
+  if (!found) return null;
   const reactions = ((record.reactions?.__refs ?? []) as string[])
     .map((id) => src.get(id))
     .filter((r) => r?.reaction && r?.sender_fbid)
     .map((r) => ({ emoji: String(r.reaction), senderId: String(r.sender_fbid) }));
   return {
     messageId: String(message.id),
-    kind: 'reel',
-    shortcode,
+    kind: found.kind,
+    source: found.source,
     senderId: String(message.sender_fbid),
     senderName: senderNameOf(src, String(message.sender_fbid)),
     timestampMs: Number(message.timestamp_ms),

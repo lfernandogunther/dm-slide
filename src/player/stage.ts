@@ -136,22 +136,34 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     current.play().catch(() => el.classList.add('paused'));
   }
 
-  function showPhoto(shown: Item, url: string): void {
+  function showPhoto(shown: Item, slide: Slide): void {
     blank();
     setStatus(null);
-    photo.onerror = () => photo.src === url && unavailable(shown, 'photo failed to load');
-    photo.src = url;
+    const fallback = slide.fallbackUrl;
+    photo.onerror = () => {
+      // The store's photo may come in a format the browser can't show; its fallback is another copy.
+      if (fallback && photo.src === slide.url) photo.src = fallback;
+      else if (photo.src === slide.url || photo.src === fallback) unavailable(shown, 'photo failed to load');
+    };
+    photo.src = slide.url;
     photo.hidden = false;
   }
 
   function showSlide(shown: Item): void {
     const slide = slides[at];
     if (slide.type === 'video') play(shown, slide.url);
-    else showPhoto(shown, slide.url);
+    else showPhoto(shown, slide);
     dots.replaceChildren(
       ...slides.map((_, i) => {
         const dot = document.createElement('span');
         dot.classList.toggle('on', i === at);
+        dot.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (i === at) return;
+          at = i;
+          showSlide(shown);
+          onSlides();
+        });
         return dot;
       }),
     );
@@ -202,6 +214,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       if (!item || !canSlide(delta)) return false;
       at += delta;
       showSlide(item);
+      onSlides();
       return true;
     },
     canSlide,

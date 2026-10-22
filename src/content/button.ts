@@ -34,7 +34,7 @@ export function renderButton(host: HTMLElement, state: ButtonState): void {
     label = "Reel Queue · can't read";
     title = state.error;
   } else if (state.items.length === 0) {
-    label = 'No reels';
+    label = 'Nothing to watch';
   } else {
     label = `▶ Reel Queue · ${state.items.filter((r) => r.myReaction === null).length} to react`;
   }

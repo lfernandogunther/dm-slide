@@ -12,10 +12,20 @@ export interface RawReaction {
 // Each kind of item someone can send to watch.
 export type ItemKind = 'reel' | 'post' | 'carousel' | 'story' | 'gallery';
 
+export type Slide = { type: 'video' | 'photo'; url: string; fallbackUrl?: string };
+
+/** Where an item's media comes from: its share's shortcode, or what the record itself carries. */
+export interface ItemSource {
+  shortcode: string | null;
+  path: string | null; // the item's own page on instagram.com
+  isVideo: boolean; // a shared video post, whose record holds only a poster
+  stored: Slide[]; // in send order; a carousel's holds its first slide only
+}
+
 export interface RawItem {
   messageId: string;
   kind: ItemKind;
-  shortcode: string;
+  source: ItemSource;
   senderId: string;
   senderName: string | null; // display name, else username
   timestampMs: number;

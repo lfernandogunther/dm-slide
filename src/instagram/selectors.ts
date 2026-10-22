@@ -23,8 +23,25 @@ export const STORE_ROOT_ID = 'client:root';
 export const VIEWER_ROOT_FIELD = 'xdt_viewer';
 export const VIEWER_ID_FIELD = 'interop_messaging_user_fbid';
 
-// A shared reel's XMA card points at its reel URL; posts (/p/) are not reels.
+// A shared item's XMA card points at its URL. Placeholders (deleted, private, expired) carry
+// none, and a link to another site matches none of these.
 export const REEL_URL = /instagram\.com\/reel\/([^/?#]+)/;
+export const POST_URL = /instagram\.com\/p\/([^/?#]+)/;
+export const STORY_URL = /instagram\.com(\/stories\/[^?#]+)/;
+// The XMA's preview photo; its decoration tells a carousel and a video post from a one-photo post.
+export const XMA_PREVIEW_FIELD = 'preview_image';
+export const XMA_DECORATION_FIELD = 'preview_image_decoration_type';
+export const CAROUSEL_DECORATION = 'COLLAGE';
+export const VIDEO_DECORATION = 'VIDEO';
+// A story card with text is a reply or reaction to a story, usually mine, not a story sent to watch.
+export const STORY_REPLY_TEXT_FIELD = 'xma_text_body';
+// Sent from the gallery: the record's content lists its attachments under one of these fields.
+// Only `videos` was seen live; the photo and mixed fields come from the web app's own code.
+export const GALLERY_FIELDS = ['videos', 'attachments', 'ordered_photo_video_attachments'];
+export const GALLERY_URL_FIELD = 'attachment_cdn_url';
+export const GALLERY_PREVIEW_FIELD = 'preview_cdn_url';
+export const GALLERY_VIDEO_FIELD = 'videos';
+export const VIDEO_ATTACHMENT_TYPE = 4;
 
 // The thread header sits in the previous sibling of an ancestor of the message scroller (wide and
 // tall, unlike the inbox list's). Its call / video / info icons are a div whose children are all
