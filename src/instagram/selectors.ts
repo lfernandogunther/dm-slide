@@ -68,6 +68,10 @@ export const CAROUSEL_MEDIA_TYPE = 8;
 export const SHORTCODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 export const SHORTCODE_ID_LENGTH = 11;
 export const EMBED_POLL_MS = 200;
+// A carousel's embed page carries every slide as a JSON string, escaped once inside the page's script;
+// its rendered iframe fills only the first two. One-photo posts have `null` there.
+export const EMBED_CONTEXT_JSON = /"contextJSON":"((?:[^"\\]|\\.)*)"/;
+export const EMBED_CAROUSEL_TYPE = 'GraphSidecar';
 
 // Reacting goes through Instagram's own picker. A row's hover toolbar is the group of exactly React
 // (aria-haspopup=dialog), Reply and More; it renders on hover. The picker's emoji buttons carry no

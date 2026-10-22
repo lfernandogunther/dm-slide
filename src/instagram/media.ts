@@ -1,5 +1,6 @@
 // Resolves what an item shows. Shares go through the web app's own media lookup and, failing that,
-// the share's embed page in a hidden iframe, read off the embed's <video>. Gallery items, stories
+// the share's embed page: a reel's in a hidden iframe, read off its <video>; a carousel's from the
+// slide data in its HTML. Gallery items, stories
 // and one-photo posts carry their own media in the record, so they ask the network nothing.
 import type { Item, Media, Slide } from './adapter';
 import * as S from './selectors';
@@ -72,11 +73,33 @@ function fromEmbed(path: string): Promise<Media | null> {
   });
 }
 
+function embedSlideOf(node: any): Slide | null {
+  const url = httpsUrl(node?.is_video ? node.video_url : node?.display_url);
+  return url ? { type: node.is_video ? 'video' : 'photo', url } : null;
+}
+
+/** A carousel's slides from its embed page's data, with no iframe. */
+async function fromEmbedData(path: string): Promise<Media | null> {
+  try {
+    const res = await fetch(S.embedUrl(path), { credentials: 'include' });
+    if (!res.ok) return null;
+    const raw = (await res.text()).match(S.EMBED_CONTEXT_JSON)?.[1];
+    if (!raw) return null;
+    const media = JSON.parse(JSON.parse(`"${raw}"`))?.gql_data?.shortcode_media;
+    if (media?.__typename !== S.EMBED_CAROUSEL_TYPE) return null;
+    const slides = ((media.edge_sidecar_to_children?.edges ?? []) as any[]).map((e) => embedSlideOf(e?.node));
+    if (!slides.length || slides.includes(null)) return null;
+    return { type: 'slides', slides: slides as Slide[] };
+  } catch {
+    return null;
+  }
+}
+
 /** A share's media from the network. A found one is asked once; a miss may be a slow network, so it is asked again next time. */
-function fetchShare(shortcode: string, path: string | null, withEmbed: boolean): Promise<Media | null> {
+function fetchShare(shortcode: string, path: string | null, fallback: ((path: string) => Promise<Media | null>) | null): Promise<Media | null> {
   let found = cache.get(shortcode);
   if (!found) {
-    found = fromApi(shortcode).then((media) => media ?? (withEmbed && path ? fromEmbed(path) : null));
+    found = fromApi(shortcode).then((media) => media ?? (fallback && path ? fallback(path) : null));
     cache.set(shortcode, found);
     found.then((media) => media ?? cache.delete(shortcode));
   }
@@ -91,11 +114,11 @@ export async function mediaOf(item: Item): Promise<Media | null> {
   const own: Media | null = stored.length > 1 ? { type: 'slides', slides: stored } : (stored[0] ?? null);
   if (!shortcode) return own;
   if (item.kind === 'reel' || video) {
-    const media = await fetchShare(shortcode, path, true);
+    const media = await fetchShare(shortcode, path, fromEmbed);
     // The poster in the record is not the video: without the video, the item is unavailable.
     return isVideo(media) ? media : null;
   }
-  // The record holds a carousel's first slide only; the rest come from the lookup, if it answers.
-  if (item.kind === 'carousel') return (await fetchShare(shortcode, path, false)) ?? own;
+  // The record holds a carousel's first slide only; the rest come from the lookup or the embed page.
+  if (item.kind === 'carousel') return (await fetchShare(shortcode, path, fromEmbedData)) ?? own;
   return own;
 }

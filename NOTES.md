@@ -84,8 +84,14 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   the shortcode's first 11 characters read in base 64 — and the `/reel/<code>/embed/` page second,
   because many authors turn embedding off. Our own `<video>` plays the mp4 with sound.
 - Since 2026-10, that lookup answers 302 to the home page for every kind, so reels play through the
-  embed, a carousel shows only the first slide the record holds, and a video post needs its
-  `/p/<code>/embed/`. Photos, stories and gallery media come from the record and ask nothing.
+  embed and a video post needs its `/p/<code>/embed/`. Photos, stories and gallery media come from
+  the record and ask nothing.
+- A carousel's slides come from a plain `fetch` of `/p/<code>/embed/`: its last inline script holds
+  `"contextJSON":"<JSON string>"`, escaped once, so it is parsed twice. `gql_data.shortcode_media`
+  of `__typename` `GraphSidecar` lists `edge_sidecar_to_children.edges[].node`: `display_url` for
+  a photo, `video_url` (a plain mp4) when `is_video`. The rendered embed fills only its first two
+  slides, so its DOM is no source. One-photo posts carry `contextJSON: null`. Seen on 10 of 10
+  carousels, 2026-10-22; posts with embedding turned off were not in the sample.
 - A one-photo post's `preview_image.url` is full resolution; its `fallback_url` is the copy to try
   when the browser can't decode the first (HEIC).
 - Two `<video>` elements (current and a spare preloading the next); a swapped-out video must not
