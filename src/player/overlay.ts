@@ -1,10 +1,11 @@
-// The player: a full-window overlay in its own shadow root, laid out like the prototype
-// (specs/01-mvp/prototype/index.html). It talks only to the ThreadAdapter.
+// The player: a full-window overlay in its own shadow root, with the strip on the left, the video
+// alone in the middle and a panel on the right. It talks only to the ThreadAdapter.
 import { CantRead, QUICK_REACTIONS, type Item, type ThreadAdapter } from '../instagram/adapter';
 import { bindKeys } from './keys';
 import { loadSettings, saveSettings } from './settings';
 import { createStage } from './stage';
 import { createStrip, type StripEdge } from './strip';
+import { STYLE } from './style';
 
 // Going back loads page after page on its own until the chat reaches this far into the past.
 const LOAD_HORIZON_MS = 60 * 24 * 60 * 60 * 1000;
@@ -20,155 +21,51 @@ const STRIP_LOAD_MARGIN_PX = 40;
 // Long enough to read; the next action clears it sooner.
 const ALERT_MS = 6000;
 
-const STYLE = `
-  * { box-sizing: border-box; }
-  button { font: inherit; color: inherit; cursor: pointer; }
-  .player {
-    position: absolute; inset: 0; display: flex; flex-direction: column; outline: 0;
-    background: #000; color: #f5f5f5;
-    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
-  .muted { color: #a8a8a8; }
-  kbd {
-    font: 11px ui-monospace, monospace; background: #262626; border: 1px solid #3a3a3a;
-    border-bottom-width: 2px; border-radius: 4px; padding: 0 5px;
-  }
-  .p-head { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid #262626; flex-wrap: wrap; }
-  .p-title { flex: 1; min-width: 160px; }
-  .p-keys { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #a8a8a8; }
-  .icon-btn { background: transparent; border: 0; font-size: 18px; padding: 4px 8px; }
-  .p-filter { background: transparent; border: 1px solid #3a3a3a; border-radius: 999px; padding: 4px 12px; font-size: 12px; }
-  .p-filter[aria-pressed="true"] { background: #f5f5f5; border-color: #f5f5f5; color: #000; }
-  .p-alert { padding: 8px 16px; background: #3a1d1d; color: #ffb4b4; font-size: 13px; text-align: center; }
-  .p-alert[hidden] { display: none; }
-  .p-notice { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; }
-  .p-notice strong { font-size: 18px; }
-  .p-notice p { margin: 0; max-width: 480px; overflow-wrap: anywhere; }
-  .p-notice button { margin-top: 8px; border: 0; background: #262626; border-radius: 16px; padding: 6px 16px; }
-  .p-body { flex: 1; display: flex; gap: 16px; padding: 16px; min-height: 0; }
-  .p-strip {
-    list-style: none; margin: 0; padding: 4px 12px 8px 0; width: 84px; flex-shrink: 0;
-    overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 8px;
-    scrollbar-width: thin; scrollbar-color: transparent transparent;
-  }
-  .p-strip:hover { scrollbar-color: #4a4a4a transparent; }
-  .p-strip li {
-    position: relative; width: 60px; height: 92px; flex-shrink: 0; border-radius: 8px; cursor: pointer;
-    display: grid; place-items: center; font-size: 16px; background: #1c1c1e; opacity: 0.5;
-    border: 2px solid transparent;
-  }
-  .p-strip li img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
-  .p-strip li.thumb .num { position: absolute; left: 4px; bottom: 2px; font: 600 9px ui-monospace, monospace; text-shadow: 0 1px 3px #000; }
-  .p-strip li.current { opacity: 1; border-color: #fff; }
-  .p-strip li.edge { height: auto; background: none; opacity: 1; border: 0; cursor: default; font-size: 11px; color: #a8a8a8; text-align: center; }
-  .p-strip li[hidden] { display: none; }
-  .p-strip li .kind { position: absolute; left: 4px; top: 3px; font-size: 12px; line-height: 1; }
-  .p-strip li .note { position: absolute; right: 4px; top: 3px; font-size: 12px; line-height: 1; }
-  .p-strip li.reacted::after { content: attr(data-reaction); position: absolute; right: -6px; bottom: -6px; font-size: 14px; }
-  .p-strip li.replied::before { content: "💬"; position: absolute; right: -6px; bottom: -6px; font-size: 14px; }
-  .p-strip li.replied.reacted::before { right: 12px; }
-  .p-stage { flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
-  .nav { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #262626; font-size: 24px; flex-shrink: 0; }
-  .nav:disabled { opacity: 0.25; cursor: default; }
-  .p-center { position: relative; display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
-  .p-empty {
-    position: absolute; z-index: 1; top: 48px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px;
-    align-items: center; padding: 12px; border-radius: 12px; background: rgba(38, 38, 38, 0.92); text-align: center;
-  }
-  .p-empty[hidden] { display: none; }
-  .p-empty button { border: 0; background: #0095f6; border-radius: 16px; padding: 6px 16px; font-weight: 600; }
-  .p-meta { width: 0; min-width: 100%; display: flex; gap: 6px; font-size: 13px; color: #a8a8a8; padding: 0 4px; white-space: nowrap; }
-  .p-meta strong { color: #fff; overflow: hidden; text-overflow: ellipsis; }
-  .reel {
-    position: relative; overflow: hidden; cursor: pointer;
-    height: clamp(280px, calc(100vh - 220px), 640px); aspect-ratio: 9 / 16; border-radius: 14px;
-    background: #1c1c1e; display: grid; place-items: center;
-  }
-  .reel video, .reel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
-  .reel [hidden] { display: none; }
-  .reel-status { text-align: center; color: #a8a8a8; padding: 16px; line-height: 1.8; }
-  .reel-status a { color: #0095f6; }
-  .reel-play {
-    position: absolute; font-size: 40px; opacity: 0; transition: opacity 0.2s; pointer-events: none;
-    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
-  }
-  .reel.paused .reel-play { opacity: 1; }
-  .reel-mute {
-    position: absolute; right: 12px; bottom: 16px; width: 28px; height: 28px; border-radius: 50%;
-    border: 0; padding: 0; background: rgba(38, 38, 38, 0.8); color: #fff; display: grid; place-items: center;
-  }
-  .reel-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255, 255, 255, 0.25); }
-  .reel-dots { position: absolute; top: 6px; left: 0; right: 0; display: flex; justify-content: center; gap: 2px; }
-  .reel-dots span { width: 6px; height: 6px; margin: 4px; cursor: pointer; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
-  .reel-dots span.on { background: #fff; }
-  .reel-progress div { height: 100%; width: 0; background: #fff; }
-  .p-reply { display: flex; gap: 8px; align-items: center; background: #121212; border: 1px solid #3a3a3a; border-radius: 22px; padding: 4px 6px 4px 14px; }
-  .p-reply:focus-within { border-color: #0095f6; }
-  .p-reply input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; padding: 8px 0; color: inherit; font: inherit; }
-  .p-reply button { border: 0; background: #0095f6; border-radius: 16px; padding: 6px 12px; font-weight: 600; }
-  .p-reply button:disabled { opacity: 0.4; cursor: default; }
-  .p-reply input:disabled { opacity: 0.5; }
-  /* Under the box, text wraps to the video's width instead of widening the column. */
-  .p-reply-opts, .p-replies { width: 0; min-width: 100%; }
-  .p-reply-opts { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: #a8a8a8; padding: 0 14px; }
-  .p-reply-opts label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
-  .p-reply-opts input { margin: 0; }
-  .p-replies { list-style: none; margin: 0; padding: 0 14px; max-height: 96px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
-  .p-replies li { background: #262626; border-radius: 12px; padding: 4px 10px; align-self: flex-end; max-width: 100%; overflow-wrap: anywhere; }
-  .p-replies li::before { content: "You: "; color: #a8a8a8; }
-  .p-replies li.theirs { align-self: flex-start; background: #1c1c1e; }
-  .p-replies li.theirs::before { content: attr(data-who) ": "; }
-  .p-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 76px; }
-  .p-quick { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .quick { width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; background: transparent; font-size: 20px; padding: 0; }
-  .quick:hover { background: #262626; }
-  .quick.mine { border-color: #fff; background: #262626; }
-  .quick { position: relative; }
-  .quick::after {
-    content: attr(data-key); position: absolute; right: -4px; bottom: -4px; line-height: 1.3;
-    font: 10px ui-monospace, monospace; color: #a8a8a8; background: #262626; border: 1px solid #3a3a3a; border-radius: 4px; padding: 0 4px;
-  }
-  .reacting .quick { opacity: 0.4; cursor: progress; }
-  .p-setting { display: flex; flex-direction: column; gap: 4px; align-items: center; font-size: 11px; line-height: 1.3; color: #a8a8a8; text-align: center; cursor: pointer; }
-  .p-setting input { margin: 0; }
-`;
-
 const LAYOUT = `
   <div class="player" tabindex="-1">
     <header class="p-head">
-      <div class="p-title"><strong>DM Slide</strong> <span class="muted" data-pos></span></div>
+      <span class="p-title">DM Slide</span>
+      <span class="p-pos" data-pos></span>
+      <button class="pill" data-filter tabindex="-1" aria-pressed="false" title="Only the ones without my reaction (U)">Not reacted</button>
+      <span class="sp"></span>
       <div class="p-keys">
         <span><kbd>W</kbd><kbd>S</kbd> or <kbd>↑</kbd><kbd>↓</kbd> prev / next</span><span><kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> slides</span>
         <span><kbd>Space</kbd> pause</span><span><kbd>M</kbd> sound</span><span><kbd>F</kbd> or <kbd>1</kbd>–<kbd>6</kbd> react</span><span><kbd>R</kbd> reply</span><span><kbd>U</kbd> not reacted</span><span><kbd>Esc</kbd> close</span>
       </div>
-      <button class="p-filter" data-filter tabindex="-1" aria-pressed="false" title="Only the ones without my reaction (U)">Not reacted</button>
-      <button class="icon-btn" data-close title="Close (Esc)">✕</button>
+      <button class="circ" data-close tabindex="-1" title="Close (Esc)">✕</button>
     </header>
     <div class="p-alert" data-alert role="alert" hidden></div>
     <div class="p-body">
       <ol class="p-strip" data-strip></ol>
-      <div class="p-stage">
-        <button class="nav" data-prev title="Previous (A / ←)">‹</button>
-        <div class="p-center">
-          <div class="p-meta"><strong data-sender></strong><span data-sent></span></div>
-          <div class="p-empty" data-empty hidden><span data-empty-text></span><button type="button" data-show-all tabindex="-1">Show all (U)</button></div>
+      <div class="p-theatre">
+        <div class="p-video">
           <div class="reel" data-reel></div>
-          <form class="p-reply" data-reply-form>
-            <input type="text" data-reply autocomplete="off" placeholder="Reply…">
-            <button type="submit" data-send disabled title="Send (Enter)">Send</button>
-          </form>
-          <div class="p-reply-opts">
-            <label><input type="checkbox" data-quote tabindex="-1" checked>Quote it</label>
-            <span data-reply-status></span>
-          </div>
-          <ul class="p-replies" data-replies></ul>
+          <button class="nav prev" data-prev tabindex="-1" title="Previous (A / ←)">‹</button>
+          <button class="nav next" data-next tabindex="-1" title="Next (D / →)">›</button>
+          <div class="p-empty" data-empty hidden><span data-empty-text></span><button type="button" data-show-all tabindex="-1">Show all (U)</button></div>
         </div>
-        <div class="p-actions">
-          <div class="p-quick" data-quick></div>
+      </div>
+      <aside class="p-side">
+        <div class="p-panel">
+          <div class="p-who"><div class="p-av" data-av></div><div><b data-sender></b><div class="p-date" data-sent></div></div></div>
+          <div class="p-talk" data-talk>
+            <h4 data-notes-head>Sent with it</h4>
+            <ul class="p-th" data-notes></ul>
+            <h4 data-replies-head>Your replies</h4>
+            <ul class="p-th" data-replies></ul>
+          </div>
+          <div class="p-emos" data-quick></div>
+          <form class="p-box" data-reply-form>
+            <input type="text" data-reply autocomplete="off" placeholder="Reply…">
+            <div class="p-row">
+              <label class="p-quote" title="Quote the item in the reply"><input type="checkbox" data-quote tabindex="-1" checked>❝ Quote</label>
+              <span data-reply-status></span>
+              <button type="submit" class="send" data-send tabindex="-1" disabled title="Send (Enter)">Send</button>
+            </div>
+          </form>
           <label class="p-setting"><input type="checkbox" data-next-after tabindex="-1" checked>Next after reacting</label>
         </div>
-        <button class="nav" data-next title="Next (D / →)">›</button>
-      </div>
+      </aside>
     </div>
   </div>
 `;
@@ -192,7 +89,8 @@ const NOTICE = `
   <div class="player" tabindex="-1">
     <header class="p-head">
       <div class="p-title"><strong>DM Slide</strong></div>
-      <button class="icon-btn" data-close title="Close (Esc)">✕</button>
+      <span class="sp"></span>
+      <button class="circ" data-close title="Close (Esc)">✕</button>
     </header>
     <div class="p-notice">
       <strong>Can't read this conversation</strong>
@@ -265,7 +163,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const quick = QUICK_REACTIONS.map((emoji, i) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'quick';
+    button.className = 'emo';
     button.tabIndex = -1;
     button.textContent = emoji;
     button.dataset.key = String(i + 1);
@@ -292,31 +190,41 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   function renderChrome(follow: boolean): void {
     const item = items[current];
     const left = items.filter((r) => r.myReaction === null).length;
-    $('data-pos').textContent = `· ${items.length - current} of ${items.length} loaded · ${left} to react`;
+    $('data-pos').textContent = `${items.length - current} / ${items.length} loaded · ${left} to react`;
     renderNav();
     $('data-filter').setAttribute('aria-pressed', String(onlyNotReacted));
     $('data-empty').hidden = !onlyNotReacted || left > 0;
     $('data-empty-text').textContent = `Nothing left to react to${edge === 'start' ? '' : ' in what is loaded'}.`;
     quick.forEach((b) => b.classList.toggle('mine', b.textContent === item.myReaction));
+    const av = $('data-av');
+    av.hidden = !item.senderName;
+    av.textContent = Array.from(item.senderName ?? '')[0]?.toUpperCase() ?? '';
     $('data-sender').textContent = item.senderName ?? '';
-    $('data-sent').textContent = `${item.senderName ? '· ' : ''}${SENT_AT.format(item.timestampMs)}`;
+    $('data-sent').textContent = SENT_AT.format(item.timestampMs);
     reply.placeholder = item.senderName ? `Reply to ${item.senderName}…` : 'Reply…';
     player.classList.toggle('reacting', reacting);
-    // What the sender wrote with the item comes first, on their side; my replies follow, on mine.
-    const bubble = (text: string, who: string | null) => {
-      const li = document.createElement('li');
-      li.textContent = text;
-      if (who !== null) {
-        li.className = 'theirs';
-        li.dataset.who = who;
-      }
-      return li;
-    };
-    $('data-replies').replaceChildren(
-      ...item.notes.map((text) => bubble(text, item.senderName ?? 'Them')),
-      ...item.myReplies.map((text) => bubble(text, null)),
-    );
+    renderTalk(item);
     strip.render(items, current, edge, follow, shown);
+  }
+
+  /** What the sender wrote with the item, then my replies; a section with nothing in it isn't shown. */
+  function renderTalk(item: Item): void {
+    const section = (attr: string, texts: string[], side: 'theirs' | 'mine') => {
+      $(`${attr}-head`).hidden = texts.length === 0;
+      const list = $(attr);
+      list.hidden = texts.length === 0;
+      list.replaceChildren(
+        ...texts.map((text) => {
+          const li = document.createElement('li');
+          li.className = `bub ${side}`;
+          li.textContent = text;
+          return li;
+        }),
+      );
+    };
+    section('data-notes', item.notes, 'theirs');
+    section('data-replies', item.myReplies, 'mine');
+    $('data-talk').hidden = item.notes.length === 0 && item.myReplies.length === 0;
   }
 
   let alertTimer = 0;
