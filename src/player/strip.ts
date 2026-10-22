@@ -29,4 +29,6 @@ export function renderStrip(strip: HTMLElement, reels: Reel[], current: number, 
   );
   if (follow) strip.querySelector('.current')?.scrollIntoView({ block: 'nearest' });
   else strip.scrollTop = strip.scrollHeight - fromBottom;
+  // The edge tile sits above the oldest reel, where scrolling to that reel would hide it.
+  if (edge && current === 0) strip.scrollTop = 0;
 }
