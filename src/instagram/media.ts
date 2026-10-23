@@ -62,6 +62,9 @@ function framePushedBack(frame: HTMLIFrameElement): boolean {
 function fromEmbed(path: string): Promise<Media | null> {
   return new Promise((done) => {
     const frame = document.createElement('iframe');
+    // Without the session's cookies or the thread's address: an embed page is public, so reading it need not be the account's activity.
+    frame.setAttribute('credentialless', '');
+    frame.referrerPolicy = 'no-referrer';
     frame.src = S.embedUrl(path);
     frame.style.cssText = 'position: fixed; left: -10000px; width: 400px; height: 700px; opacity: 0; pointer-events: none;';
     frame.setAttribute('aria-hidden', 'true');
@@ -86,7 +89,7 @@ function embedSlideOf(node: any): Slide | null {
 /** A carousel's slides from its embed page's data, with no iframe. */
 async function fromEmbedData(path: string): Promise<Media | null> {
   try {
-    const res = await fetch(S.embedUrl(path), { credentials: 'include' });
+    const res = await fetch(S.embedUrl(path), { credentials: 'omit', referrerPolicy: 'no-referrer' });
     if (pushedBack(res.status, res.url) || !res.ok) return null;
     const raw = (await res.text()).match(S.EMBED_CONTEXT_JSON)?.[1];
     if (!raw) return null;

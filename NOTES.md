@@ -86,6 +86,13 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   `<video>` carries a plain mp4; our own `<video>` plays it with sound. An author who turned
   embedding off makes the item unavailable, and `I` opens it in Instagram. Photos, stories and
   gallery media come from the record and ask nothing.
+- **Embeds load without cookies or referrer:** the iframe is `credentialless` and the carousel
+  fetch is `credentials: 'omit'`, both `no-referrer` (by default a same-origin read sends the
+  thread's full path as `Referer`). A credentialless embed iframe stays same-origin and readable,
+  and its `<video>` has an https src. Chrome gives a page's credentialless iframes one throwaway
+  cookie jar: from the second embed on, they send the anonymous device-id and csrf cookies the
+  first one set, never the account's. So reads link to each other until a reload, not to the
+  account (checked live, 2026-10-23).
 - **No private API.** v0.1.0 also called `/api/v1/media/<id>/info/` with only `X-IG-App-ID`; it
   answered 302 to the home page on and off, and a user was challenged the day after release. It is
   gone, and the build fails if the bundle names `/api/`, `graphql`, `doc_id`, `fb_dtsg`, `x-ig-` or
