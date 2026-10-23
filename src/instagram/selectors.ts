@@ -58,15 +58,6 @@ export const EMBED_TIMEOUT_MS = 6000;
 // A page of older messages took ~2 s in the spike.
 export const LOAD_OLDER_TIMEOUT_MS = 8000;
 export const LOAD_OLDER_POLL_MS = 250;
-// The web app's own media lookup; the app id header is the one instagram.com sends with it.
-export const mediaInfoUrl = (mediaId: string) => `https://www.instagram.com/api/v1/media/${mediaId}/info/`;
-export const WEB_APP_ID_HEADER = { 'X-IG-App-ID': '936619743392459' };
-// The lookup's media_type: 1 is a photo, 2 a video, 8 a carousel of either.
-export const VIDEO_MEDIA_TYPE = 2;
-export const CAROUSEL_MEDIA_TYPE = 8;
-// A shortcode is the media id in base 64; private accounts append extra characters after these.
-export const SHORTCODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-export const SHORTCODE_ID_LENGTH = 11;
 export const EMBED_POLL_MS = 200;
 // A carousel's embed page carries every slide as a JSON string, escaped once inside the page's script;
 // its rendered iframe fills only the first two. One-photo posts have `null` there.
