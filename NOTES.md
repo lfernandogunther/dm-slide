@@ -36,7 +36,9 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 - **Thumbnails:** the XMA's `preview_image.url`, already in the record (a reel's is its cover, never
   played). Signed URLs expire, so a tile whose `<img>` fails shows its number.
 - Loading older: `scrollTop` to the top loads a page of 20 messages in 450–625 ms plus ~600 ms to
-  settle. Two months back is ~2 pages in a quiet thread, 30+ in a busy one.
+  settle. Two months back is ~2 pages in a quiet thread, 30+ in a busy one. The player loads one
+  page per request only (`W` at the oldest item, the wheel at the strip's top), never on open or on
+  moving: paging back on its own is the shape of scraping (principle 3).
 - Revealing a row near the top of the loaded list makes Instagram fetch older pages on its own, so
   list indices shift under the caller: keep ids, never indices, across an await.
 - The loaded window can in principle miss the newest messages (`hasMoreBelow`); in normal use it
@@ -80,12 +82,17 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   with synthetic events: harness checks need real key presses.
 
 ## Playback
-- Video URL: the web app's `/api/v1/media/<id>/info/` (with `X-IG-App-ID`) first — the media id is
-  the shortcode's first 11 characters read in base 64 — and the `/reel/<code>/embed/` page second,
-  because many authors turn embedding off. Our own `<video>` plays the mp4 with sound.
-- Since 2026-10, that lookup answers 302 to the home page for every kind, so reels play through the
-  embed and a video post needs its `/p/<code>/embed/`. Photos, stories and gallery media come from
-  the record and ask nothing.
+- Video URL: the share's `/<kind>/<code>/embed/` page only, in a hidden same-origin iframe whose
+  `<video>` carries a plain mp4; our own `<video>` plays it with sound. An author who turned
+  embedding off makes the item unavailable, and `I` opens it in Instagram. Photos, stories and
+  gallery media come from the record and ask nothing.
+- **No private API.** v0.1.0 also called `/api/v1/media/<id>/info/` with only `X-IG-App-ID`; it
+  answered 302 to the home page on and off, and a user was challenged the day after release. It is
+  gone, and the build fails if the bundle names `/api/`, `graphql`, `doc_id`, `fb_dtsg`, `x-ig-` or
+  `i.instagram.com`.
+- **Back off:** a 401/403/429, or an embed read (fetch or iframe) that ends anywhere but `/embed/`,
+  stops every media read for the page's life, and the player says so once. A miss is asked again
+  only when its item shows again; nothing retries on its own.
 - A carousel's slides come from a plain `fetch` of `/p/<code>/embed/`: its last inline script holds
   `"contextJSON":"<JSON string>"`, escaped once, so it is parsed twice. `gql_data.shortcode_media`
   of `__typename` `GraphSidecar` lists `edge_sidecar_to_children.edges[].node`: `display_url` for
@@ -104,10 +111,11 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 - `close()` hands the chat back at once (`onClose`, `inert`, no pointer events) and only then
   finishes leaving, so the header button works during the shrink.
 - React → next moves at once and shows the reaction before Instagram confirms it. Reactions wait in
-  a queue told to Instagram one at a time, never while a reply drives the composer; the chat stays
-  on the row being reacted to and follows the player once the queue empties. A failed one is tried
-  once more (setReaction is idempotent), then undone from what Instagram shows: red ring on its
-  control, or on its tile plus a pill once the player moved on. `I` waits for the queue to empty.
+  a queue told to Instagram one at a time, at least 1.5 s apart (replies included), never while a
+  reply drives the composer; the chat stays on the row being reacted to and follows the player once
+  the queue empties. A failed one is not tried again on its own: it is undone from what Instagram
+  shows, with a red ring on its control, or on its tile plus a pill once the player moved on. `I`
+  waits for the queue to empty.
 
 ## Failure
 - `CantRead` (the scan failed, so nothing was attempted) vs any other error (one action failed).
@@ -153,7 +161,8 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 - The store counts data handled only on the device as handled: the sender's name, personal
   communications and website content are declared although nothing leaves the page.
 - Media loads from Instagram's CDN, not only www.instagram.com; the privacy policy and the host
-  justification say "Instagram's own servers and content network".
+  justification say "Instagram's own servers and content network", and name the embed page, the
+  one-item lookahead and the stop at a refusal.
 - The store's docs name only gcloud impersonation and a JSON key; `google-github-actions/auth` with
   `service_account` + `token_format: access_token` reaches it through federation instead.
 - The dashboard checks the privacy tab only on submit, listing every missing field in one popup.

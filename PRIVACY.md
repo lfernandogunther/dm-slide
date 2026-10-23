@@ -14,9 +14,15 @@ it does happens in your browser, on the Instagram page you have open.
   thread's messages in the page to find what was sent to watch, who sent it, when, and your own
   reactions and replies to it. This stays in the page's memory and is gone when you close or reload
   the tab. It is never stored, logged or sent anywhere.
-- **The media itself.** To play an item, DM Slide loads it from Instagram's own servers and content
-  network, with the Instagram session you are already signed in with — the same requests Instagram's
-  own page makes. Nothing else is contacted.
+- **The media itself.** To play an item, DM Slide loads the item's public embed page — the page
+  Instagram serves so other sites can show a post — and the media file it points to, from
+  Instagram's own servers and content network, with the Instagram session you are already signed in
+  with. It loads only the item on screen and the next one, and never calls Instagram's private API.
+  If Instagram ever answers with a refusal, DM Slide stops loading media until you reload the page.
+  Nothing else is contacted.
+- **Older messages, only when you ask.** DM Slide never scrolls back through your conversation on
+  its own. Going back past the oldest loaded item loads one more page of it, the way scrolling up in
+  Instagram does.
 
 ## What it stores
 Only its own settings, in your browser's extension storage (`chrome.storage.local`), on your device:

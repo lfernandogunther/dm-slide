@@ -29,7 +29,8 @@ Chrome on desktop only.
 1. Open a conversation at [instagram.com/direct](https://www.instagram.com/direct/inbox/).
 2. Press **▶ DM Slide** in the conversation's header — it shows how many items still wait for your
    reaction — or click any shared reel or post in the chat to start from that one.
-3. The player opens on the oldest item you haven't reacted to or answered. Watch, react, reply, and
+3. The player opens on the oldest item you haven't reacted to or answered, among the messages
+   already loaded. Watch, react, reply, and
    move on. **Esc** closes it.
 
 The first time, a card lists the keys; press any key to start. Hold **Option** (Alt) or press **?**
@@ -41,7 +42,7 @@ to see each control's key next to it.
 
 | Key | Does |
 |---|---|
-| **W** or **↑** | Previous item |
+| **W** or **↑** | Previous item; at the oldest loaded one, loads one more page of the chat |
 | **S** or **↓** | Next item |
 | **A** or **←** | Previous slide of a carousel; on anything else, the previous item |
 | **D** or **→** | Next slide of a carousel; on anything else, the next item |

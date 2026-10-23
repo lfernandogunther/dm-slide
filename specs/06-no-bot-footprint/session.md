@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-23 · owner's go-ahead on the plan
 
 ## Next
-Task 02: media from the embed page only.
+Task 08: live check in a subagent (new tab, injected `dist/`, counts only). Then 09, the owner's hand check.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -12,10 +12,35 @@ Task 02: media from the embed page only.
 - Spec open question 1: stay stopped for the page's life (chosen) or a stored time.
 
 ## Tasks status
-1 of 10. See tasks.md.
+7 of 10. See tasks.md.
 
 ## What was done
 - 2026-10-23: a friend's Instagram challenged them right after installing v0.1.0. The owner amended
   principle 3 and asked for S05 to wait on a branch. S06 drafted.
 - 2026-10-23: go-ahead. Task 01 done: S05 on `05-post-caption` (8 commits, ON-HOLD), `main` is
   `origin/main` + the amendment (398bc9a). Web research on similar extensions running in a subagent.
+- 2026-10-23: tasks 02–07 done (embed only, back off, history on request, 1.5 s gap with no
+  auto-retry, build guard, docs). Research in `docs/research-instagram-extensions.md`: it confirms
+  the direction; open from it — a stored cooldown across reloads (spec open question 1), embeds
+  loaded without credentials (needs a live test).
+
+## Pre-compact snapshot
+<!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
+
+**2026-10-23 12:49** - branch `main`
+
+Next open task: **05 — pace the queue: at least 1.5 s between two things told to Instagram**
+
+### Uncommitted
+```
+?? docs/research-instagram-extensions.md
+```
+
+### Recent commits
+```
+7aab6a4 fix [S06 #04]: load older messages one page at a time, only when asked
+687cfea feat [S06 #03]: stop every media read at Instagram's first refusal and say so
+902a1ed fix [S06 #02]: play shares from their embed page only, without the private API
+3b20ea7 doc [S06]: plan the move to no private API, history on request and backing off
+398bc9a doc: extend principle 3 to reads, requests and Instagram's terms
+```
