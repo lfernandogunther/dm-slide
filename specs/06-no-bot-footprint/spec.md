@@ -44,8 +44,9 @@ the branch `05-post-caption`, unreleased, until a compliant source exists.
    Instagram. A person cannot react faster through Instagram's own UI. A reaction that failed is
    no longer tried again on its own: the player says so, and the user's next press is the retry.
    No random jitter: it would dress our timing up as a person's, which principle 3 rules out.
-6. **A mechanical guard.** `npm run build` fails if the bundle contains `/api/`, so a private API
-   call cannot come back by accident.
+6. **A mechanical guard.** `npm run build` fails, and writes nothing, if the bundle contains
+   `/api/`, `i.instagram.com`, `graphql`, `doc_id`, `fb_dtsg` or `x-ig-` (any case), so a private
+   API call cannot come back by accident. The release workflow runs the same build.
 7. **Docs.** NOTES.md (Playback, Loading older, Player motion), `PRIVACY.md`, `store/listing.md`,
    the README if it mentions any of this.
 8. **Release.** The owner cuts v0.1.1 and uploads it to the store by hand.
