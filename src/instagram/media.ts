@@ -5,19 +5,40 @@ import type { Item, Media, Slide } from './adapter';
 import * as S from './selectors';
 
 const cache = new Map<string, Promise<Media | null>>();
-// One read at a time: several embed pages at once is a burst, whatever asked for them.
-let lane: Promise<unknown> = Promise.resolve();
 
-// Instagram's first refusal stops every read for the page's life: asking again is what a bot does.
+// Instagram's first refusal stops every read, in every tab, for hours: asking again soon is what a bot does.
+const PAUSE_MS = 6 * 3600e3;
+const PAUSE_KEY = 'pausedUntil';
 let refusal: string | null = null;
 const refusalListeners = new Set<(reason: string) => void>();
 
-function refuse(reason: string): void {
+// Absent when the script runs outside the extension (injected by hand for a check).
+const storage = () => (typeof chrome === 'undefined' ? undefined : chrome.storage?.local);
+
+function refuse(reason: string, store = true): void {
   if (refusal) return;
   refusal = reason;
-  console.warn('[dm-slide] Instagram pushed back; media reads stopped until the page reloads:', reason);
+  console.warn('[dm-slide] Instagram pushed back; media reads stopped for a few hours:', reason);
+  if (store) void storage()?.set({ [PAUSE_KEY]: Date.now() + PAUSE_MS }).catch(() => undefined);
   refusalListeners.forEach((listener) => listener(reason));
 }
+
+/** A pause stored by any tab stops this one too while it lasts. */
+function honour(until: unknown): void {
+  if (typeof until === 'number' && until > Date.now()) refuse('paused earlier', false);
+}
+
+const storedPause = (async () => {
+  try {
+    honour((await storage()?.get(PAUSE_KEY))?.[PAUSE_KEY]);
+  } catch {
+    // Unreadable storage leaves only this page's own refusals to go by.
+  }
+})();
+if (storage()) chrome.storage.onChanged.addListener((changes, area) => area === 'local' && honour(changes[PAUSE_KEY]?.newValue));
+
+// One read at a time: several embed pages at once is a burst, whatever asked for them. The first waits for the stored pause.
+let lane: Promise<unknown> = storedPause;
 
 /** Calls `listener` once Instagram refuses a read, at once if it already has; returns the unsubscribe. */
 export function onRefusal(listener: (reason: string) => void): () => void {

@@ -19,14 +19,16 @@ it does happens in your browser, on the Instagram page you have open.
   Instagram's own servers and content network, without your Instagram session or the address of
   your conversation: your cookies are not sent, so Instagram sees the same request as from anyone who
   is not signed in. It loads only the item on screen and the next one, and never calls Instagram's private API.
-  If Instagram ever answers with a refusal, DM Slide stops loading media until you reload the page.
+  If Instagram ever answers with a refusal, DM Slide stops loading media in every tab for six hours,
+  and a reload does not undo that.
   Nothing else is contacted.
 - **Older messages, only when you ask.** DM Slide never scrolls back through your conversation on
   its own. Going back past the oldest loaded item loads one more page of it, the way scrolling up in
   Instagram does.
 
 ## What it stores
-Only its own settings, in your browser's extension storage (`chrome.storage.local`), on your device:
+Only its own settings, plus a resume time if Instagram ever refused a load, in your browser's
+extension storage (`chrome.storage.local`), on your device:
 
 | Setting | What it holds |
 |---|---|
@@ -35,6 +37,7 @@ Only its own settings, in your browser's extension storage (`chrome.storage.loca
 | `onlyNotReacted` | whether the "Not reacted" filter is on |
 | `volume` | the sound level, from 0 to 1 |
 | `seenKeys` | whether the first-time key card was already shown |
+| `pausedUntil` | when media loading may resume, set only if Instagram refused a load |
 
 No message, name, username, id or media is ever stored. Removing the extension removes these
 settings.

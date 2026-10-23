@@ -98,8 +98,9 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   gone, and the build fails if the bundle names `/api/`, `graphql`, `doc_id`, `fb_dtsg`, `x-ig-` or
   `i.instagram.com`.
 - **Back off:** a 401/403/429, or an embed read (fetch or iframe) that ends anywhere but `/embed/`,
-  stops every media read for the page's life, and the player says so once. A miss is asked again
-  only when its item shows again; nothing retries on its own.
+  stops every media read in every tab for 6 h: `pausedUntil` in `chrome.storage.local`, read
+  before the first read after a load and watched with `onChanged`. The player says so once. A miss
+  is asked again only when its item shows again; nothing retries on its own.
 - A carousel's slides come from a plain `fetch` of `/p/<code>/embed/`: its last inline script holds
   `"contextJSON":"<JSON string>"`, escaped once, so it is parsed twice. `gql_data.shortcode_media`
   of `__typename` `GraphSidecar` lists `edge_sidecar_to_children.edges[].node`: `display_url` for
