@@ -27,6 +27,12 @@ Task 08: live check in a subagent (new tab, injected `dist/`, counts only). Then
   the oldest item, a 1501 ms gap between two quick reactions, pushback pill shown once. Live half not
   run: in the DevTools Chrome, `/direct/inbox/` showed only the empty "Your messages" state (0
   thread links after a reload), and the subagent may not click Instagram's UI.
+- 2026-10-23: task 08, live half, in a thread the owner opened: 20 loaded messages before open,
+  after open and after each move; 6 embed loads for 5 items visited (the 6th the lookahead); 0
+  `/api/v1/media/`; one `W` at the oldest took 20 → 40 and nothing more loaded in the next ~16 s.
+  A `credentialless` iframe on an embed page is readable from the page and its `<video>` has an https
+  src: embeds can load without the session's cookies. Forced pushback not run live (the only carousel
+  was visited at open); covered in the demo.
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
