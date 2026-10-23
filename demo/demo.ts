@@ -155,7 +155,6 @@ const adapter: ThreadAdapter = {
     render();
     return true;
   },
-  oldestLoadedMs: () => items[0]?.timestampMs ?? null,
   reveal: (id) => card(id)?.scrollIntoView({ block: 'nearest' }),
   async media(item): Promise<Media | null> {
     await sleep(DELAY * 3);

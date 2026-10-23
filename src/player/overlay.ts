@@ -9,14 +9,6 @@ import { createStage } from './stage';
 import { createStrip, type Follow, type StripEdge } from './strip';
 import { STYLE } from './style';
 
-// Going back loads page after page on its own until the chat reaches this far into the past.
-const LOAD_HORIZON_MS = 60 * 24 * 60 * 60 * 1000;
-// Past that, one load goes on for at most this many pages while they bring no item to show.
-const MAX_PAGES_PER_LOAD = 5;
-// A pause between pages, drawn at random, so loading reads like a person scrolling up, not a burst.
-const PAGE_PAUSE_MS = { min: 1200, max: 3000 };
-// Loading starts once fewer shown items than this are left above the current one.
-const PREFETCH_ITEMS = 3;
 // How often a paused load checks whether the reaction or reply it waits on is done.
 const BUSY_POLL_MS = 250;
 const STRIP_LOAD_MARGIN_PX = 40;
@@ -76,6 +68,7 @@ const PAUSED = 'Instagram asked to slow down · media paused until you reload th
 // Longer than a failure: it explains every unavailable item that follows.
 const PAUSED_MS = 12000;
 const LOADING_OLDER = 'Loading older…';
+const NOTHING_OLDER = 'Nothing to watch in that page · W to look further back';
 const BLACK = { backgroundColor: '#000' };
 const CLEAR = { backgroundColor: 'transparent' };
 const SHOW = { opacity: 1 };
@@ -135,6 +128,9 @@ const LAYOUT = `
 `;
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
+// What one page of older messages brought.
+type Older = 'found' | 'nothing' | 'start' | 'failed';
 
 interface Pending {
   id: string;
@@ -256,8 +252,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let items = loaded;
   let current = start;
   let edge: StripEdge = null;
-  let loading: Promise<void> | null = null;
-  let pageWaiters: (() => void)[] = [];
+  let loading: Promise<Older> | null = null;
   let closed = false;
   // Stepped aside for Instagram's view of the item, from the thread at `path`.
   let away = false;
@@ -435,13 +430,6 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     stage.show(items[current], items[current + 1], dir);
     // Scrolling now would pull the row from under a reaction under way; the chat follows once they're done.
     if (!reacting) revealCurrent();
-    if (shownAbove() < PREFETCH_ITEMS) void loadOlder();
-  }
-
-  function shownAbove(): number {
-    let count = 0;
-    for (let i = current - 1; i >= 0 && count < PREFETCH_ITEMS; i--) if (shown(i)) count++;
-    return count;
   }
 
   /** Puts the items older than the first one in front, and counts those shown; newer arrivals wait for the next open. */
@@ -453,58 +441,37 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     return older.filter((r) => !onlyNotReacted || !engaged(r)).length;
   }
 
-  const wakeWaiters = () => pageWaiters.splice(0).forEach((wake) => wake());
-
-  /** Page after page with a pause between: back to the horizon, then until one brings an item to show. */
-  async function fetchOlder(): Promise<void> {
+  /** One page, and only when the user asked for it: loading on its own is what a bot does. */
+  async function fetchOlder(): Promise<Older> {
     edge = 'loading';
     renderChrome(false);
-    const horizon = Date.now() - LOAD_HORIZON_MS;
-    let found = false;
+    let result: Older = 'nothing';
     try {
-      for (let page = 0, beyond = 0; ; page++) {
-        if (page > 0) await sleep(PAGE_PAUSE_MS.min + Math.random() * (PAGE_PAUSE_MS.max - PAGE_PAUSE_MS.min));
-        // A page scrolls the thread to its top, which would pull the row away from a reaction or reply under way.
-        while ((reacting || sending || away) && !closed) await sleep(BUSY_POLL_MS);
-        if (closed) break;
+      // A page scrolls the thread to its top, which would pull the row away from a reaction or reply under way.
+      while ((reacting || sending || away) && !closed) await sleep(BUSY_POLL_MS);
+      if (!closed) {
         if (!(await adapter.loadOlder())) {
           edge = 'start';
-          break;
-        }
-        if (closed) break;
-        if (mergeOlder(adapter.listItems()) > 0) {
-          found = true;
-          wakeWaiters();
-        }
-        renderChrome(false);
-        const oldest = adapter.oldestLoadedMs();
-        if (oldest !== null && oldest > horizon) continue;
-        if (found || ++beyond >= MAX_PAGES_PER_LOAD) break;
+          result = 'start';
+        } else if (!closed && mergeOlder(adapter.listItems()) > 0) result = 'found';
       }
     } catch (e) {
+      result = 'failed';
       console.warn('[dm-slide]', e instanceof Error ? e.message : e);
       if (!closed) pill.show(e instanceof CantRead ? CANT_READ : "Couldn't load older · W to try again", FAIL_MS, true);
     }
     if (edge === 'loading') edge = null;
-    wakeWaiters();
     // Loading scrolled the thread to its top: bring it back to the item on screen, open or closed.
     if (!reacting) revealCurrent();
     if (!closed) renderChrome(false);
+    return result;
   }
 
   /** One load at a time; asking during one joins it. */
-  function loadOlder(): Promise<void> {
-    if (edge === 'start' || closed) return Promise.resolve();
+  function loadOlder(): Promise<Older> {
+    if (edge === 'start' || closed) return Promise.resolve(edge === 'start' ? 'start' : 'nothing');
     loading ??= fetchOlder().finally(() => (loading = null));
     return loading;
-  }
-
-  /** Resolves once a page brings an older item to show, or loading stops. */
-  function olderShown(): Promise<void> {
-    return new Promise((done) => {
-      pageWaiters.push(done);
-      void loadOlder().then(done);
-    });
   }
 
   async function prev(): Promise<void> {
@@ -513,12 +480,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (edge !== 'start') {
       const from = items[current].id;
       pill.show(LOADING_OLDER);
-      await olderShown();
+      const loaded = await loadOlder();
       if (pill.text === LOADING_OLDER) pill.hide();
       // Only if the player is still on the item A was pressed on.
       if (items[current].id !== from || closed || away) return;
       const older = neighbour(current, -1);
       if (older >= 0) return go(older);
+      if (loaded === 'nothing') return void pill.show(NOTHING_OLDER, START_PILL_MS);
     }
     if (edge === 'start') atStart();
   }

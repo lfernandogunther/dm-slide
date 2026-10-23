@@ -205,9 +205,7 @@ function scan(): ScanResult {
   const mine = readMine(src, loaded, viewerId);
   const items = loaded.map((_, at) => itemOf(src, loaded, at, mine.replies)).filter((r): r is RawItem => r !== null);
   const hasMoreAbove = Boolean(list.fiber.memoizedProps[S.HAS_MORE_ABOVE_PROP]);
-  const sent = loaded.map((element: any) => Number(element?.currentMessage?.timestamp_ms)).filter(Number.isFinite);
-  const oldestMs = sent.length ? Math.min(...sent) : null;
-  return { ok: true, viewerId, hasMoreAbove, messageCount: loaded.length, oldestMs, items, lastMine: mine.last };
+  return { ok: true, viewerId, hasMoreAbove, messageCount: loaded.length, items, lastMine: mine.last };
 }
 
 /** The row of a message: by the row's own fiber key or, unless `exact`, by position when the counts line up. */

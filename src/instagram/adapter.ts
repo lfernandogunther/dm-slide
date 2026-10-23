@@ -59,7 +59,6 @@ export interface ThreadAdapter {
   unreact(id: string): Promise<void>;
   reply(id: string, text: string, quote: boolean): Promise<void>;
   loadOlder(): Promise<boolean>; // one page; false = start of chat
-  oldestLoadedMs(): number | null; // when the oldest loaded message, of any kind, was sent
   reveal(id: string): void; // scrolls Instagram's thread to that message
   media(item: Item): Promise<Media | null>; // null = unavailable
   onPause(listener: (reason: string) => void): () => void; // Instagram refused a read, so media reads stopped
@@ -228,7 +227,6 @@ export function createThreadAdapter(): ThreadAdapter {
     unreact: (id) => setReaction(id, null),
     reply: sendReply,
     loadOlder: loadOlderPage,
-    oldestLoadedMs: () => readThread('oldestLoadedMs').oldestMs,
     itemAt(el) {
       const card = requestMediaCard(el);
       return card.ok ? card.messageId : null;

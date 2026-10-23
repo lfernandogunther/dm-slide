@@ -47,7 +47,6 @@ export type ScanResult =
       viewerId: string;
       hasMoreAbove: boolean;
       messageCount: number;
-      oldestMs: number | null; // when the oldest loaded message was sent
       items: RawItem[];
       lastMine: SentMessage | null; // my newest loaded message
     }
