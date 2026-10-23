@@ -3,7 +3,7 @@ import type { Item, Media, Slide, ThreadAdapter } from '../src/instagram/adapter
 import { createButton, renderButton } from '../src/content/button';
 import { openNotice, openPlayer, startIndex, type Player } from '../src/player/overlay';
 
-// Query switches for the states worth a look: ?delay=ms ?fail=1 ?failOlder=1 ?video=0 ?layer=0 ?notice=1
+// Query switches for the states worth a look: ?delay=ms ?fail=1 ?failOlder=1 ?video=0 ?layer=0 ?notice=1 ?pushback=1
 const q = new URLSearchParams(location.search);
 const DELAY = Number(q.get('delay') ?? 150);
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
@@ -164,6 +164,11 @@ const adapter: ThreadAdapter = {
     if (video) return { type: 'video', url: video };
     const slides: Slide[] = scenes.map((s) => ({ type: 'photo', url: still(s, 540, 675) }));
     return slides.length > 1 ? { type: 'slides', slides } : slides[0];
+  },
+  // ?pushback=1 stands in for Instagram refusing a read, a moment after the player opens.
+  onPause(listener) {
+    const timer = q.get('pushback') === '1' ? setTimeout(() => listener('demo'), DELAY * 5) : undefined;
+    return () => clearTimeout(timer);
   },
   link: () => '#',
   health: () => ({ ok: true }),

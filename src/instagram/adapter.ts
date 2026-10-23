@@ -29,7 +29,7 @@ import {
   SEND_TIMEOUT_MS,
   THREAD_PATH,
 } from './selectors';
-import { mediaOf } from './media';
+import { mediaOf, onRefusal } from './media';
 
 export interface Item {
   id: string; // the DM message id
@@ -62,6 +62,7 @@ export interface ThreadAdapter {
   oldestLoadedMs(): number | null; // when the oldest loaded message, of any kind, was sent
   reveal(id: string): void; // scrolls Instagram's thread to that message
   media(item: Item): Promise<Media | null>; // null = unavailable
+  onPause(listener: (reason: string) => void): () => void; // Instagram refused a read, so media reads stopped
   link(item: Item): string; // the item on Instagram itself
   health(): Health;
   itemAt(el: Element): string | null; // the message of the chat's media card holding el
@@ -220,6 +221,7 @@ export function createThreadAdapter(): ThreadAdapter {
       if (!result.ok) throw new Error(`reveal: ${result.reason}`);
     },
     media: mediaOf,
+    onPause: onRefusal,
     // A gallery item has no page of its own: the thread is where Instagram shows it.
     link: (item) => (item.source.path ? `https://www.instagram.com${item.source.path}` : location.href),
     react: (id, emoji) => setReaction(id, emoji),

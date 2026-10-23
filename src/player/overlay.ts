@@ -72,6 +72,9 @@ const SINK_MS = 200;
 const BUMP = [{ transform: 'none' }, { transform: 'translateY(16px)', offset: 0.35 }, { transform: 'none' }];
 const BUMP_MS = 450;
 const START_PILL_MS = 2000;
+const PAUSED = 'Instagram asked to slow down · media paused until you reload the page, later';
+// Longer than a failure: it explains every unavailable item that follows.
+const PAUSED_MS = 12000;
 const LOADING_OLDER = 'Loading older…';
 const BLACK = { backgroundColor: '#000' };
 const CLEAR = { backgroundColor: 'transparent' };
@@ -846,6 +849,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     closed = true;
     clearTimeout(awayTimer);
     unbindKeys();
+    unbindPause();
     finishAll();
     const to = adapter.rectOf(items[current].id);
     host.style.pointerEvents = 'none';
@@ -856,6 +860,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       host.remove();
     });
   }
+
+  const unbindPause = adapter.onPause(() => pill.show(PAUSED, PAUSED_MS, true));
 
   $('data-close').addEventListener('click', close);
   $('data-prev').addEventListener('click', () => item(-1));

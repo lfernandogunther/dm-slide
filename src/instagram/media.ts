@@ -6,6 +6,36 @@ import * as S from './selectors';
 
 const cache = new Map<string, Promise<Media | null>>();
 
+// Instagram's first refusal stops every read for the page's life: asking again is what a bot does.
+let refusal: string | null = null;
+const refusalListeners = new Set<(reason: string) => void>();
+
+function refuse(reason: string): void {
+  if (refusal) return;
+  refusal = reason;
+  console.warn('[dm-slide] Instagram pushed back; media reads stopped until the page reloads:', reason);
+  refusalListeners.forEach((listener) => listener(reason));
+}
+
+/** Calls `listener` once Instagram refuses a read, at once if it already has; returns the unsubscribe. */
+export function onRefusal(listener: (reason: string) => void): () => void {
+  if (refusal) {
+    listener(refusal);
+    return () => {};
+  }
+  refusalListeners.add(listener);
+  return () => refusalListeners.delete(listener);
+}
+
+/** True, and reads stop, when Instagram answered a read with anything but the embed page. */
+function pushedBack(status: number, url: string): boolean {
+  const path = new URL(url, location.href).pathname;
+  // The first segment only: a full path can name an account.
+  const why = S.REFUSED_STATUS.includes(status) ? `HTTP ${status}` : S.EMBED_PATH.test(path) ? null : `sent to /${path.split('/')[1]}/`;
+  if (why) refuse(why);
+  return why !== null;
+}
+
 function httpsUrl(url: unknown): string | null {
   return typeof url === 'string' && url.startsWith('https://') ? url : null;
 }
@@ -13,6 +43,18 @@ function httpsUrl(url: unknown): string | null {
 function readVideoUrl(frame: HTMLIFrameElement): string | null {
   const video = frame.contentDocument?.querySelector('video');
   return httpsUrl(video?.currentSrc || video?.src);
+}
+
+/** The frame left its embed page for a login, a challenge or the home page. */
+function framePushedBack(frame: HTMLIFrameElement): boolean {
+  try {
+    const href = frame.contentWindow?.location.href;
+    return !!href && href !== 'about:blank' && pushedBack(200, href);
+  } catch {
+    // Reading it throws only once the frame is on another origin, which no embed page is.
+    refuse('sent off instagram.com');
+    return true;
+  }
 }
 
 function fromEmbed(path: string): Promise<Media | null> {
@@ -23,8 +65,9 @@ function fromEmbed(path: string): Promise<Media | null> {
     frame.setAttribute('aria-hidden', 'true');
     const started = Date.now();
     const poll = setInterval(() => {
-      const url = readVideoUrl(frame);
-      if (!url && Date.now() - started < S.EMBED_TIMEOUT_MS) return;
+      const refused = framePushedBack(frame);
+      const url = refused ? null : readVideoUrl(frame);
+      if (!url && !refused && Date.now() - started < S.EMBED_TIMEOUT_MS) return;
       clearInterval(poll);
       frame.remove();
       done(url ? { type: 'video', url } : null);
@@ -42,7 +85,7 @@ function embedSlideOf(node: any): Slide | null {
 async function fromEmbedData(path: string): Promise<Media | null> {
   try {
     const res = await fetch(S.embedUrl(path), { credentials: 'include' });
-    if (!res.ok) return null;
+    if (pushedBack(res.status, res.url) || !res.ok) return null;
     const raw = (await res.text()).match(S.EMBED_CONTEXT_JSON)?.[1];
     if (!raw) return null;
     const media = JSON.parse(JSON.parse(`"${raw}"`))?.gql_data?.shortcode_media;
@@ -57,7 +100,7 @@ async function fromEmbedData(path: string): Promise<Media | null> {
 
 /** A share's media from its embed page. A found one is asked once; a miss is asked again only when the item shows again. */
 function fetchShare(shortcode: string, path: string | null, read: (path: string) => Promise<Media | null>): Promise<Media | null> {
-  if (!path) return Promise.resolve(null);
+  if (refusal || !path) return Promise.resolve(null);
   let found = cache.get(shortcode);
   if (!found) {
     found = read(path);

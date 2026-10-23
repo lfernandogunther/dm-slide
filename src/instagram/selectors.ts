@@ -58,6 +58,9 @@ export const EMBED_TIMEOUT_MS = 6000;
 // A page of older messages took ~2 s in the spike.
 export const LOAD_OLDER_TIMEOUT_MS = 8000;
 export const LOAD_OLDER_POLL_MS = 250;
+// Instagram saying "slow down": one of these statuses, or a page other than the embed asked for.
+export const REFUSED_STATUS = [401, 403, 429];
+export const EMBED_PATH = /\/embed\/?$/;
 export const EMBED_POLL_MS = 200;
 // A carousel's embed page carries every slide as a JSON string, escaped once inside the page's script;
 // its rendered iframe fills only the first two. One-photo posts have `null` there.
