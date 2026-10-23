@@ -22,6 +22,8 @@ const SOUND_ON = `${SPEAKER}<path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 
 const SOUND_OFF = `${SPEAKER}<path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`;
 
 const ITEM_MS = 300;
+// An item passed through, as when S is held, is never asked for: only one that held the screen this long.
+const SETTLE_MS = 300;
 const SLIDE_MS = 260;
 const REVEAL_MS = 320;
 
@@ -359,6 +361,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       setSlides([]);
       setStatus(null);
       coverOn(shown.thumb);
+      await new Promise((done) => setTimeout(done, SETTLE_MS));
+      if (ticket !== showing) return;
       const media = await adapter.media(shown).catch(() => null);
       if (ticket !== showing) return;
       item = shown;

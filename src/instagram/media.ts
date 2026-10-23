@@ -5,6 +5,8 @@ import type { Item, Media, Slide } from './adapter';
 import * as S from './selectors';
 
 const cache = new Map<string, Promise<Media | null>>();
+// One read at a time: several embed pages at once is a burst, whatever asked for them.
+let lane: Promise<unknown> = Promise.resolve();
 
 // Instagram's first refusal stops every read for the page's life: asking again is what a bot does.
 let refusal: string | null = null;
@@ -103,7 +105,8 @@ function fetchShare(shortcode: string, path: string | null, read: (path: string)
   if (refusal || !path) return Promise.resolve(null);
   let found = cache.get(shortcode);
   if (!found) {
-    found = read(path);
+    found = lane.then(() => (refusal ? null : read(path)));
+    lane = found.catch(() => null);
     cache.set(shortcode, found);
     found.then((media) => media ?? cache.delete(shortcode));
   }
