@@ -23,6 +23,10 @@ Task 08: live check in a subagent (new tab, injected `dist/`, counts only). Then
   auto-retry, build guard, docs). Research in `docs/research-instagram-extensions.md`: it confirms
   the direction; open from it — a stored cooldown across reloads (spec open question 1), embeds
   loaded without credentials (needs a live test).
+- 2026-10-23: task 08, demo half passed: 0 older pages on open and on moving, exactly 1 per `W` at
+  the oldest item, a 1501 ms gap between two quick reactions, pushback pill shown once. Live half not
+  run: in the DevTools Chrome, `/direct/inbox/` showed only the empty "Your messages" state (0
+  thread links after a reload), and the subagent may not click Instagram's UI.
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
