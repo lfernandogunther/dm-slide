@@ -84,7 +84,9 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 ## Playback
 - Video URL: the share's `/<kind>/<code>/embed/` page only, in a hidden same-origin iframe whose
   `<video>` carries a plain mp4; our own `<video>` plays it with sound. An author who turned
-  embedding off makes the item unavailable, and `I` opens it in Instagram. Photos, stories and
+  embedding off makes the item unavailable, and `I` opens it in Instagram. So does a post from a
+  private account, since embeds load without cookies: its embed answers 200 on `/embed/` with
+  `contextJSON: null` and no media, never a redirect (checked live, 2026-10-23). Photos, stories and
   gallery media come from the record and ask nothing.
 - **Embeds load without cookies or referrer:** the iframe is `credentialless` and the carousel
   fetch is `credentials: 'omit'`, both `no-referrer` (by default a same-origin read sends the

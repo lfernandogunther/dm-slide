@@ -3,7 +3,7 @@
 import { finishAll } from './motion';
 
 export interface KeyActions {
-  item(delta: -1 | 1): void; // the older or newer item
+  item(delta: -1 | 1, held?: boolean): void; // the older or newer item; held = a key's auto-repeat
   step(delta: -1 | 1): void; // the slide before or after, else the item
   close(): void;
   togglePause(): void;
@@ -65,10 +65,10 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
     const slot = e.key.toLowerCase() === 'f' ? 0 : /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : null;
     if (slot !== null && e.repeat) return e.preventDefault();
     const action = slot !== null ? () => actions.react(slot) : {
-      w: () => actions.item(-1),
-      arrowup: () => actions.item(-1),
-      s: () => actions.item(1),
-      arrowdown: () => actions.item(1),
+      w: () => actions.item(-1, e.repeat),
+      arrowup: () => actions.item(-1, e.repeat),
+      s: () => actions.item(1, e.repeat),
+      arrowdown: () => actions.item(1, e.repeat),
       a: () => actions.step(-1),
       arrowleft: () => actions.step(-1),
       d: () => actions.step(1),

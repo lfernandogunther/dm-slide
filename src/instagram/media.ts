@@ -4,7 +4,8 @@
 import type { Item, Media, Slide } from './adapter';
 import * as S from './selectors';
 
-const cache = new Map<string, Promise<Media | null>>();
+// Each read keeps who asked for it, so a queued read nobody still wants is dropped.
+const cache = new Map<string, { media: Promise<Media | null>; wanted: (() => boolean)[] }>();
 
 // Instagram's first refusal stops every read, in every tab, for hours: asking again soon is what a bot does.
 const PAUSE_MS = 6 * 3600e3;
@@ -125,31 +126,39 @@ async function fromEmbedData(path: string): Promise<Media | null> {
 }
 
 /** A share's media from its embed page. A found one is asked once; a miss is asked again only when the item shows again. */
-function fetchShare(shortcode: string, path: string | null, read: (path: string) => Promise<Media | null>): Promise<Media | null> {
+function fetchShare(
+  shortcode: string,
+  path: string | null,
+  read: (path: string) => Promise<Media | null>,
+  wanted: () => boolean,
+): Promise<Media | null> {
   if (refusal || !path) return Promise.resolve(null);
-  let found = cache.get(shortcode);
-  if (!found) {
-    found = lane.then(() => (refusal ? null : read(path)));
-    lane = found.catch(() => null);
-    cache.set(shortcode, found);
-    found.then((media) => media ?? cache.delete(shortcode));
+  const found = cache.get(shortcode);
+  if (found) {
+    found.wanted.push(wanted);
+    return found.media;
   }
-  return found;
+  const entry = { media: Promise.resolve<Media | null>(null), wanted: [wanted] };
+  entry.media = lane.then(() => (refusal || !entry.wanted.some((w) => w()) ? null : read(path)));
+  lane = entry.media.catch(() => null);
+  cache.set(shortcode, entry);
+  entry.media.then((media) => media ?? cache.delete(shortcode));
+  return entry.media;
 }
 
 const isVideo = (media: Media | null) => media?.type === 'video';
 
-/** What the item shows, or null when Instagram shows nothing for it. */
-export async function mediaOf(item: Item): Promise<Media | null> {
+/** What the item shows, or null when Instagram shows nothing for it or `wanted` says it is no longer needed. */
+export async function mediaOf(item: Item, wanted: () => boolean = () => true): Promise<Media | null> {
   const { shortcode, path, isVideo: video, stored } = item.source;
   const own: Media | null = stored.length > 1 ? { type: 'slides', slides: stored } : (stored[0] ?? null);
   if (!shortcode) return own;
   if (item.kind === 'reel' || video) {
-    const media = await fetchShare(shortcode, path, fromEmbed);
+    const media = await fetchShare(shortcode, path, fromEmbed, wanted);
     // The poster in the record is not the video: without the video, the item is unavailable.
     return isVideo(media) ? media : null;
   }
   // The record holds a carousel's first slide only; the rest come from the embed page.
-  if (item.kind === 'carousel') return (await fetchShare(shortcode, path, fromEmbedData)) ?? own;
+  if (item.kind === 'carousel') return (await fetchShare(shortcode, path, fromEmbedData, wanted)) ?? own;
   return own;
 }

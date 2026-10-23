@@ -60,7 +60,7 @@ export interface ThreadAdapter {
   reply(id: string, text: string, quote: boolean): Promise<void>;
   loadOlder(): Promise<boolean>; // one page; false = start of chat
   reveal(id: string): void; // scrolls Instagram's thread to that message
-  media(item: Item): Promise<Media | null>; // null = unavailable
+  media(item: Item, wanted?: () => boolean): Promise<Media | null>; // null = unavailable, or no longer wanted when its turn came
   onPause(listener: (reason: string) => void): () => void; // Instagram refused a read, so media reads stopped
   link(item: Item): string; // the item on Instagram itself
   health(): Health;

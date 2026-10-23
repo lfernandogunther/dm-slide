@@ -12,6 +12,7 @@ import { STYLE } from './style';
 // How often a paused load checks whether the reaction or reply it waits on is done.
 const BUSY_POLL_MS = 250;
 const STRIP_LOAD_MARGIN_PX = 40;
+const WHEEL_REST_MS = 400;
 // Long enough to read; the next action clears it sooner.
 const FAIL_MS = 5000;
 // A control whose action failed shakes twice.
@@ -475,9 +476,11 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     return loading;
   }
 
-  async function prev(): Promise<void> {
+  async function prev(held = false): Promise<void> {
     const before = neighbour(current, -1);
     if (before >= 0) return go(before);
+    // A held key moves through loaded items, but only a fresh press loads a page.
+    if (held) return;
     if (edge !== 'start') {
       const from = items[current].id;
       pill.show(LOADING_OLDER);
@@ -498,7 +501,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   }
 
   const next = () => go(neighbour(current, 1));
-  const item = (delta: -1 | 1) => (delta < 0 ? void prev() : next());
+  const item = (delta: -1 | 1, held = false) => (delta < 0 ? void prev(held) : next());
   const step = (delta: -1 | 1) => stage.slide(delta) || item(delta);
 
   function toggleFilter(): void {
@@ -851,11 +854,18 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     const tile = (e.target as Element).closest<HTMLElement>('li[data-i]');
     if (tile) go(Number(tile.dataset.i));
   });
+  // One page per gesture: a swipe fires a wheel event per frame, so the next load waits for the wheel to rest.
+  let wheelArmed = true;
+  let wheelRest: ReturnType<typeof setTimeout> | undefined;
   $('data-strip').addEventListener(
     'wheel',
     (e) => {
       const strip = e.currentTarget as HTMLElement;
-      if (e.deltaY < 0 && strip.scrollTop < STRIP_LOAD_MARGIN_PX) void loadOlder();
+      clearTimeout(wheelRest);
+      wheelRest = setTimeout(() => (wheelArmed = true), WHEEL_REST_MS);
+      if (!wheelArmed || e.deltaY >= 0 || strip.scrollTop >= STRIP_LOAD_MARGIN_PX) return;
+      wheelArmed = false;
+      void loadOlder();
     },
     { passive: true },
   );

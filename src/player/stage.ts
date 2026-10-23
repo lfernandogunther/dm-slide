@@ -325,8 +325,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     onSlides();
   }
 
-  async function preload(next: Item | undefined): Promise<void> {
-    const media = next && (await adapter.media(next).catch(() => null));
+  async function preload(next: Item | undefined, ticket: number): Promise<void> {
+    const media = next && (await adapter.media(next, () => ticket === showing).catch(() => null));
     const first = media && (media.type === 'slides' ? media.slides[0] : media);
     if (!first) return;
     if (first.type === 'video') {
@@ -363,7 +363,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       coverOn(shown.thumb);
       await new Promise((done) => setTimeout(done, SETTLE_MS));
       if (ticket !== showing) return;
-      const media = await adapter.media(shown).catch(() => null);
+      const media = await adapter.media(shown, () => ticket === showing).catch(() => null);
       if (ticket !== showing) return;
       item = shown;
       if (!media) unavailable(shown, 'no media found');
@@ -372,7 +372,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
         if (slides.length) showSlide(shown);
         else unavailable(shown, 'no slides');
       }
-      void preload(next);
+      void preload(next, ticket);
     },
     slide: slideBy,
     canSlide,

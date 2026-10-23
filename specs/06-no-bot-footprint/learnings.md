@@ -11,6 +11,9 @@
   page's `credentialless` iframes one throwaway cookie jar, so the anonymous ids the first embed set
   ride on every later one. The first is fixed with `no-referrer`; the second is Chrome's design and
   links reads to each other only, never to the account. Read the request headers, not the flag.
+- **2026-10-23 — Cookieless costs private accounts.** A post from a private account, even one the
+  user follows, embeds as an empty page without cookies (200, `contextJSON: null`, no media), so it
+  shows as unavailable and `I` opens it. It is not a refusal, so it never pauses anything.
 
 ## Concepts learned
 - **Private API**: Instagram's internal `/api/v1/…` endpoints; calling them from a script breaks Meta's terms.

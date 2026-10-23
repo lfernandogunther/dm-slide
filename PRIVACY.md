@@ -17,8 +17,8 @@ it does happens in your browser, on the Instagram page you have open.
 - **The media itself.** To play an item, DM Slide loads the item's public embed page — the page
   Instagram serves so other sites can show a post — and the media file it points to, from
   Instagram's own servers and content network, without your Instagram session or the address of
-  your conversation: your cookies are not sent, so Instagram sees the same request as from anyone who
-  is not signed in. It loads only the item on screen and the next one, and never calls Instagram's private API.
+  your conversation: your account's cookies are not sent. The embed pages may set anonymous ids of
+  their own, which are not tied to your account. It loads only the item on screen and the next one, and never calls Instagram's private API.
   If Instagram ever answers with a refusal, DM Slide stops loading media in every tab for six hours,
   and a reload does not undo that.
   Nothing else is contacted.
