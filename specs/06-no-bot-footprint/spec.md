@@ -49,7 +49,15 @@ the branch `05-post-caption`, unreleased, until a compliant source exists.
    API call cannot come back by accident. The release workflow runs the same build.
 7. **Docs.** NOTES.md (Playback, Loading older, Player motion), `PRIVACY.md`, `store/listing.md`,
    the README if it mentions any of this.
-8. **Release.** The owner cuts v0.1.1 and uploads it to the store by hand.
+8. **No burst.** Holding `S` or `W` passes ~20 items a second. A media read starts only once an item
+   has held the screen ~300 ms, and Instagram gets one read at a time, never a batch of iframes.
+9. **Embeds without the session's cookies.** The embed iframe is `credentialless` and the carousel
+   fetch omits credentials, so an embed load looks like any site's embed traffic and is not tied to
+   the account. A live check on 2026-10-23 found a `credentialless` embed readable, with its video.
+10. **The pause outlives a reload.** A refusal stores `pausedUntil` (now + 6 h) in
+   `chrome.storage.local`; every tab, and every page load until then, reads nothing. Our pill tells
+   the user to wait, so a reload must not undo it.
+11. **Release.** After a self-review, the owner cuts v0.1.1 and uploads it to the store by hand.
 
 ## Acceptance criteria
 - [ ] `main` holds no S05 commit, and the branch `05-post-caption` holds all of S05, including the formerly uncommitted work, with its session marked ON-HOLD.
@@ -95,9 +103,9 @@ hand check runs with the real extension.
 - **Back off**: stop asking after a refusal, instead of trying again until it works.
 
 ## Open questions
-1. How long to stay stopped after a pushback: the page's life (a reload clears it), or a stored
-   "paused until" time that outlives reloads? Chosen: the page's life, since a reload is a person's
-   act and costs one request at most. Say if you prefer stored.
+1. How long to stay stopped after a pushback. First chosen: the page's life. Changed on 2026-10-23
+   after the research: a stored 6 h pause, since the pill itself tells the user to reload. No source
+   publishes a duration; 6 h errs on the safe side.
 2. The 1.5 s gap between actions is a judgment call, roughly a person's hover-click-click.
 
 ## Outcome
