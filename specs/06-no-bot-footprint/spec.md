@@ -41,7 +41,9 @@ the branch `05-post-caption`, unreleased, until a compliant source exists.
    brings nothing to show, the pill says so and the next press loads the next one. The 60-day
    horizon, the page chain and the random pause are removed.
 5. **Paced actions.** The reaction/reply queue keeps at least 1.5 s between two things it tells
-   Instagram. A person cannot react faster through Instagram's own UI.
+   Instagram. A person cannot react faster through Instagram's own UI. A reaction that failed is
+   no longer tried again on its own: the player says so, and the user's next press is the retry.
+   No random jitter: it would dress our timing up as a person's, which principle 3 rules out.
 6. **A mechanical guard.** `npm run build` fails if the bundle contains `/api/`, so a private API
    call cannot come back by accident.
 7. **Docs.** NOTES.md (Playback, Loading older, Player motion), `PRIVACY.md`, `store/listing.md`,

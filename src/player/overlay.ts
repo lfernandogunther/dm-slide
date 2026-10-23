@@ -45,8 +45,8 @@ const FLY_DELAY_MS = 350;
 const FLY_MS = 450;
 const BADGE_POP = [{ transform: 'scale(0)' }, { transform: 'scale(1.4)', offset: 0.6 }, { transform: 'scale(1)' }];
 const BADGE_MS = 260;
-// A reaction Instagram didn't show is tried once more before it shows as failed.
-const REACT_TRIES = 2;
+// The least time between two things told to Instagram: a person can't react faster through its own UI.
+const ACTION_GAP_MS = 1500;
 // Opening grows the video out of its message and closing shrinks it back in; the rest of the player fades.
 const GROW_MS = 440;
 const SHRINK_MS = 380;
@@ -264,6 +264,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const reactions: ReactJob[] = [];
   let reacting = false;
   let sending = false;
+  let lastTold = 0;
   // Only around Instagram's composer, so a reaction never drives the picker at the same time.
   let replying = false;
   // The reply being sent, or the last one sent or not, shown as a bubble on its item.
@@ -529,7 +530,18 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (!removing) celebrate(item, emoji);
   }
 
-  /** Tells Instagram each waiting reaction in turn, never during a reply; a failed one is tried again, then undone. */
+  /** Waits out the gap since the last thing told to Instagram, then tells it this one. */
+  async function told<T>(act: () => Promise<T>): Promise<T> {
+    const wait = lastTold + ACTION_GAP_MS - Date.now();
+    if (wait > 0) await sleep(wait);
+    try {
+      return await act();
+    } finally {
+      lastTold = Date.now();
+    }
+  }
+
+  /** Tells Instagram each waiting reaction in turn, never during a reply; a failed one is undone, never tried again on its own. */
   async function tellReactions(): Promise<void> {
     if (reacting) return;
     reacting = true;
@@ -539,14 +551,10 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       // Instagram's picker takes the focus (onto its ❤️); whatever had it gets it back.
       const focused = root.activeElement instanceof HTMLElement ? root.activeElement : player;
       let error: unknown = null;
-      for (let tries = 0; tries < REACT_TRIES; tries++) {
-        try {
-          await (job.target ? adapter.react(job.item.id, job.target) : adapter.unreact(job.item.id));
-          error = null;
-          break;
-        } catch (e) {
-          error = e;
-        }
+      try {
+        await told(() => (job.target ? adapter.react(job.item.id, job.target) : adapter.unreact(job.item.id)));
+      } catch (e) {
+        error = e;
       }
       if (!closed && !away) focused.focus();
       if (error) reactionFailed(job, error);
@@ -645,7 +653,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       // A reaction under way is driving Instagram's picker; the composer waits for the queue to empty.
       while (reacting) await sleep(BUSY_POLL_MS);
       replying = true;
-      await adapter.reply(item.id, text, quoted);
+      await told(() => adapter.reply(item.id, text, quoted));
       if (quoted) item.myReplies.push(text);
       sent.state = 'sent';
       const shown = sent;
