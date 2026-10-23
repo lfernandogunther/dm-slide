@@ -4,6 +4,7 @@ import { createButton, renderButton } from '../src/content/button';
 import { openNotice, openPlayer, startIndex, type Player } from '../src/player/overlay';
 
 // Query switches for the states worth a look: ?delay=ms ?fail=1 ?failOlder=1 ?video=0 ?layer=0 ?notice=1 ?pushback=1
+// `window.demoTold` lists when each action and older page started and ended.
 const q = new URLSearchParams(location.search);
 const DELAY = Number(q.get('delay') ?? 150);
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
@@ -124,37 +125,52 @@ const find = (id: string) => items.find((r) => r.id === id)!;
 const fail = (what: string) => {
   if (q.get('fail') === '1') throw new Error(`demo: ${what} set to fail`);
 };
+const told: { what: string; start: number; end?: number }[] = [];
+(window as unknown as { demoTold: typeof told }).demoTold = told;
+async function log<T>(what: string, act: () => Promise<T>): Promise<T> {
+  const entry: (typeof told)[number] = { what, start: performance.now() };
+  told.push(entry);
+  try {
+    return await act();
+  } finally {
+    entry.end = performance.now();
+  }
+}
 
 const adapter: ThreadAdapter = {
   listItems: () => items.map((r) => ({ ...r, myReplies: [...r.myReplies] })),
-  async react(id, emoji) {
-    await sleep(DELAY);
-    fail('react');
-    find(id).myReaction = emoji;
-    render();
-  },
-  async unreact(id) {
-    await sleep(DELAY);
-    find(id).myReaction = null;
-    render();
-  },
-  async reply(id, text, quote) {
-    await sleep(DELAY * 3);
-    fail('reply');
-    if (quote) find(id).myReplies.push(text);
-    render();
-  },
-  async loadOlder() {
-    await sleep(600);
-    if (q.get('failOlder') === '1') throw new Error('demo: loading older set to fail');
-    if (olderLeft === 0) return false;
-    const share = OLDER[--olderLeft];
-    const item = toItem(share, items[0].timestampMs - HOUR);
-    shareOf.set(item.id, share);
-    items = [item, ...items];
-    render();
-    return true;
-  },
+  react: (id, emoji) =>
+    log('react', async () => {
+      await sleep(DELAY);
+      fail('react');
+      find(id).myReaction = emoji;
+      render();
+    }),
+  unreact: (id) =>
+    log('unreact', async () => {
+      await sleep(DELAY);
+      find(id).myReaction = null;
+      render();
+    }),
+  reply: (id, text, quote) =>
+    log('reply', async () => {
+      await sleep(DELAY * 3);
+      fail('reply');
+      if (quote) find(id).myReplies.push(text);
+      render();
+    }),
+  loadOlder: () =>
+    log('older', async () => {
+      await sleep(600);
+      if (q.get('failOlder') === '1') throw new Error('demo: loading older set to fail');
+      if (olderLeft === 0) return false;
+      const share = OLDER[--olderLeft];
+      const item = toItem(share, items[0].timestampMs - HOUR);
+      shareOf.set(item.id, share);
+      items = [item, ...items];
+      render();
+      return true;
+    }),
   reveal: (id) => card(id)?.scrollIntoView({ block: 'nearest' }),
   async media(item): Promise<Media | null> {
     await sleep(DELAY * 3);
