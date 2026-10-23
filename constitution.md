@@ -14,9 +14,23 @@ DM Slide you do all of it on one screen, from the keyboard, in any conversation,
 2. **Your session, your browser, nothing else.** It runs on instagram.com inside the user's
    logged-in browser. No password, no server, no account of its own. Message content is never
    stored or sent anywhere; it lives only as long as the page does.
-3. **Act like a person, not a bot.** Every action is one the user triggered, one at a time. No
-   bulk reacting, no automatic replies, no background polling. This protects the account, which
-   matters more than any feature.
+3. **Never give Instagram a reason to see a bot.** Nothing the extension does may lead Instagram to
+   flag the user's account as automated, to challenge, lock or ban it, or to take action against
+   the project. That holds for what the extension reads as much as for what it does:
+   - Every action is one the user triggered, one at a time. No bulk reacting, no automatic
+     replies, no background polling.
+   - It loads only what a person on instagram.com would load at that moment: the item on screen
+     and at most the next one. No paging through history on its own, no bursts.
+   - No direct calls to Instagram's private API (`/api/…`). Data comes from what the page already
+     holds or from public pages Instagram serves to any site, one item at a time.
+   - When Instagram pushes back (a redirect, a 429, a challenge), it stops asking and says so; it
+     never retries its way through.
+   - It behaves like a person instead of passing for one: no requests dressed up as Instagram's
+     own app, no getting around a limit Instagram sets.
+   - Nothing in Instagram's or Meta's terms is broken: no scraping, no collecting beyond what the
+     user is looking at.
+   The user's account and the project matter more than any feature. A feature that can only work
+   by breaking this does not ship.
 4. **Instagram's page is the source of truth, and a guess is never an action.** State (which
    reels exist, whether I reacted) is read from what Instagram shows, never from a parallel copy
    that can drift. When the extension can't find what it needs, because Instagram changed its
@@ -36,6 +50,8 @@ DM Slide you do all of it on one screen, from the keyboard, in any conversation,
 - No mobile, and no browser other than Chrome (desktop).
 - No liking or commenting on the reel itself. Reactions and replies go to the DM message.
 - No bulk or automatic actions of any kind (principle 3).
+- No reading Instagram through its private API, and no loading history the user didn't ask for
+  (principle 3).
 - No automated tests (principle 6).
 - No live updates while the player is open. Reels that arrive meanwhile show up on the next open.
 
@@ -50,3 +66,7 @@ dated. Created 2026-10-21.
   and ? (the key tips), from S03.
 - 2026-10-22: the Chrome Web Store release leaves the non-goals, on the owner's request (S04); the
   extension ships there and as a zip on each GitHub release. The principles are unchanged.
+- 2026-10-23: principle 3 covers reads and requests, not only actions, and adds Instagram's and
+  Meta's terms, on the owner's request: a user of v0.1.0 got Instagram's "suspicious activity"
+  challenge and was asked to change their password right after installing it. No private API, no
+  history loaded on its own, back off when Instagram pushes back, never pass for Instagram's app.
