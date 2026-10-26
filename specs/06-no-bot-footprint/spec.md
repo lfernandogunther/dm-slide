@@ -54,7 +54,7 @@ the branch `05-post-caption`, unreleased, until a compliant source exists.
 9. **Embeds without the session's cookies.** The embed iframe is `credentialless` and the carousel
    fetch omits credentials, so an embed load looks like any site's embed traffic and is not tied to
    the account. A live check on 2026-10-23 found a `credentialless` embed readable, with its video.
-10. **The pause outlives a reload.** A refusal stores `pausedUntil` (now + 6 h) in
+10. **The pause outlives a reload.** A refusal stores `pausedUntil` (now + 1 h) in
    `chrome.storage.local`; every tab, and every page load until then, reads nothing. Our pill tells
    the user to wait, so a reload must not undo it.
 11. **Release.** After a self-review, the owner cuts v0.1.1 and uploads it to the store by hand.
@@ -105,7 +105,8 @@ hand check runs with the real extension.
 ## Open questions
 1. How long to stay stopped after a pushback. First chosen: the page's life. Changed on 2026-10-23
    after the research: a stored 6 h pause, since the pill itself tells the user to reload. No source
-   publishes a duration; 6 h errs on the safe side.
+   publishes a duration; 6 h errs on the safe side. Cut to 1 h by the owner the same day: no refusal
+   was seen live under the new code, and a needless 6 h stop costs the user an afternoon.
 2. The 1.5 s gap between actions is a judgment call, roughly a person's hover-click-click.
 
 ## Outcome

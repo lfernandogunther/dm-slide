@@ -3,16 +3,16 @@
 ## Status: IN-PROGRESS · 2026-10-23 · owner's go-ahead on the plan
 
 ## Next
-Task 12: self-review (`/cn-self-review`, then `/cn-self-review-walk`). Then 13, the owner's hand check and the release.
+Task 14: the owner's hand check and the release. Then 15, close learnings.md.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
 
 ## Open decisions
-- None. Spec open question 1 resolved: a stored 6 h pause.
+- None. Spec open question 1 resolved: a stored pause, cut from 6 h to 1 h by the owner.
 
 ## Tasks status
-11 of 14. See tasks.md.
+13 of 15. See tasks.md.
 
 ## What was done
 - 2026-10-23: a friend's Instagram challenged them right after installing v0.1.0. The owner amended
@@ -40,19 +40,23 @@ Task 12: self-review (`/cn-self-review`, then `/cn-self-review-walk`). Then 13, 
   cookie, no referrer). 11: `pausedUntil` stored for 6 h, honoured by every tab; checked in Node with a
   fake `chrome.storage` (future pause → 0 fetches, refusal → +6 h, another tab's pause stops this one,
   no `chrome` → reads still go out).
+- 2026-10-23: task 12, self-review walked: 5 fixed, 1 checked live with no change. Task 13: the
+  owner cut the pause to 1 h and approved the copy: the pill says why and for how long, and while
+  paused a share shows "Paused to keep your account safe" instead of the generic won't-play card,
+  which now names private accounts. Node checks pass again (refusal → +1 h).
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
 
-**2026-10-23 13:24** - branch `main`
+**2026-10-23 14:09** - branch `main`
 
-Next open task: **10 — embeds without the session's cookies: `credentialless` iframe for reels and video posts, `credentials: 'omit'` for the carousel fetch; live check of a carousel read**
+Next open task: **13 — owner: hand check with the real extension in your own Chrome, then push and cut v0.1.1 (`npm run release 0.1.1`) and upload it to the store**
 
 ### Recent commits
 ```
+dd352b5 fix [S06 #12]: load one older page per press or gesture, and drop reads nobody still wants
+544af1c feat [S06 #11]: keep the pause for six hours across reloads and tabs
+0daaecd fix [S06 #10]: load embeds without the session's cookies or the thread's address
 ed5e953 fix [S06 #09]: read an item's media only once it holds the screen, one read at a time
 d00a5b4 doc [S06]: add no burst, cookieless embeds and a stored pause before the release
-a4d3477 doc [S06 #08]: record the live check
-0d51deb doc [S06 #08]: record the demo half of the live check
-69cdcad chore [S06 #08]: record when the demo's actions and older pages run
 ```

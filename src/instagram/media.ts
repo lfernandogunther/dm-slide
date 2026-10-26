@@ -7,8 +7,8 @@ import * as S from './selectors';
 // Each read keeps who asked for it, so a queued read nobody still wants is dropped.
 const cache = new Map<string, { media: Promise<Media | null>; wanted: (() => boolean)[] }>();
 
-// Instagram's first refusal stops every read, in every tab, for hours: asking again soon is what a bot does.
-const PAUSE_MS = 6 * 3600e3;
+// Instagram's first refusal stops every read, in every tab, for an hour: asking again soon is what a bot does.
+const PAUSE_MS = 3600e3;
 const PAUSE_KEY = 'pausedUntil';
 let refusal: string | null = null;
 const refusalListeners = new Set<(reason: string) => void>();
@@ -19,7 +19,7 @@ const storage = () => (typeof chrome === 'undefined' ? undefined : chrome.storag
 function refuse(reason: string, store = true): void {
   if (refusal) return;
   refusal = reason;
-  console.warn('[dm-slide] Instagram pushed back; media reads stopped for a few hours:', reason);
+  console.warn('[dm-slide] Instagram pushed back; media reads stopped for an hour:', reason);
   if (store) void storage()?.set({ [PAUSE_KEY]: Date.now() + PAUSE_MS }).catch(() => undefined);
   refusalListeners.forEach((listener) => listener(reason));
 }

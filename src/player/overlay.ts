@@ -65,7 +65,7 @@ const SINK_MS = 200;
 const BUMP = [{ transform: 'none' }, { transform: 'translateY(16px)', offset: 0.35 }, { transform: 'none' }];
 const BUMP_MS = 450;
 const START_PILL_MS = 2000;
-const PAUSED = 'Instagram asked to slow down · media paused for a few hours';
+const PAUSED = 'Instagram asked to slow down · paused for about an hour to keep your account safe';
 // Longer than a failure: it explains every unavailable item that follows.
 const PAUSED_MS = 12000;
 const LOADING_OLDER = 'Loading older…';

@@ -26,6 +26,9 @@ const ITEM_MS = 300;
 const SETTLE_MS = 300;
 const SLIDE_MS = 260;
 const REVEAL_MS = 320;
+const CANT_PLAY = { title: "Can't play this here", text: 'Private accounts, deleted posts and posts with embedding off open only in Instagram. I opens it.' };
+// While Instagram's refusal holds, a share is not broken: it is not asked for.
+const PAUSED = { title: 'Paused to keep your account safe', text: 'I opens it in Instagram.' };
 
 function createVideo(): HTMLVideoElement {
   const video = document.createElement('video');
@@ -39,6 +42,8 @@ function createVideo(): HTMLVideoElement {
 export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: () => void, cantPlay: KeyAct[]): Stage {
   const status = document.createElement('div');
   status.className = 'reel-status';
+  let paused = false;
+  const unbindPause = adapter.onPause(() => (paused = true));
   // What moves when the item or slide changes; the controls over it stay put.
   const media = document.createElement('div');
   media.className = 'reel-media';
@@ -246,7 +251,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     el.classList.remove('paused');
   }
 
-  function unavailable(shown: Item, reason: string): void {
+  function unavailable(shown: Item, reason: string, card = CANT_PLAY): void {
     console.info('[dm-slide] item unavailable:', reason);
     blank();
     // The blurred thumbnail stays, still, under the card.
@@ -254,7 +259,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     el.classList.replace('loading', 'unplayable');
     current.removeAttribute('src');
     setSlides([]);
-    setStatus(stateCard({ title: "Can't play this here", text: 'It may be private, deleted, or not loading.', keys: cantPlay }));
+    setStatus(stateCard({ ...card, keys: cantPlay }));
   }
 
   function play(shown: Item, url: string): void {
@@ -366,7 +371,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       const media = await adapter.media(shown, () => ticket === showing).catch(() => null);
       if (ticket !== showing) return;
       item = shown;
-      if (!media) unavailable(shown, 'no media found');
+      if (!media) unavailable(shown, paused ? 'media paused' : 'no media found', paused ? PAUSED : CANT_PLAY);
       else {
         setSlides(media.type === 'slides' ? media.slides : [media]);
         if (slides.length) showSlide(shown);
@@ -387,6 +392,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     toggleMute,
     destroy() {
       showing++;
+      unbindPause();
       for (const v of [current, spare]) {
         v.pause();
         v.removeAttribute('src');

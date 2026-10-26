@@ -1,6 +1,6 @@
 # Privacy policy
 
-*Last updated: 2026-10-22*
+*Last updated: 2026-10-23*
 
 DM Slide is a Chrome extension that plays the reels, posts, stories and photos sent in an Instagram
 direct-message conversation, one after another, so you can react and reply on one screen.
@@ -19,7 +19,7 @@ it does happens in your browser, on the Instagram page you have open.
   Instagram's own servers and content network, without your Instagram session or the address of
   your conversation: your account's cookies are not sent. The embed pages may set anonymous ids of
   their own, which are not tied to your account. It loads only the item on screen and the next one, and never calls Instagram's private API.
-  If Instagram ever answers with a refusal, DM Slide stops loading media in every tab for six hours,
+  If Instagram ever answers with a refusal, DM Slide stops loading media in every tab for an hour,
   and a reload does not undo that.
   Nothing else is contacted.
 - **Older messages, only when you ask.** DM Slide never scrolls back through your conversation on
