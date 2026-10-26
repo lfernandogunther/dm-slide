@@ -26,3 +26,8 @@ early (`specs/03-player-polish/`).
 ## 06 · Web Store release (in progress)
 The extension on the Chrome Web Store, a README with screenshots and every key, and releases that
 ship from a tag. Spec: `specs/04-web-store-release/`.
+
+## 07 · Faster video start (future)
+A reel can take seconds to start: its video comes from the embed page loaded in a hidden iframe,
+since the page's HTML does not carry it for reels. Measure the iframe on current reels first, then
+cut what can be cut without more requests (the 200 ms poll, a read for an item already left).

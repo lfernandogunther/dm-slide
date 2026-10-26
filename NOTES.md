@@ -103,6 +103,11 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   stops every media read in every tab for 1 h: `pausedUntil` in `chrome.storage.local`, read
   before the first read after a load and watched with `onChanged`. The player says so once. A miss
   is asked again only when its item shows again; nothing retries on its own.
+- **Load time** (2026-10-26, public fixtures, isolated tab): a cookieless `fetch` of an embed page
+  takes 0.4–0.5 s and a fresh mp4 ~1.6 s to its first frame. `contextJSON.video_url` showed up for
+  one `/tv/` of four; `/reel/` embeds carry `GraphVideo` with no URL, so the iframe stays for reels.
+  Its own time on current reels is unmeasured (the old fixtures never played). Never test this with
+  faked browser headers from a shell: that is the bot footprint principle 3 forbids.
 - A carousel's slides come from a plain `fetch` of `/p/<code>/embed/`: its last inline script holds
   `"contextJSON":"<JSON string>"`, escaped once, so it is parsed twice. `gql_data.shortcode_media`
   of `__typename` `GraphSidecar` lists `edge_sidecar_to_children.edges[].node`: `display_url` for

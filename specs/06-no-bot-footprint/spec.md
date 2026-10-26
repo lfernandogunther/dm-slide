@@ -113,5 +113,17 @@ hand check runs with the real extension.
 
 | # | Criterion | Result |
 |---|---|---|
+| 1 | S05 parked on `05-post-caption`, none of it on `main` | Pass — task 01 |
+| 2 | No `/api/` in the bundle; the build fails if there is | Pass — guard mutation run in the self-review |
+| 3 | 5 items live: 0 `/api/`, embeds ≤ visited + 1 | Pass — 6 embeds for 5 items, 0 `/api/` (task 08, live) |
+| 4 | No history on open or moving; one `W` at the oldest → one page | Pass — live 20 → 40, nothing more in ~16 s; held `W` and the wheel fixed in task 12 |
+| 5 | Forced pushback stops reads, said once | Pass — demo and Node; never seen live |
+| 6 | Two quick reactions ≥ 1.5 s apart | Pass — 1501 ms in the demo; owner's hand check |
+| 7 | Embedding off → unavailable, `I` opens it | Partial — a private account's post checked live; an embedding-off reel was not in any sample |
+| 8 | `PRIVACY.md` and `store/listing.md` describe the reads | Pass — no API lookup named; 1 h pause |
+| 9 | `npm run typecheck`, `npm run build` | Pass |
+
+Also: the pause is 1 h, stored, and every tab honours it (task 11, 13); embeds load without the
+session's cookies or referrer (task 10). Slow video start is not fixed here: ROADMAP 07.
 
 ---

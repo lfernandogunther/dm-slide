@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-23 · owner's go-ahead on the plan
 
 ## Next
-Task 14: the owner's hand check and the release. Then 15, close learnings.md.
+Task 14: the owner's hand check, then `npm run release 0.1.1` (pushes; the tag's workflow publishes to the store).
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -12,7 +12,7 @@ Task 14: the owner's hand check and the release. Then 15, close learnings.md.
 - None. Spec open question 1 resolved: a stored pause, cut from 6 h to 1 h by the owner.
 
 ## Tasks status
-13 of 15. See tasks.md.
+14 of 15. See tasks.md.
 
 ## What was done
 - 2026-10-23: a friend's Instagram challenged them right after installing v0.1.0. The owner amended
@@ -44,6 +44,9 @@ Task 14: the owner's hand check and the release. Then 15, close learnings.md.
   owner cut the pause to 1 h and approved the copy: the pill says why and for how long, and while
   paused a share shows "Paused to keep your account safe" instead of the generic won't-play card,
   which now names private accounts. Node checks pass again (refusal → +1 h).
+- 2026-10-26: owner found videos slow to start. Measured in an isolated tab: the embed HTML is
+  fast but has no video URL for reels, so no quick fix; left out of v0.1.1 as ROADMAP 07. Task 15:
+  learnings closed (all four already in NOTES), Outcome filled.
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
