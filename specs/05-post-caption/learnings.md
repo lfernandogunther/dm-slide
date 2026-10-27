@@ -46,6 +46,11 @@
 
   → notes
 
+- **2026-10-27 — The card waits for the item's media read, by design.** Every move clears it and
+  it comes back once the read settles, so it flickers between items, and a slow reel shows none
+  until its embed read ends (up to the timeout). The facts arrive with that same read, so an
+  earlier card would show the date alone and then grow. → stays
+
 ## Concepts learned
 - **Caption**: the text the author wrote when posting, returned with the post's info.
 - **Top-level comment**: a comment on the post itself, not a reply inside another comment's thread.

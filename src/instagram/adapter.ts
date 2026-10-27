@@ -60,6 +60,7 @@ export interface Post {
   comments: number | null;
   views: number | null; // reels only
   music: { artist: string; song: string } | null; // reels only
+  originalAudio: boolean; // a reel playing its own sound
 }
 
 export { QUICK_REACTIONS, type Box, type ItemKind, type Slide };

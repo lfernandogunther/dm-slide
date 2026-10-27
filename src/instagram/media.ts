@@ -97,6 +97,7 @@ function keepFacts(path: string, media: any): void {
     comments: countOf(media.edge_media_to_comment?.count),
     views: countOf(media.video_view_count),
     music: artist && song ? { artist, song } : null,
+    originalAudio: media.clips_music_attribution_info?.uses_original_audio === true,
   });
 }
 

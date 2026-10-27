@@ -34,6 +34,7 @@ const SHARES: Share[] = [
       likes: 56023,
       comments: 446,
       views: 358120,
+      originalAudio: true,
     },
   },
   {
@@ -220,7 +221,7 @@ const adapter: ThreadAdapter = {
     }, item.id),
   post(item) {
     const post = shareOf.get(item.id)!.post;
-    return post ? { author: null, verified: false, caption: null, postedMs: null, likes: null, comments: null, views: null, music: null, ...post } : null;
+    return post ? { author: null, verified: false, caption: null, postedMs: null, likes: null, comments: null, views: null, music: null, originalAudio: false, ...post } : null;
   },
   // ?pushback=1 stands in for Instagram refusing a read, a moment after the player opens.
   onPause(listener) {

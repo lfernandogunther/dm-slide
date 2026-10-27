@@ -169,7 +169,7 @@ const POSTED_AT_YEAR = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' 
 const COUNT = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
 /** A shared post's card as text nodes only: what Instagram's page holds is never read as HTML. */
-function postParts({ author, verified, caption, postedMs, likes, comments, views, music }: Post): HTMLElement[] {
+function postParts({ author, verified, caption, postedMs, likes, comments, views, music, originalAudio }: Post): HTMLElement[] {
   const el = (tag: string, className: string, text = '') => Object.assign(document.createElement(tag), { className, textContent: text });
   const parts: HTMLElement[] = [];
   const by = el('div', 'p-by');
@@ -184,9 +184,8 @@ function postParts({ author, verified, caption, postedMs, likes, comments, views
   }
   if (by.childElementCount) parts.push(by);
   if (caption) parts.push(el('p', 'p-cap', caption));
-  // Only a reel has views; one without a named song plays its own sound.
   if (music) parts.push(el('div', 'p-music', `🎵 ${music.artist} — ${music.song}`));
-  else if (views !== null) parts.push(el('div', 'p-music', '🎵 Original audio'));
+  else if (originalAudio) parts.push(el('div', 'p-music', '🎵 Original audio'));
   const counts = (
     [
       ['❤️', likes],

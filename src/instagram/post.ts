@@ -4,7 +4,7 @@ import type { Item, Post } from './adapter';
 import { factsOf } from './media';
 import * as S from './selectors';
 
-/** When the post was made, from its shortcode alone; null for a code that is no plain media id. */
+/** When the post was made, from its shortcode alone; null for a code that is no plain media id. "C1iWe4TgAAA" gives 2024-01-01T00:00:00.000Z. */
 function postedMsOf(shortcode: string, sentMs: number): number | null {
   // A media id fits 64 bits, 11 characters; longer codes carry more than the id.
   if (shortcode.length > 11) return null;
@@ -34,6 +34,7 @@ export function postOf(item: Item): Post | null {
     comments: null,
     views: null,
     music: null,
+    originalAudio: false,
     ...facts,
     postedMs,
   };
