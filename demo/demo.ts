@@ -1,5 +1,5 @@
 // The real player over a fake thread: generated media, invented people, no network. Never ships.
-import type { Item, Media, Slide, ThreadAdapter } from '../src/instagram/adapter';
+import type { Item, Media, Post, Slide, ThreadAdapter } from '../src/instagram/adapter';
 import { createButton, renderButton } from '../src/content/button';
 import { openNotice, openPlayer, startIndex, type Player } from '../src/player/overlay';
 
@@ -16,11 +16,33 @@ interface Share {
   notes?: string[];
   replies?: string[];
   reaction?: string;
+  post?: Partial<Post>; // what the shared post says about itself; a one-photo post has its date only
 }
 
+const DAY = 864e5;
+
 const SHARES: Share[] = [
-  { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🐶', caption: 'dog learns to skateboard', hue: 200 }], reaction: '😂' },
-  { kind: 'post', sender: 'Sam', scenes: [{ emoji: '🍝', caption: 'pasta in 60 seconds', hue: 18 }], replies: ['making this tonight'] },
+  {
+    kind: 'reel',
+    sender: 'Alex',
+    scenes: [{ emoji: '🐶', caption: 'dog learns to skateboard', hue: 200 }],
+    reaction: '😂',
+    post: {
+      author: 'biscuit.rolls',
+      caption: 'Day 12 of teaching Biscuit to skate 🛹\nHe still prefers the board to the treats.\n\n#dogsofinstagram #skatedog',
+      postedMs: Date.now() - 12 * DAY,
+      likes: 56023,
+      comments: 446,
+      views: 358120,
+    },
+  },
+  {
+    kind: 'post',
+    sender: 'Sam',
+    scenes: [{ emoji: '🍝', caption: 'pasta in 60 seconds', hue: 18 }],
+    replies: ['making this tonight'],
+    post: { postedMs: Date.now() - 400 * DAY },
+  },
   {
     kind: 'carousel',
     sender: 'Alex',
@@ -31,8 +53,23 @@ const SHARES: Share[] = [
       { emoji: '🌅', caption: 'last night', hue: 12 },
     ],
     notes: ['the third one is us 😅', 'we should go back in spring'],
+    post: { author: 'trail.notes', caption: 'Four days, three lakes, one very cold night ⛺', postedMs: Date.now() - 40 * DAY, likes: 1240, comments: 38 },
   },
-  { kind: 'reel', sender: 'Sam', scenes: [{ emoji: '🎸', caption: 'that riff, slowed down', hue: 275 }] },
+  {
+    kind: 'reel',
+    sender: 'Sam',
+    scenes: [{ emoji: '🎸', caption: 'that riff, slowed down', hue: 275 }],
+    post: {
+      author: 'slowriffs',
+      verified: true,
+      caption: 'That riff, at half speed. Tabs on request 🎸',
+      postedMs: Date.now() - 3 * DAY,
+      likes: 8912,
+      comments: 211,
+      views: 120400,
+      music: { artist: 'Hollow Pines', song: 'Late Bloom' },
+    },
+  },
   { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🐱', caption: 'cat vs cucumber', hue: 95 }], notes: ['watch till the end'] },
   { kind: 'story', sender: 'Sam', scenes: [{ emoji: '☕', caption: 'monday mood', hue: 28 }] },
   { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🛹', caption: 'how is this even possible', hue: 330 }] },
@@ -181,7 +218,10 @@ const adapter: ThreadAdapter = {
       const slides: Slide[] = scenes.map((s) => ({ type: 'photo', url: still(s, 540, 675) }));
       return slides.length > 1 ? { type: 'slides', slides } : slides[0];
     }, item.id),
-  post: () => null,
+  post(item) {
+    const post = shareOf.get(item.id)!.post;
+    return post ? { author: null, verified: false, caption: null, postedMs: null, likes: null, comments: null, views: null, music: null, ...post } : null;
+  },
   // ?pushback=1 stands in for Instagram refusing a read, a moment after the player opens.
   onPause(listener) {
     const timer = q.get('pushback') === '1' ? setTimeout(() => listener('demo'), DELAY * 5) : undefined;

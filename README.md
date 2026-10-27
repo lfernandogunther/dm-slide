@@ -4,7 +4,7 @@ A Chrome extension that plays everything sent to watch in an Instagram DM conver
 posts, carousels, stories and gallery photos or videos — one after another, so you can watch, react
 and reply on one screen, without the back-and-forth.
 
-![The player on a reel: the strip of items on the left, the video in the middle, who sent it, the reactions and the reply box on the right](docs/screenshots/01-player.png)
+![The player on a reel: the strip of items on the left, the video in the middle, the post's caption and counts above who sent it, the reactions and the reply box on the right](docs/screenshots/01-player.png)
 
 *Screenshots come from the demo page: invented people and generated media.*
 

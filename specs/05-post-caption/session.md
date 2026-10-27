@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-27 · brought back on the embed page as its source
 
 ## Next
-04 — demo: invented post data; screenshot 01 retaken.
+05 — PRIVACY.md and store/listing.md.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -12,7 +12,7 @@
 - None.
 
 ## Tasks status
-3 of 7. See tasks.md.
+4 of 7. See tasks.md.
 
 ## What was done
 - 2026-10-22: the owner asked to fill the right column's empty space with the post's caption and,
@@ -28,6 +28,10 @@
 - 2026-10-27: 03 done. `.p-post` above the panel; `Stage.show` now says when the item's media read
   settled, and only then the overlay asks `post(item)`; a later move drops the answer. The card
   hides when the panel leaves under 72 px above it (hidden from a 370 px tall window in the demo).
+- 2026-10-27: 04 done. Four demo items carry post data (a reel, a one-photo post with its date only,
+  a carousel, a verified reel with music). Checked in the demo by a subagent: each card's text, line
+  breaks, no card on the rest, quick moves never show another item's card, no console errors.
+  Screenshot 01 retaken on the reel with its card.
 
 ## Inputs ingested
 
