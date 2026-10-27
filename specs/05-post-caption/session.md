@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-27 · brought back on the embed page as its source
 
 ## Next
-06 — owner: hand check on the real Instagram.
+07 — self-review walk, close learnings.md and promote.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -12,7 +12,7 @@
 - None.
 
 ## Tasks status
-5 of 7. See tasks.md.
+6 of 7. See tasks.md.
 
 ## What was done
 - 2026-10-22: the owner asked to fill the right column's empty space with the post's caption and,
@@ -34,33 +34,31 @@
   Screenshot 01 retaken on the reel with its card.
 - 2026-10-27: 05 done. PRIVACY.md names the caption, author, counts and music read from the embed
   page; the listing adds them to its description, host justification and data usage.
+- 2026-10-27: 06 done. The owner checked a reel, a carousel and a photo on the real Instagram, with
+  quick moves: all as specified.
 
 ## Inputs ingested
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
 
-**2026-10-27 12:03** - branch `main`
+**2026-10-27 12:24** - branch `main`
 
-Next open task: **03 — player: the post card above the reactions, ported from the branch onto today's overlay; late answers dropped; hidden when squeezed**
+Next open task: **07 — self-review, close learnings.md and promote**
 
 ### Uncommitted
 ```
- M demo/demo.ts
  M specs/04-web-store-release/session.md
- M specs/05-post-caption/spec.md
+ M specs/05-post-caption/session.md
  M specs/05-post-caption/tasks.md
- M src/instagram/adapter.ts
- M src/instagram/media.ts
- M src/instagram/selectors.ts
-?? src/instagram/post.ts
+?? specs/05-post-caption/self-review.md
 ```
 
 ### Recent commits
 ```
+d9436d6 doc [S05 #05]: name the post's caption, author and counts in the privacy policy and listing
+b8e60b6 feat [S05 #04]: give the demo's posts invented captions and retake the player screenshot
+af0f27b feat [S05 #03]: show the shared post's card above the reactions once its media read settles
+0915ae7 feat [S05 #02]: keep a shared post's facts from its embed read and date it from its shortcode
 8a73f46 doc [S05 #01]: bring S05 back with the public embed as its source
-7e09aa8 doc [S07 #08]: bring the session log up to date
-9686241 doc [S07 #08]: close learnings and promote them to NOTES
-42c48cc doc [S07 #08]: record the self-review and its walk
-fe25751 fix [S07 #08]: forget the preloaded item once the spare is swapped out
 ```
