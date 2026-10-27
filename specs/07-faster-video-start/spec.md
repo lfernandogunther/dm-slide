@@ -30,7 +30,8 @@ the lane then makes the item they did go to wait behind it.
 2. A baseline on current reels with today's build.
 3. The preload follows the direction of travel and the filter.
 4. Cuts the baseline justifies, each only if it adds no request: a read for an item no longer
-   wanted stops at once instead of running to its end; a shorter poll; no settle for an item the
+   wanted stops at once instead of running to its end; a shorter poll; an embed showing broken
+   media fails at once like the "Watch on Instagram" cover (the 6 s timeouts); no settle for an item the
    preload already got (its own preload still waits it); a shorter settle for a single press
    (never for a held key) — dropped, see learnings.
 5. The same probe after the cuts, on the same kind of thread.

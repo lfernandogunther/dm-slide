@@ -69,7 +69,7 @@ function readVideoUrl(frame: HTMLIFrameElement): string | null {
   return httpsUrl(video?.currentSrc || video?.src);
 }
 
-/** The embed covers the post with "Watch on Instagram": no video is coming, so waiting out the timeout is pointless. */
+/** The embed covers the post with "Watch on Instagram" or shows it broken: no video is coming, so waiting out the timeout is pointless. */
 function embedHasNoVideo(frame: HTMLIFrameElement): boolean {
   return !!frame.contentDocument?.querySelector(S.EMBED_NO_VIDEO);
 }

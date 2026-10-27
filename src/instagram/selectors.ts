@@ -63,8 +63,8 @@ export const REFUSED_STATUS = [401, 403, 429];
 export const EMBED_PATH = /\/embed\/?$/;
 // A check reads the frame's own DOM and asks the network nothing, so checking often costs only a query.
 export const EMBED_POLL_MS = 50;
-// An embed that will serve no video shows a "Watch on Instagram" cover within ~0.6 s; the playable one checked never had it.
-export const EMBED_NO_VIDEO = '.WatchOnInstagram';
+// An embed that will serve no video shows a "Watch on Instagram" cover or a broken-media page within ~1 s; no playable one had either.
+export const EMBED_NO_VIDEO = '.WatchOnInstagram, .EmbedBrokenMedia';
 // A carousel's embed page carries every slide as a JSON string, escaped once inside the page's script;
 // its rendered iframe fills only the first two. One-photo posts have `null` there.
 export const EMBED_CONTEXT_JSON = /"contextJSON":"((?:[^"\\]|\\.)*)"/;
