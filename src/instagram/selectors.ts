@@ -69,6 +69,11 @@ export const EMBED_NO_VIDEO = '.WatchOnInstagram, .EmbedBrokenMedia';
 // its rendered iframe fills only the first two. One-photo posts have `null` there.
 export const EMBED_CONTEXT_JSON = /"contextJSON":"((?:[^"\\]|\\.)*)"/;
 export const EMBED_CAROUSEL_TYPE = 'GraphSidecar';
+// A shortcode is the media id in base64url, and the id's bits above the 23rd count ms from Instagram's
+// own epoch. The id is given at upload, so it can run hours before the post went out.
+export const SHORTCODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+export const MEDIA_ID_TIME_SHIFT = 23n;
+export const MEDIA_ID_EPOCH_MS = 1314220021721n;
 
 // Reacting goes through Instagram's own picker. A row's hover toolbar is the group of exactly React
 // (aria-haspopup=dialog), Reply and More; it renders on hover. The picker's emoji buttons carry no

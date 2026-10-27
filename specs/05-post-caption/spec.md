@@ -82,8 +82,8 @@ what it has once the item's own media read settles, and it never starts a read i
 
 The overlay ports the card from the parked branch onto today's `.p-side`: a `.p-post` above
 `.p-panel`. It renders the card when the item becomes current, and drops an answer that arrives
-after the item is gone. Text from Instagram is set as text only. Field names live in
-`selectors.ts` next to `EMBED_CONTEXT_JSON`.
+after the item is gone. Text from Instagram is set as text only. The field paths sit
+beside the carousel's in `media.ts`; the shortcode alphabet and the id's epoch go in `selectors.ts`.
 
 ## Edge cases
 - **No caption** (Instagram allows posts without one): the card shows the author, the date and the

@@ -1,7 +1,7 @@
 // Resolves what an item shows. Shares come from their public embed page only: a reel's in a hidden
 // iframe, read off its <video>; a carousel's from the slide data in its HTML. Gallery items, stories
 // and one-photo posts carry their own media in the record, so they ask the network nothing.
-import type { Item, Media, Slide } from './adapter';
+import type { Item, Media, Post, Slide } from './adapter';
 import * as S from './selectors';
 
 // Each read keeps who asked for it, so a queued read nobody still wants is dropped.
@@ -64,6 +64,48 @@ function httpsUrl(url: unknown): string | null {
   return typeof url === 'string' && url.startsWith('https://') ? url : null;
 }
 
+/** What a post says about itself, all but its date, which its shortcode holds. */
+export type PostFacts = Omit<Post, 'postedMs'>;
+
+// Kept per share path for the page's life, from whichever read loaded the embed: never a read of their own.
+const facts = new Map<string, PostFacts>();
+
+export const factsOf = (path: string): PostFacts | null => facts.get(path) ?? null;
+
+/** The embed's data about the post, escaped once inside its script; null when it carries none. */
+function shortcodeMedia(raw: string | undefined): any {
+  if (!raw) return null;
+  try {
+    return JSON.parse(JSON.parse(`"${raw}"`))?.gql_data?.shortcode_media ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const countOf = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
+const textOf = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : null);
+
+function keepFacts(path: string, media: any): void {
+  if (!media) return;
+  const artist = textOf(media.clips_music_attribution_info?.artist_name);
+  const song = textOf(media.clips_music_attribution_info?.song_name);
+  facts.set(path, {
+    author: textOf(media.owner?.username),
+    verified: media.owner?.is_verified === true,
+    caption: textOf(media.edge_media_to_caption?.edges?.[0]?.node?.text),
+    likes: countOf(media.edge_liked_by?.count),
+    comments: countOf(media.edge_media_to_comment?.count),
+    views: countOf(media.video_view_count),
+    music: artist && song ? { artist, song } : null,
+  });
+}
+
+/** The embed's data from the frame's own inline script; a frame sent anywhere else carries none. */
+function frameMedia(frame: HTMLIFrameElement): any {
+  const script = [...(frame.contentDocument?.scripts ?? [])].find((s) => s.text.includes('"contextJSON"'));
+  return shortcodeMedia(script?.text.match(S.EMBED_CONTEXT_JSON)?.[1]);
+}
+
 function readVideoUrl(frame: HTMLIFrameElement): string | null {
   const video = frame.contentDocument?.querySelector('video');
   return httpsUrl(video?.currentSrc || video?.src);
@@ -111,6 +153,8 @@ function fromEmbed(path: string, wanted: () => boolean): Promise<Media | null> {
     }, S.EMBED_POLL_MS);
     function finish(media: Media | null): void {
       clearInterval(poll);
+      // Even with no video, so a reel that can't play here still shows what it says.
+      keepFacts(path, frameMedia(frame));
       frame.remove();
       done(media);
     }
@@ -128,9 +172,8 @@ async function fromEmbedData(path: string): Promise<Media | null> {
   try {
     const res = await fetch(S.embedUrl(path), { credentials: 'omit', referrerPolicy: 'no-referrer' });
     if (pushedBack(res.status, res.url) || !res.ok) return null;
-    const raw = (await res.text()).match(S.EMBED_CONTEXT_JSON)?.[1];
-    if (!raw) return null;
-    const media = JSON.parse(JSON.parse(`"${raw}"`))?.gql_data?.shortcode_media;
+    const media = shortcodeMedia((await res.text()).match(S.EMBED_CONTEXT_JSON)?.[1]);
+    keepFacts(path, media);
     if (media?.__typename !== S.EMBED_CAROUSEL_TYPE) return null;
     const slides = ((media.edge_sidecar_to_children?.edges ?? []) as any[]).map((e) => embedSlideOf(e?.node));
     if (!slides.length || slides.includes(null)) return null;

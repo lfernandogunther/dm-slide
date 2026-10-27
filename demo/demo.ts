@@ -181,6 +181,7 @@ const adapter: ThreadAdapter = {
       const slides: Slide[] = scenes.map((s) => ({ type: 'photo', url: still(s, 540, 675) }));
       return slides.length > 1 ? { type: 'slides', slides } : slides[0];
     }, item.id),
+  post: () => null,
   // ?pushback=1 stands in for Instagram refusing a read, a moment after the player opens.
   onPause(listener) {
     const timer = q.get('pushback') === '1' ? setTimeout(() => listener('demo'), DELAY * 5) : undefined;

@@ -30,6 +30,7 @@ import {
   THREAD_PATH,
 } from './selectors';
 import { mediaOf, onRefusal } from './media';
+import { postOf } from './post';
 
 export interface Item {
   id: string; // the DM message id
@@ -49,6 +50,18 @@ export const engaged = (item: Item) => item.myReaction !== null || item.myReplie
 
 export type Media = Slide | { type: 'slides'; slides: Slide[] };
 
+/** What a shared post says about itself, from the embed page its media already came from. */
+export interface Post {
+  author: string | null; // username
+  verified: boolean;
+  caption: string | null;
+  postedMs: number | null; // right to the day, not the hour
+  likes: number | null;
+  comments: number | null;
+  views: number | null; // reels only
+  music: { artist: string; song: string } | null; // reels only
+}
+
 export { QUICK_REACTIONS, type Box, type ItemKind, type Slide };
 
 export type Health = { ok: true } | { ok: false; reason: string };
@@ -61,6 +74,7 @@ export interface ThreadAdapter {
   loadOlder(): Promise<boolean>; // one page; false = start of chat
   reveal(id: string): void; // scrolls Instagram's thread to that message
   media(item: Item, wanted?: () => boolean): Promise<Media | null>; // null = unavailable, or no longer wanted when its turn came
+  post(item: Item): Post | null; // asks nothing: what its media read already brought; null = no shared post
   onPause(listener: (reason: string) => void): () => void; // Instagram refused a read, so media reads stopped
   link(item: Item): string; // the item on Instagram itself
   health(): Health;
@@ -220,6 +234,7 @@ export function createThreadAdapter(): ThreadAdapter {
       if (!result.ok) throw new Error(`reveal: ${result.reason}`);
     },
     media: mediaOf,
+    post: postOf,
     onPause: onRefusal,
     // A gallery item has no page of its own: the thread is where Instagram shows it.
     link: (item) => (item.source.path ? `https://www.instagram.com${item.source.path}` : location.href),
