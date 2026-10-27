@@ -10,7 +10,7 @@
 - **2026-10-22 — The caption rides on the info read the media already makes.** `items[0].caption`
   (`text`, `created_at` in seconds, `user`) came back in 6 of 6; `preview_comments` was always empty,
   so it can't stand in for the comments read. Ids are compared by `pk_id` (a string): a numeric pk
-  can outgrow a JSON number. → notes
+  can outgrow a JSON number. → stays (the private-API build was dropped)
 - **2026-10-22 — The author-comment fields were read live, a match never was.** Task 01's live read
   had `items[0].comment_count` as a number and `pk_id` on `items[0].user`, `caption.user` and every
   `comments[].user`, so the read compares `pk_id` only. No post of the 6 had a top-level author comment,
@@ -34,7 +34,7 @@
   - **Speed:** a reel's `captioned` iframe gave its `<video>` as fast as the plain one did, within
     the 1 s sample.
 
-  → notes
+  → notes (Reading Instagram)
 - **2026-10-27 — A post's time can be decoded from its shortcode, to the day.**
   - **The steps:** decode the shortcode as base64url to get the media id. It matched the JSON `id`
     and `data-media-id` on 3 of 3 posts. Then `(id >> 23) + 1314220021721` gives milliseconds.
@@ -44,7 +44,7 @@
   - **Why not `taken_at`:** loading that full page would be a new kind of request, so the card
     shows a date, never a time.
 
-  → notes
+  → notes (Reading Instagram)
 
 - **2026-10-27 — The card waits for the item's media read, by design.** Every move clears it and
   it comes back once the read settles, so it flickers between items, and a slow reel shows none
@@ -58,3 +58,5 @@
 - **Epoch seconds**: Instagram's dates are seconds since 1970; JavaScript's are milliseconds.
 
 ## Promoted
+- 2026-10-27 → NOTES.md, Reading Instagram: what the embed carries about a post; the post date from
+  its shortcode. Everything else stays here: tied to the dropped private-API build or to this card.

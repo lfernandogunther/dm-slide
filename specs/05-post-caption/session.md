@@ -1,9 +1,9 @@
 # Session — S05
 
-## Status: IN-PROGRESS · 2026-10-27 · brought back on the embed page as its source
+## Status: DONE · 2026-10-27
 
 ## Next
-07 — self-review walk, close learnings.md and promote.
+Nothing: S05 is closed. Push and the 0.1.2 release are the owner's call.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -12,7 +12,7 @@
 - None.
 
 ## Tasks status
-6 of 7. See tasks.md.
+7 of 7. See tasks.md.
 
 ## What was done
 - 2026-10-22: the owner asked to fill the right column's empty space with the post's caption and,
@@ -36,6 +36,9 @@
   page; the listing adds them to its description, host justification and data usage.
 - 2026-10-27: 06 done. The owner checked a reel, a carousel and a photo on the real Instagram, with
   quick moves: all as specified.
+- 2026-10-27: 07 done. Self-review: "Original audio" now follows the reel's own flag, the shortcode
+  decode has a pinned pair, the card's wait noted; a cache change and a "~" on the date dismissed.
+  The embed's post data and the shortcode date moved to NOTES.md.
 
 ## Inputs ingested
 

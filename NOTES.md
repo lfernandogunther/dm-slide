@@ -133,6 +133,17 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   a photo, `video_url` (a plain mp4) when `is_video`. The rendered embed fills only its first two
   slides, so its DOM is no source. One-photo posts carry `contextJSON: null`. Seen on 10 of 10
   carousels, 2026-10-22; posts with embedding turned off were not in the sample.
+- **What a post says about itself rides on the same embed read.** `shortcode_media` (reels and
+  carousels alike, `embed/` or `embed/captioned/`) holds the caption, `owner.{username,
+  is_verified}`, like and comment counts and, on reels, `video_view_count` and
+  `clips_music_attribution_info.{artist_name, song_name, uses_original_audio}`. It has no comment
+  bodies, post time, location or tagged users. One-photo posts carry none (`contextJSON: null`).
+  Paths must be bare: a `/<user>/` prefix gives 404 on `captioned` and a page without data on
+  `embed/`. Read live 2026-10-27; the owner's check on the real Instagram confirmed the paths.
+- **A post's date comes from its shortcode:** base64url gives the media id (matched 3 of 3), and
+  `(id >> 23) + 1314220021721` gives ms. Against `taken_at` it ran 7–17 s early on a carousel and a
+  photo and 2.4 h early on a reel (the id is likely given at upload), so the card shows a date,
+  never a time. `taken_at` itself is only on the full post page, a request of another kind.
 - A one-photo post's `preview_image.url` is full resolution; its `fallback_url` is the copy to try
   when the browser can't decode the first (HEIC).
 - Two `<video>` elements (current and a spare preloading the next); a swapped-out video must not

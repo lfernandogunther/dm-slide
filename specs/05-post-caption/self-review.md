@@ -1,8 +1,8 @@
 # Self-review — S05 post-caption (tasks 02–05)
-**Status:** walked   <!-- analyzed | walked | reviewed -->
+**Status:** reviewed   <!-- analyzed | walked | reviewed -->
 **Range:** 8a73f46..HEAD
 **Analyzed:** d9436d6 @ 2026-10-27
-**Reviewed:** uncommitted @ 2026-10-27
+**Reviewed:** 7996290 @ 2026-10-27
 
 ## Findings
 1. MED · src/instagram/media.ts:205-208 — a reel read that ends without a video (cover / "Watch on Instagram") deletes its cache entry, so reopening it loads a new embed iframe even though its facts were already kept; the card then shows from `facts` but Instagram is asked again, against "opening the same item again asks Instagram nothing new" · evidence: `if (!media) cache.delete(shortcode)` runs for every null, and `keepFacts` in `finish` (line 157) stores facts for that same null. Pre-existing "a miss is asked again" rule; decide whether a miss that kept facts should stay cached.
@@ -29,7 +29,7 @@ Checked and clean: typecheck and build green (private-API gate included); no new
 ### 3 · LOW · src/instagram/post.ts:11-17
 **Fix**
 > Unknown: whether to accept the up-to-2.4 h skew or add a "~" hint to the date; the spec accepts "to the day". Needs a decision, not a code read.
-**Effort:** unknown · **Outcome:** —
+**Effort:** unknown · **Outcome:** descartar
 
 ### 4 · LOW · src/instagram/post.ts:6-18
 **Fix**
@@ -47,7 +47,8 @@ Checked and clean: typecheck and build green (private-API gate included); no new
 ## Dismissed
 <!-- flags I decided against, one line of reason each -->
 1 · src/instagram/media.ts:205-208 — a cover can be passing, and caching it would keep a reel unavailable until reload; the saving is one request on revisiting a rare reel that can't play here, and "a miss is asked again" is deliberate
+3 · src/instagram/post.ts:11-17 — the spec promises the date to the day; a post made just after midnight showing the day before is rare, and a "~" would mark every card for it
 
 ## Decision
 <!-- filled by the walk -->
-3 corrigidos (2, 4, 5) · 0 pra depois · 1 descartado (1) · 1 sem decisão (3, effort unknown) · checks: verde (typecheck, build)
+3 corrigidos (2, 4, 5) · 0 pra depois · 2 descartados (1, 3) · checks: verde (typecheck, build)
