@@ -1,9 +1,9 @@
 # Session — S07
 
-## Status: IN-PROGRESS · 2026-10-27 · probe written, waiting for the owner's baseline run
+## Status: IN-PROGRESS · 2026-10-27 · baseline in, waiting for the owner's run on this build
 
 ## Next
-02 + 06 — the owner runs probe.md on v0.1.1 (unpacked from the release zip), then on `dist/`; then 07 and 08.
+06 — the owner runs probe.md on `dist/s07` (v0.1.1 card off, cached files cleared); then the Outcome, 07 and 08.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** not opened yet (solo repo, commits on main)
@@ -22,26 +22,24 @@
   settle for a preloaded item; the single-press settle cut dropped). Demo check: W preloads the
   older item, a preloaded item is asked at 0 ms instead of 300, its preload waits the settle, a
   press leaving within the settle reads nothing ahead. Abandoning reads is real-adapter only.
+- 2026-10-27: 02 — v0.1.1 baseline in learnings.md (older 1001 ms, newer preloaded 299 ms, 6 s
+  timeouts); the newer leg had 8 reels, accepted since every one is the 300 ms settle. The build
+  for 06 is copied to `dist/s07`.
 
 ## Inputs ingested
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
 
-**2026-10-27 09:30** - branch `main`
+**2026-10-27 10:27** - branch `main`
 
-Next open task: **01 — the probe: a paste-ready Claude-in-Chrome prompt (in this folder) that times, per item, key → read starts → read ends → first frame through the player's open shadow root, marks cache hits and unplayable reels, and returns numbers only**
-
-### Uncommitted
-```
-?? specs/07-faster-video-start/
-```
+Next open task: **02 — owner: baseline with today's build — at least 10 reels moving newer and 5 moving older; numbers into learnings.md**
 
 ### Recent commits
 ```
-8e46a8a doc: record the Chrome Web Store upload setup
-ba29a68 doc [S06]: link the Chrome Web Store listing in the README
-d19899b doc [S06 #14]: mark the hand check, release and store upload done
-8ea7ba9 chore: release v0.1.1
-e76c034 feat [S06 #17]: let reacting move to the newer or the older item
+5460701 doc [S07 #02]: record the v0.1.1 baseline and look inside timed-out frames
+f6ac3c2 doc [S07 #02]: cover unseen items both ways in the probe and log the first run
+17e6fcf doc [S07 #05]: record the cuts, the dropped one and the demo check
+77d2711 chore [S07 #05]: log the item id of each demo media read
+6d71b51 feat [S07 #05]: show a preloaded item without waiting the settle
 ```
