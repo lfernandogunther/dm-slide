@@ -5,7 +5,7 @@ import type { Item, Media, Slide } from './adapter';
 import * as S from './selectors';
 
 // Each read keeps who asked for it, so a queued read nobody still wants is dropped.
-const cache = new Map<string, { media: Promise<Media | null>; wanted: (() => boolean)[] }>();
+const cache = new Map<string, { media: Promise<Media | null>; wanted: (() => boolean)[]; done: boolean }>();
 
 // Instagram's first refusal stops every read, in every tab, for an hour: asking again soon is what a bot does.
 const PAUSE_MS = 3600e3;
@@ -96,13 +96,18 @@ function fromEmbed(path: string, wanted: () => boolean): Promise<Media | null> {
     frame.style.cssText = 'position: fixed; left: -10000px; width: 400px; height: 700px; opacity: 0; pointer-events: none;';
     frame.setAttribute('aria-hidden', 'true');
     const started = Date.now();
+    let noVideoPolls = 0;
     const poll = setInterval(() => {
-      // Nobody waits for it any more: stop now so the lane is free for the item on screen.
-      if (!wanted()) return finish(null);
       const refused = framePushedBack(frame);
       const url = refused ? null : readVideoUrl(frame);
-      if (!url && !refused && !embedHasNoVideo(frame) && Date.now() - started < S.EMBED_TIMEOUT_MS) return;
-      finish(url ? { type: 'video', url } : null);
+      // A URL already in the frame is kept whoever still wants it, so the read is never wasted.
+      if (url) return finish({ type: 'video', url });
+      // Nobody waits for it any more: stop now so the lane is free for the item on screen.
+      if (!wanted()) return finish(null);
+      // Two polls in a row, so a cover rendered for a moment before the video cannot fail a playable reel.
+      noVideoPolls = embedHasNoVideo(frame) ? noVideoPolls + 1 : 0;
+      if (!refused && noVideoPolls < 2 && Date.now() - started < S.EMBED_TIMEOUT_MS) return;
+      finish(null);
     }, S.EMBED_POLL_MS);
     function finish(media: Media | null): void {
       clearInterval(poll);
@@ -145,15 +150,19 @@ function fetchShare(
   if (refusal || !path) return Promise.resolve(null);
   const found = cache.get(shortcode);
   if (found) {
-    found.wanted.push(wanted);
+    // A settled read asks nobody any more, so its list would only grow.
+    if (!found.done) found.wanted.push(wanted);
     return found.media;
   }
-  const entry = { media: Promise.resolve<Media | null>(null), wanted: [wanted] };
+  const entry = { media: Promise.resolve<Media | null>(null), wanted: [wanted], done: false };
   const stillWanted = () => entry.wanted.some((w) => w());
   entry.media = lane.then(() => (refusal || !stillWanted() ? null : read(path, stillWanted)));
   lane = entry.media.catch(() => null);
   cache.set(shortcode, entry);
-  entry.media.then((media) => media ?? cache.delete(shortcode));
+  entry.media.then((media) => {
+    entry.done = true;
+    if (!media) cache.delete(shortcode);
+  });
   return entry.media;
 }
 
