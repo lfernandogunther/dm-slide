@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-27 · probe written, waiting for the owner's baseline run
 
 ## Next
-02 — the owner pastes probe.md into Claude in Chrome on today's build; numbers into learnings.md.
+02 + 06 — the owner runs probe.md on v0.1.1 (unpacked from the release zip), then on `dist/`; then 07 and 08.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** not opened yet (solo repo, commits on main)
@@ -12,12 +12,16 @@
 - A target time for key-to-first-frame: set after the baseline (spec, open question 1).
 
 ## Tasks status
-1 of 8; see tasks.md.
+4 of 8; see tasks.md.
 
 ## What was done
 - 2026-10-27: planned from ROADMAP 07 after v0.1.1 shipped; found the preload ignores direction.
 - 2026-10-27: spec approved; 01 — probe.md: top-frame observers on the embed iframes, the stage's
   `loading` class and `data-pos`; numbers only.
+- 2026-10-27: 03–05 done (preload by direction and filter; unwanted reads stop; 50 ms poll; no
+  settle for a preloaded item; the single-press settle cut dropped). Demo check: W preloads the
+  older item, a preloaded item is asked at 0 ms instead of 300, its preload waits the settle, a
+  press leaving within the settle reads nothing ahead. Abandoning reads is real-adapter only.
 
 ## Inputs ingested
 
