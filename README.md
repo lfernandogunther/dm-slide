@@ -10,7 +10,7 @@ and reply on one screen, without the back-and-forth.
 
 ## Install
 
-**From the Chrome Web Store** — coming soon; the listing is in review.
+**From the Chrome Web Store:** [DM Slide](https://chromewebstore.google.com/detail/dm-slide/emfeebonhnagffgomdbpflehhjccefin) — press **Add to Chrome**.
 
 **From a release zip** (no build needed):
 1. Download `dm-slide-vX.Y.Z.zip` from the [latest release](https://github.com/lfernandogunther/dm-slide/releases/latest)
