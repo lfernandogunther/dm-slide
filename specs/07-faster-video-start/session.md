@@ -12,7 +12,7 @@ Nothing pending in the spec. Push and a 0.1.2 release are the owner's call (spec
 - A target time for key-to-first-frame: set after the baseline (spec, open question 1).
 
 ## Tasks status
-4 of 8; see tasks.md.
+8 of 8; see tasks.md.
 
 ## What was done
 - 2026-10-27: planned from ROADMAP 07 after v0.1.1 shipped; found the preload ignores direction.
@@ -25,6 +25,11 @@ Nothing pending in the spec. Push and a 0.1.2 release are the owner's call (spec
 - 2026-10-27: 02 — v0.1.1 baseline in learnings.md (older 1001 ms, newer preloaded 299 ms, 6 s
   timeouts); the newer leg had 8 reels, accepted since every one is the 300 ms settle. The build
   for 06 is copied to `dist/s07`.
+- 2026-10-27: 06 — the owner's run on `dist/s07`: older 1001 → 1 ms, newer 299 → 1 ms, the reel
+  after an abandoned read 2034 → 978 ms; the 6 s timeouts are broken-media embeds, so 05 gained a
+  fast fail for them, confirmed by eye (~1 s). Outcome filled.
+- 2026-10-27: 07 — ROADMAP 07 marked done; NOTES gained where a reel's start time goes.
+- 2026-10-27: 08 — self-review: 6 flags, all fixed, checks green; learnings sorted into NOTES.
 
 ## Inputs ingested
 
