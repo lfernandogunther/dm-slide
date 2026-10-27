@@ -175,8 +175,13 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 ## Release and the store
 - `npm run release <v>` refuses unless `main` is clean and even with `origin/main` and the tag is
   new; it typechecks before touching any file. The tag's workflow builds, attaches the zip to a
-  GitHub Release and uploads to the store only once all four store variables exist (deferred: for
-  now the zip goes up by hand in the Developer Dashboard).
+  GitHub Release and uploads to the store only once all four store variables exist. They were set
+  2026-10-27; no tag has gone through them yet (v0.1.1 went up by hand), so the first run is 0.1.2's.
+- Store upload setup (2026-10-27, no billing, no key): GCP project `dm-slide-release-33ywl`, service
+  account `cws-publisher@…` added in the dashboard's Settings → Service account; pool `github`,
+  provider `dm-slide` accepting only this repo's numeric id and `refs/tags/v*` (a rename cannot
+  borrow it). On a fresh project, creating the pool was denied for ~1 min, and the store refused the
+  service account (403) for ~30 s after it was added: retry before doubting the setup.
 - Pushing `.github/workflows/` needs a `gh` token with the `workflow` scope; `gh auth refresh -s
   workflow` takes only with the browser signed in to the same account.
 - The store counts data handled only on the device as handled: the sender's name, personal
