@@ -48,6 +48,8 @@
   `EmbedLogo`, `EmbedVisitInstagram` and `Sprite`, with no video and no img (3 of 3). Removing an
   embed frame makes Instagram's own script beacon `logging_client_events` on unload. v0.1.1 did
   this too; it is Instagram's, not a new request of ours.
+- **2026-10-27 — the broken-media fast fail, owner's eye.** After it, such items show "Can't play
+  this here" in about 1 s, not 6.3 s. That was seen by eye, without probe numbers.
 
 ## Concepts learned
 

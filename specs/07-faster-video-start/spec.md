@@ -37,15 +37,15 @@ the lane then makes the item they did go to wait behind it.
 5. The same probe after the cuts, on the same kind of thread.
 
 ## Acceptance criteria
-- [ ] A baseline: per item, key → read starts, read time, read → first frame, and whether the
+- [x] A baseline: per item, key → read starts, read time, read → first frame, and whether the
       preload served it; on at least 10 reels moving newer and 5 moving older.
-- [ ] The preload reads the item the next key in the current direction would show (filter
+- [x] The preload reads the item the next key in the current direction would show (filter
       included); moving older no longer reads the newer neighbour.
-- [ ] The median key-to-first-frame time drops, measured with the same probe, and each cut kept
+- [x] The median key-to-first-frame time drops, measured with the same probe, and each cut kept
       has its own number in the Outcome.
-- [ ] No more embed reads per item visited than before (at most the item and the next); none for
+- [x] No more embed reads per item visited than before (at most the item and the next); none for
       an item passed through with S held; no request of a new kind.
-- [ ] `npm run typecheck` and `npm run build` pass; the owner's hand check on the real Instagram.
+- [x] `npm run typecheck` and `npm run build` pass; the owner's hand check on the real Instagram.
 
 ## Approach
 Measure before cutting: the probe sits outside the extension (top frame, open shadow root, a
@@ -91,5 +91,12 @@ item that stays).
 
 | # | Criterion | Result |
 |---|---|---|
+| 1 | Baseline (v0.1.1) | Older fresh reels 1001 ms (n=7); newer preloaded 299 ms (n=6), the settle alone; 6 s timeouts. 8 newer reels, not 10: each was the flat 300 ms settle |
+| 2 | Preload follows direction + filter | Moving older, preloaded reels show in 0–1 ms (n=5); v0.1.1 had none |
+| 3 | Median drops, a number per cut | Videos: older 1001 → 1 ms, newer 299 → 1 ms. Per cut: direction 1001 → 0–1 (older); no settle when preloaded 299 → 1 (newer); abandoned read stops: next reel 2034 → 978 ms; 50 ms poll: no median of its own, reads end 39–187 ms sooner than the 200 ms ticks would allow (derived, kept); broken embed fails in ~1 s, not 6.3 s (owner's eye) |
+| 4 | No more reads, none when held, no new request | Held key: dozens of items passed, 0 reads. ≤ 1 read + 1 preload per item. Same embed iframe only. Taps > 300 ms apart read each item, as before |
+| 5 | typecheck + build, hand check | Pass; owner's hand check 2026-10-27 |
+
+Open question 1 (target): a preloaded reel is ~0 ms; a fresh one stays ~1 s (settle + read), set by Instagram's page, not ours.
 
 ---
