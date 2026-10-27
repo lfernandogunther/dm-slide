@@ -40,6 +40,14 @@
   timeouts still happen (one in each part). The timeout diagnostics weren't captured, because the
   run used the earlier probe text. An item's "ownReads 2" is its read plus its own preload when the
   preload starts before the first frame, not a second read for it.
+- **2026-10-27 — hand check on the new build (owner, W).** A held W passed through dozens of items
+  with no read for any of them (ownReads 0, aheadReads 0 on every passed row). Fast taps landing
+  more than 300 ms apart each start a read, as v0.1.1 did. Each of those reads now stops within one
+  poll once the tap moves on (56 and 161 ms), but its request was already sent. The 6 s timeouts
+  are an embed page that shows broken media: the only classes in the frame are `EmbedBrokenMedia`,
+  `EmbedLogo`, `EmbedVisitInstagram` and `Sprite`, with no video and no img (3 of 3). Removing an
+  embed frame makes Instagram's own script beacon `logging_client_events` on unload. v0.1.1 did
+  this too; it is Instagram's, not a new request of ours.
 
 ## Concepts learned
 
