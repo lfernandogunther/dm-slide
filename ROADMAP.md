@@ -23,7 +23,7 @@ Spec: `specs/02-beyond-reels/`.
 An options page (defaults for auto-advance and quote, key remapping). The player's polish shipped
 early (`specs/03-player-polish/`).
 
-## 06 · Web Store release (in progress)
+## 06 · Web Store release (done)
 The extension on the Chrome Web Store, a README with screenshots and every key, and releases that
 ship from a tag. Spec: `specs/04-web-store-release/`.
 
@@ -32,3 +32,8 @@ A reel can take seconds to start: its video comes from the embed page loaded in 
 since the page's HTML does not carry it for reels. Measured on current reels, then cut without more
 requests: a preloaded reel now shows at once both ways, and a broken embed fails in ~1 s, not 6.
 Spec: `specs/07-faster-video-start/`.
+
+## 08 · The shared post's card (done)
+Beside each shared post: its author, date, caption, a reel's music and its public like, comment and
+view counts, all from the embed page its media already comes from, with no further request.
+Spec: `specs/05-post-caption/`.

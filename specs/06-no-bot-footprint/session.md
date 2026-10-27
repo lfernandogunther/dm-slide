@@ -1,9 +1,9 @@
 # Session — S06
 
-## Status: IN-PROGRESS · 2026-10-23 · owner's go-ahead on the plan
+## Status: DONE · 2026-10-27
 
 ## Next
-Task 14: the owner's hand check, then `npm run release 0.1.1` (pushes; the tag's workflow publishes to the store).
+Nothing: S06 is closed; v0.1.1 shipped with it.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -12,7 +12,7 @@ Task 14: the owner's hand check, then `npm run release 0.1.1` (pushes; the tag's
 - None. Spec open question 1 resolved: a stored pause, cut from 6 h to 1 h by the owner.
 
 ## Tasks status
-14 of 15. See tasks.md.
+17 of 17. See tasks.md.
 
 ## What was done
 - 2026-10-23: a friend's Instagram challenged them right after installing v0.1.0. The owner amended

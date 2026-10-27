@@ -99,7 +99,10 @@ reads Instagram and the traps found on the way: [NOTES.md](NOTES.md).
 - Specs: [01 MVP](specs/01-mvp/spec.md) (clickable prototype in `specs/01-mvp/prototype/`),
   [02 Beyond reels](specs/02-beyond-reels/spec.md),
   [03 Player polish](specs/03-player-polish/spec.md),
-  [04 Web Store release](specs/04-web-store-release/spec.md)
+  [04 Web Store release](specs/04-web-store-release/spec.md),
+  [05 Post caption](specs/05-post-caption/spec.md),
+  [06 No bot footprint](specs/06-no-bot-footprint/spec.md),
+  [07 Faster video start](specs/07-faster-video-start/spec.md)
 
 ## License
 [MIT](LICENSE)
