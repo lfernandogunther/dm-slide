@@ -109,6 +109,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   let spare = createVideo();
   // Each show() bumps this, so media resolved for an item already left behind is ignored.
   let showing = 0;
+  // The item the latest show() is for, set before its media resolves.
+  let target: Item | null = null;
   let item: Item | null = null;
   let slides: Slide[] = [];
   let at = 0;
@@ -331,7 +333,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   }
 
   async function preload(next: Item | undefined, ticket: number): Promise<void> {
-    const media = next && (await adapter.media(next, () => ticket === showing).catch(() => null));
+    // Moving onto the item being preloaded keeps its read: it is now the one asked for.
+    const media = next && (await adapter.media(next, () => ticket === showing || target === next).catch(() => null));
     const first = media && (media.type === 'slides' ? media.slides[0] : media);
     if (!first) return;
     if (first.type === 'video') {
@@ -361,6 +364,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     async show(shown, next, dir = 0) {
       if (dir) move('Y', dir, ITEM_MS);
       const ticket = ++showing;
+      target = shown;
       item = null;
       blank();
       setSlides([]);
@@ -392,6 +396,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     toggleMute,
     destroy() {
       showing++;
+      target = null;
       unbindPause();
       for (const v of [current, spare]) {
         v.pause();

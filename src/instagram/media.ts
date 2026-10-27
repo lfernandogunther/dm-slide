@@ -86,7 +86,7 @@ function framePushedBack(frame: HTMLIFrameElement): boolean {
   }
 }
 
-function fromEmbed(path: string): Promise<Media | null> {
+function fromEmbed(path: string, wanted: () => boolean): Promise<Media | null> {
   return new Promise((done) => {
     const frame = document.createElement('iframe');
     // Without the session's cookies or the thread's address: an embed page is public, so reading it need not be the account's activity.
@@ -97,13 +97,18 @@ function fromEmbed(path: string): Promise<Media | null> {
     frame.setAttribute('aria-hidden', 'true');
     const started = Date.now();
     const poll = setInterval(() => {
+      // Nobody waits for it any more: stop now so the lane is free for the item on screen.
+      if (!wanted()) return finish(null);
       const refused = framePushedBack(frame);
       const url = refused ? null : readVideoUrl(frame);
       if (!url && !refused && !embedHasNoVideo(frame) && Date.now() - started < S.EMBED_TIMEOUT_MS) return;
+      finish(url ? { type: 'video', url } : null);
+    }, S.EMBED_POLL_MS);
+    function finish(media: Media | null): void {
       clearInterval(poll);
       frame.remove();
-      done(url ? { type: 'video', url } : null);
-    }, S.EMBED_POLL_MS);
+      done(media);
+    }
     document.body.append(frame);
   });
 }
@@ -134,7 +139,7 @@ async function fromEmbedData(path: string): Promise<Media | null> {
 function fetchShare(
   shortcode: string,
   path: string | null,
-  read: (path: string) => Promise<Media | null>,
+  read: (path: string, wanted: () => boolean) => Promise<Media | null>,
   wanted: () => boolean,
 ): Promise<Media | null> {
   if (refusal || !path) return Promise.resolve(null);
@@ -144,7 +149,8 @@ function fetchShare(
     return found.media;
   }
   const entry = { media: Promise.resolve<Media | null>(null), wanted: [wanted] };
-  entry.media = lane.then(() => (refusal || !entry.wanted.some((w) => w()) ? null : read(path)));
+  const stillWanted = () => entry.wanted.some((w) => w());
+  entry.media = lane.then(() => (refusal || !stillWanted() ? null : read(path, stillWanted)));
   lane = entry.media.catch(() => null);
   cache.set(shortcode, entry);
   entry.media.then((media) => media ?? cache.delete(shortcode));
