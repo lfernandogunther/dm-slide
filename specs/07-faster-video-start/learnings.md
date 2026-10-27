@@ -54,3 +54,9 @@
 ## Concepts learned
 
 ## Promoted
+- preload ignores direction · first v0.1.1 run · mid-preload move keeps its read · broken-media by eye -> stay here
+- the baseline needs the owner, how to compare builds -> NOTES.md (Testing)
+- settle only guards items passed through; baseline and after-cut numbers -> NOTES.md (Playback, "Where a reel's start time goes")
+- single-press settle cut dropped -> NOTES.md (Playback)
+- `EmbedBrokenMedia` and the unload beacon -> NOTES.md (Playback)
+- a median can't show a cut that removes rounding -> proposed for lessons.local.md

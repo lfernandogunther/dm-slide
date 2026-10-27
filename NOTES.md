@@ -117,12 +117,16 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   through the private API; that is the price of dropping it. A second kind never plays either: an
   embed page showing only `.EmbedBrokenMedia` (with `EmbedLogo`, `EmbedVisitInstagram`, `Sprite`),
   present within ~1 s and never seen on a playable one (5 of 5, 2026-10-27); it fails the same way.
+- Removing an embed frame makes Instagram's own script beacon `logging_client_events` on unload. That is Instagram's
+  request, not ours, and older builds did the same.
 - **Where a reel's start time goes** (2026-10-27, measured before and after S07): the 300 ms settle,
   the read, then the first frame. The preload follows the direction of travel and the filter, and an
   item it already read skips the settle (its own preload still waits it, so a held key reads
   nothing): a preloaded reel shows in 0–1 ms both ways, where v0.1.1 took 299 ms newer and a full
   ~1 s read older. A read nobody wants any more stops at the next 50 ms check, freeing the lane; the
-  request already went out. Taps more than 300 ms apart still read each item tapped through.
+  request already went out. Taps more than 300 ms apart still read each item tapped through. A shorter
+  settle for a single press was dropped: `e.repeat` marks only a held key, and taps at 4–6 a second
+  would each outlast it and be read.
 - A carousel's slides come from a plain `fetch` of `/p/<code>/embed/`: its last inline script holds
   `"contextJSON":"<JSON string>"`, escaped once, so it is parsed twice. `gql_data.shortcode_media`
   of `__typename` `GraphSidecar` lists `edge_sidecar_to_children.edges[].node`: `display_url` for
@@ -162,6 +166,11 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   adapter there. Each extension reload leaves the old isolated world in the context list
   (a SPA tab never swaps documents), and evaluating in one throws `__dms is not defined`: reload the
   tab so one "DM Slide" remains. `console.warn` from a content script lands on the extension's Errors page.
+- Speed is the owner's to measure: the DevTools Chrome has no DM threads. Paste
+  `specs/07-faster-video-start/probe.md` into Claude in Chrome on a thread with many reels. It
+  returns numbers only. Compare two builds with the same probe text and the cached files cleared,
+  and turn the other build's card off. A median over a few fresh reads can't show a cut worth
+  ~100 ms; read each read's end against the old poll ticks instead.
 - The button syncs on page mutations only, so an idle page can lag in a test.
 - An unreadable thread can be simulated by blocking the `scan` request at window capture.
 

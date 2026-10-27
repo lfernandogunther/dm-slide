@@ -1,6 +1,6 @@
 # Tasks — S07
 
-**7 of 8 done · next: 08 — self-review, close learnings and promote**
+**8 of 8 done**
 
 - [x] **01 — the probe: a paste-ready Claude-in-Chrome prompt (in this folder) that times, per item, key → read starts → read ends → first frame through the player's open shadow root, marks cache hits and unplayable reels, and returns numbers only**
 - [x] **02 — owner: baseline with today's build — at least 10 reels moving newer and 5 moving older; numbers into learnings.md**
@@ -9,6 +9,6 @@
 - [x] **05 — the cuts the baseline justifies, one commit each with its number: a shorter embed poll; a shorter settle for a single press only if fast tapping still reads at most the item that stays (dropped when the number doesn't move)**
 - [x] **06 — owner: the same probe after the cuts, plus the hand check; the Outcome filled from both runs**
 - [x] **07 — ROADMAP 07 marked done, README/NOTES updated where the behaviour changed**
-- [ ] **08 — self-review, close learnings.md and promote**
+- [x] **08 — self-review, close learnings.md and promote**
 
 ---

@@ -1,9 +1,9 @@
 # Session — S07
 
-## Status: IN-PROGRESS · 2026-10-27 · baseline in, waiting for the owner's run on this build
+## Status: DONE · 2026-10-27
 
 ## Next
-06 — the owner runs probe.md on `dist/s07` (v0.1.1 card off, cached files cleared); then the Outcome, 07 and 08.
+Nothing pending in the spec. Push and a 0.1.2 release are the owner's call (spec, open question 2).
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** not opened yet (solo repo, commits on main)
