@@ -111,6 +111,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   let showing = 0;
   // The item the latest show() is for, set before its media resolves.
   let target: Item | null = null;
+  // The item whose media the last preload got: showing it asks Instagram nothing.
+  let ready: Item | null = null;
   let item: Item | null = null;
   let slides: Slide[] = [];
   let at = 0;
@@ -337,6 +339,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     const media = next && (await adapter.media(next, () => ticket === showing || target === next).catch(() => null));
     const first = media && (media.type === 'slides' ? media.slides[0] : media);
     if (!first) return;
+    ready = next;
     if (first.type === 'video') {
       if (spare.src !== first.url) spare.src = first.url;
     } else new Image().src = first.url;
@@ -370,7 +373,8 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       setSlides([]);
       setStatus(null);
       coverOn(shown.thumb);
-      await new Promise((done) => setTimeout(done, SETTLE_MS));
+      const settled = new Promise((done) => setTimeout(done, SETTLE_MS));
+      if (shown !== ready) await settled;
       if (ticket !== showing) return;
       const media = await adapter.media(shown, () => ticket === showing).catch(() => null);
       if (ticket !== showing) return;
@@ -381,6 +385,9 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
         if (slides.length) showSlide(shown);
         else unavailable(shown, 'no slides');
       }
+      // A preloaded item skips the settle, but its own preload doesn't, so a held key still reads nothing.
+      await settled;
+      if (ticket !== showing) return;
       void preload(next, ticket);
     },
     slide: slideBy,
