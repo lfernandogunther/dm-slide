@@ -26,7 +26,7 @@ const ITEM_MS = 300;
 const SETTLE_MS = 300;
 const SLIDE_MS = 260;
 const REVEAL_MS = 320;
-const CANT_PLAY = { title: "Can't play this here", text: 'Private accounts, deleted posts and posts with embedding off open only in Instagram. I opens it.' };
+const CANT_PLAY = { title: "Can't play this here", text: "Instagram doesn't let this one play outside its own view. I opens it." };
 // While Instagram's refusal holds, a share is not broken: it is not asked for.
 const PAUSED = { title: 'Paused to keep your account safe', text: 'I opens it in Instagram.' };
 

@@ -108,6 +108,12 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   one `/tv/` of four; `/reel/` embeds carry `GraphVideo` with no URL, so the iframe stays for reels.
   Its own time on current reels is unmeasured (the old fixtures never played). Never test this with
   faked browser headers from a shell: that is the bot footprint principle 3 forbids.
+- **Some public reels never play in an embed** (2026-10-27, one playable and one not, same thread,
+  credentialless iframe): the unplayable one shows a `.WatchOnInstagram` cover with a play sprite at
+  ~0.6 s and never gets a `<video>`; its `contextJSON` is `GraphVideo`/`clips` with no `video_url`
+  (why Instagram withholds it is unknown; licensed music is a guess). The playable one has `.EmbedVideo` and a `<video>` with a src at ~1 s, and no cover. The player shows
+  the card as soon as the cover appears instead of waiting out the 6 s timeout. v0.1.0 played these
+  through the private API; that is the price of dropping it.
 - A carousel's slides come from a plain `fetch` of `/p/<code>/embed/`: its last inline script holds
   `"contextJSON":"<JSON string>"`, escaped once, so it is parsed twice. `gql_data.shortcode_media`
   of `__typename` `GraphSidecar` lists `edge_sidecar_to_children.edges[].node`: `display_url` for

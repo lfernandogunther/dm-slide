@@ -69,6 +69,11 @@ function readVideoUrl(frame: HTMLIFrameElement): string | null {
   return httpsUrl(video?.currentSrc || video?.src);
 }
 
+/** The embed covers the post with "Watch on Instagram": no video is coming, so waiting out the timeout is pointless. */
+function embedHasNoVideo(frame: HTMLIFrameElement): boolean {
+  return !!frame.contentDocument?.querySelector(S.EMBED_NO_VIDEO);
+}
+
 /** The frame left its embed page for a login, a challenge or the home page. */
 function framePushedBack(frame: HTMLIFrameElement): boolean {
   try {
@@ -94,7 +99,7 @@ function fromEmbed(path: string): Promise<Media | null> {
     const poll = setInterval(() => {
       const refused = framePushedBack(frame);
       const url = refused ? null : readVideoUrl(frame);
-      if (!url && !refused && Date.now() - started < S.EMBED_TIMEOUT_MS) return;
+      if (!url && !refused && !embedHasNoVideo(frame) && Date.now() - started < S.EMBED_TIMEOUT_MS) return;
       clearInterval(poll);
       frame.remove();
       done(url ? { type: 'video', url } : null);
