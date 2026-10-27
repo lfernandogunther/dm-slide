@@ -1,11 +1,9 @@
 # Session — S04
 
-## Status: IN-PROGRESS · 2026-10-22 · go-ahead with the defaults (0.1.0, public, federation)
+## Status: DONE · 2026-10-27
 
 ## Next
-v0.1.0 is in the store's review. When it is approved: the Web Store link goes in the README.
-At the next release: task 10 (store credentials), task 12 if the owner wants Dependabot, and paste
-the new host justification from `store/listing.md` into the dashboard (it now names the CDN).
+Nothing: S04 is closed.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -14,7 +12,7 @@ the new host justification from `store/listing.md` into the dashboard (it now na
 - None.
 
 ## Tasks status
-10 of 12. See tasks.md.
+12 of 12. See tasks.md.
 
 ## What was done
 - 2026-10-22: the owner asked for a full README with screenshots and a Web Store release with
@@ -28,19 +26,22 @@ the new host justification from `store/listing.md` into the dashboard (it now na
 - 2026-10-22: task 10 deferred to the next release. Self-review: 8 flags, 7 fixed (privacy policy
   names the CDN, release job split from the read-only build, store job needs all four variables,
   release script fetches and typechecks first), 1 to task 12. Learnings sorted into NOTES.md.
+- 2026-10-27: 10 proven by v0.1.2, whose tag uploaded the zip to the store and submitted it for
+  review with no hand step. 12 done: the release workflow's actions pinned to commit SHAs, and
+  Dependabot keeps the pins current.
 
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
 
-**2026-10-22 14:21** - branch `main`
+**2026-10-27 10:55** - branch `main`
 
-Next open task: **09 — owner, guided: developer account, first submission by hand with the first release's zip**
+Next open task: **10 — owner, guided: store credentials for the workflow, proven by one tag that reaches the store** — deferred 2026-10-22: the owner uploads each release zip by hand; the store job stays skipped until its variables exist
 
 ### Recent commits
 ```
-6eaf927 doc [S04]: mark tasks 02-08 done and record their learnings
-b06f87e feat [S04 #08]: release on a v* tag to GitHub Releases and the Chrome Web Store
-67a1106 feat [S04 #07]: add npm run release to bump, commit, tag and push a version
-b232086 doc [S04 #06]: add the Chrome Web Store listing kit and promo tile
-f5e7582 doc [S04 #04]: rewrite the README with screenshots, install, keys and privacy
+9686241 doc [S07 #08]: close learnings and promote them to NOTES
+42c48cc doc [S07 #08]: record the self-review and its walk
+fe25751 fix [S07 #08]: forget the preloaded item once the spare is swapped out
+922bbbe fix [S07 #08]: keep a video already found and fail a no-video embed on two checks
+0f547ff doc [S07 #07]: mark ROADMAP 07 done and note where a reel's start time goes
 ```
