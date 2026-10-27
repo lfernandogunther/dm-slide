@@ -4,7 +4,7 @@ import { createButton, renderButton } from '../src/content/button';
 import { openNotice, openPlayer, startIndex, type Player } from '../src/player/overlay';
 
 // Query switches for the states worth a look: ?delay=ms ?fail=1 ?failOlder=1 ?video=0 ?layer=0 ?notice=1 ?pushback=1
-// `window.demoTold` lists when each action, media read and older page started and ended.
+// `window.demoTold` lists when each action, media read (with its item's id) and older page started and ended.
 const q = new URLSearchParams(location.search);
 const DELAY = Number(q.get('delay') ?? 150);
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
@@ -125,10 +125,10 @@ const find = (id: string) => items.find((r) => r.id === id)!;
 const fail = (what: string) => {
   if (q.get('fail') === '1') throw new Error(`demo: ${what} set to fail`);
 };
-const told: { what: string; start: number; end?: number }[] = [];
+const told: { what: string; id?: string; start: number; end?: number }[] = [];
 (window as unknown as { demoTold: typeof told }).demoTold = told;
-async function log<T>(what: string, act: () => Promise<T>): Promise<T> {
-  const entry: (typeof told)[number] = { what, start: performance.now() };
+async function log<T>(what: string, act: () => Promise<T>, id?: string): Promise<T> {
+  const entry: (typeof told)[number] = { what, id, start: performance.now() };
   told.push(entry);
   try {
     return await act();
@@ -180,7 +180,7 @@ const adapter: ThreadAdapter = {
       if (video) return { type: 'video', url: video };
       const slides: Slide[] = scenes.map((s) => ({ type: 'photo', url: still(s, 540, 675) }));
       return slides.length > 1 ? { type: 'slides', slides } : slides[0];
-    }),
+    }, item.id),
   // ?pushback=1 stands in for Instagram refusing a read, a moment after the player opens.
   onPause(listener) {
     const timer = q.get('pushback') === '1' ? setTimeout(() => listener('demo'), DELAY * 5) : undefined;
