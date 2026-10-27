@@ -2,6 +2,7 @@ import { createThreadAdapter } from '../instagram/adapter';
 import { findHeaderIcons } from '../instagram/header';
 import { THREAD_PATH } from '../instagram/selectors';
 import { openNotice, openPlayer, startIndex, type Player } from '../player/overlay';
+import { loadSettings, type Settings } from '../player/settings';
 import { createButton, renderButton, type ButtonState } from './button';
 
 // Instagram is a SPA: the script loads on any page and acts only inside a DM thread.
@@ -16,8 +17,14 @@ const SYNC_DEBOUNCE_MS = 400;
 
 let player: { instance: Player; path: string } | null = null;
 
+// Read ahead, since open() must answer a click at once; the player may change it, so it is read again on close.
+let afterReactDir: Settings['afterReactDir'] = 'newer';
+const readAfterReactDir = () => void loadSettings().then((s) => (afterReactDir = s.afterReactDir));
+readAfterReactDir();
+
 const onClose = () => {
   player = null;
+  readAfterReactDir();
   sync();
 };
 
@@ -34,7 +41,7 @@ function open(at?: string): boolean {
     if (at === undefined) player = { instance: openNotice(reason, onClose), path: location.pathname };
     return false;
   }
-  const start = at === undefined ? startIndex(items) : items.findIndex((r) => r.id === at);
+  const start = at === undefined ? startIndex(items, afterReactDir) : items.findIndex((r) => r.id === at);
   if (start < 0) return false;
   player = { instance: openPlayer(adapter, items, start, onClose), path: location.pathname };
   return true;

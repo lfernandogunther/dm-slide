@@ -4,7 +4,7 @@ import { CantRead, engaged, QUICK_REACTIONS, type Box, type Item, type ThreadAda
 import { createPill, keyCard, stateCard } from './cards';
 import { bindKeys } from './keys';
 import { animate, finishAll, reduceMotion } from './motion';
-import { loadSettings, saveSettings } from './settings';
+import { loadSettings, saveSettings, type Settings } from './settings';
 import { createStage } from './stage';
 import { createStrip, type Follow, type StripEdge } from './strip';
 import { STYLE } from './style';
@@ -117,7 +117,10 @@ const LAYOUT = `
               <button type="submit" class="send" data-send tabindex="-1" disabled title="Send (Enter)">Send</button>
             </div>
           </form>
-          <label class="p-setting"><input type="checkbox" data-next-after tabindex="-1" checked>Next after reacting</label>
+          <div class="p-setting">
+            <label><input type="checkbox" data-next-after tabindex="-1" checked>Next after reacting</label>
+            <button type="button" class="p-dir" data-after-dir tabindex="-1" title="Which way reacting moves">↓ newer</button>
+          </div>
         </div>
       </aside>
       <span class="kt w">W ↑</span>
@@ -163,10 +166,10 @@ export interface Player {
   away(): boolean; // stepped aside for Instagram's view, which may change the page's path
 }
 
-/** The oldest loaded item without my reaction or reply, or the newest one when every item has one. */
-export function startIndex(items: Item[]): number {
-  const unreacted = items.findIndex((r) => !engaged(r));
-  return unreacted >= 0 ? unreacted : items.length - 1;
+/** The oldest loaded item without my reaction or reply (the newest such one when reacting moves older), or the newest one when every item has one. */
+export function startIndex(items: Item[], dir: Settings['afterReactDir'] = 'newer'): number {
+  const order = dir === 'older' ? [...items.keys()].reverse() : [...items.keys()];
+  return order.find((i) => !engaged(items[i])) ?? items.length - 1;
 }
 
 const NOTICE_KEY_EVENTS = ['keydown', 'keyup', 'keypress'] as const;
@@ -271,14 +274,18 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   // The reply being sent, or the last one sent or not, shown as a bubble on its item.
   let pending: Pending | null = null;
   let nextAfterReact = true;
+  let afterReactDir: Settings['afterReactDir'] = 'newer';
   let onlyNotReacted = false;
   let tipsHeld = false;
   let tipsPinned = false;
   const nextAfter = $<HTMLInputElement>('data-next-after');
+  const afterDir = $<HTMLButtonElement>('data-after-dir');
   const quote = $<HTMLInputElement>('data-quote');
   const send = $<HTMLButtonElement>('data-send');
   void loadSettings().then((s) => {
     nextAfter.checked = nextAfterReact = s.nextAfterReact;
+    afterReactDir = s.afterReactDir;
+    renderAfterDir();
     quote.checked = s.quoteReply;
     onlyNotReacted = s.onlyNotReacted;
     renderChrome(true);
@@ -312,6 +319,11 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   function neighbour(from: number, step: 1 | -1): number {
     for (let i = from + step; i >= 0 && i < items.length; i += step) if (shown(i)) return i;
     return -1;
+  }
+
+  function renderAfterDir(): void {
+    afterDir.textContent = afterReactDir === 'older' ? '↑ older' : '↓ newer';
+    afterDir.disabled = !nextAfterReact;
   }
 
   function renderNav(): void {
@@ -526,8 +538,10 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (waiting >= 0) reactions[waiting] = { ...job, was: reactions[waiting].was };
     else reactions.push(job);
     void tellReactions();
-    if (removing || !nextAfterReact || neighbour(current, 1) < 0) renderChrome(false);
-    else next();
+    // Moving older stops at the oldest loaded item: reacting never loads history.
+    const to = neighbour(current, afterReactDir === 'older' ? -1 : 1);
+    if (removing || !nextAfterReact || to < 0) renderChrome(false);
+    else go(to);
     // After the move, which settles every running motion.
     if (!reduceMotion()) animate(quick[slot], POP, { duration: POP_MS, easing: 'ease-out' });
     if (!removing) celebrate(item, emoji);
@@ -875,6 +889,13 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   nextAfter.addEventListener('change', () => {
     nextAfterReact = nextAfter.checked;
     saveSettings({ nextAfterReact });
+    renderAfterDir();
+    player.focus();
+  });
+  afterDir.addEventListener('click', () => {
+    afterReactDir = afterReactDir === 'newer' ? 'older' : 'newer';
+    saveSettings({ afterReactDir });
+    renderAfterDir();
     player.focus();
   });
   $('data-reply-form').addEventListener('submit', (e) => {

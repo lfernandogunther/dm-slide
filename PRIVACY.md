@@ -1,6 +1,6 @@
 # Privacy policy
 
-*Last updated: 2026-10-23*
+*Last updated: 2026-10-27*
 
 DM Slide is a Chrome extension that plays the reels, posts, stories and photos sent in an Instagram
 direct-message conversation, one after another, so you can react and reply on one screen.
@@ -33,6 +33,7 @@ extension storage (`chrome.storage.local`), on your device:
 | Setting | What it holds |
 |---|---|
 | `nextAfterReact` | whether reacting moves on to the next item |
+| `afterReactDir` | whether that move goes to the newer or the older item |
 | `quoteReply` | whether a reply quotes the item |
 | `onlyNotReacted` | whether the "Not reacted" filter is on |
 | `volume` | the sound level, from 0 to 1 |

@@ -30,7 +30,7 @@ Chrome on desktop only.
 2. Press **▶ DM Slide** in the conversation's header — it shows how many items still wait for your
    reaction — or click any shared reel or post in the chat to start from that one.
 3. The player opens on the oldest item you haven't reacted to or answered, among the messages
-   already loaded. Watch, react, reply, and
+   already loaded (the newest such one if reacting moves older, see below). Watch, react, reply, and
    move on. **Esc** closes it.
 
 The first time, a card lists the keys; press any key to start. Hold **Option** (Alt) or press **?**
@@ -58,7 +58,8 @@ to see each control's key next to it.
 | **Esc** | Close the player |
 
 Pressing your current reaction again removes it. With **Next after reacting** on (the default),
-reacting moves to the next item at once. Every key has a button too; the mouse is never required
+reacting moves to the next newer item at once; the **↓ newer** button beside it switches that to
+**↑ older**, which stops at the oldest loaded item rather than loading more. Every key has a button too; the mouse is never required
 and never in the way.
 
 ![A carousel, with its ‹ › slide arrows around the dots](docs/screenshots/02-carousel.png)

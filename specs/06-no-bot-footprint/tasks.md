@@ -1,6 +1,6 @@
 # Tasks — S06
 
-**15 of 17 done · next: 17, then 14 — hand check and release**
+**16 of 17 done · next: 14 — push, release and store upload**
 
 - [x] **01 — park S05 on the branch `05-post-caption`: commit its uncommitted work there, mark its session ON-HOLD with the reason; reset `main` to `origin/main`, cherry-pick the constitution amendment, rebase the branch onto it; discard the hook's snapshot in S04's session.md**
 - [x] **02 — media: drop `/api/v1/media/…/info/`; reels and video posts from the embed page only, carousels from the embed data or the record's first slide; remove `mediaId`, `postInfo`, the app-id header and the media-type constants**
@@ -18,6 +18,6 @@
 - [ ] **14 — owner: hand check with the real extension in your own Chrome, then push and cut v0.1.1 (`npm run release 0.1.1`) and upload it to the store**
 - [x] **15 — close learnings.md and promote (the self-review ran in 12)**
 - [x] **16 — an embed that serves no video ("Watch on Instagram"): the card shows as soon as the embed says so, not after the 6 s wait, and its text stops blaming private accounts**
-- [ ] **17 — reacting moves newer or older: a `↓ newer` / `↑ older` button beside "Next after reacting" (`afterReactDir`); older opens at the newest unreacted item and stops at the oldest loaded one, never loading history**
+- [x] **17 — reacting moves newer or older: a `↓ newer` / `↑ older` button beside "Next after reacting" (`afterReactDir`); older opens at the newest unreacted item and stops at the oldest loaded one, never loading history**
 
 ---

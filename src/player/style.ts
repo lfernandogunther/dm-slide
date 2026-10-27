@@ -169,8 +169,12 @@ export const STYLE = `
   .p-quote input { position: absolute; opacity: 0; pointer-events: none; }
   .send { border: 0; background: #0095f6; color: #fff; border-radius: 16px; padding: 4px 11px; font-weight: 600; }
   .send:disabled { opacity: 0.45; cursor: default; }
-  .p-setting { display: flex; gap: 6px; align-items: center; font-size: 11px; color: #a8a8a8; cursor: pointer; }
+  .p-setting { display: flex; gap: 8px; align-items: center; font-size: 11px; color: #a8a8a8; }
+  .p-setting label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
   .p-setting input { margin: 0; }
+  .p-dir { border: 0; border-radius: 10px; padding: 1px 8px; font: inherit; white-space: nowrap; background: #262626; color: #a8a8a8; }
+  .p-dir:hover:not(:disabled) { color: #f5f5f5; }
+  .p-dir:disabled { opacity: 0.45; cursor: default; }
 
   /* Key tips: each control's key, shown while Option (Alt) is held or ? is on. */
   .kt, [data-kt]::after {

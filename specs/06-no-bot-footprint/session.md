@@ -51,15 +51,32 @@ Task 14: the owner's hand check, then `npm run release 0.1.1` (pushes; the tag's
 ## Pre-compact snapshot
 <!-- Written by pre-compact.sh on every compaction, replaced whole. Edit above, not here. -->
 
-**2026-10-23 14:09** - branch `main`
+**2026-10-27 09:01** - branch `main`
 
-Next open task: **13 — owner: hand check with the real extension in your own Chrome, then push and cut v0.1.1 (`npm run release 0.1.1`) and upload it to the store**
+Next open task: **14 — owner: hand check with the real extension in your own Chrome, then push and cut v0.1.1 (`npm run release 0.1.1`) and upload it to the store**
+
+### Uncommitted
+```
+ M NOTES.md
+ M PRIVACY.md
+ M README.md
+ M specs/06-no-bot-footprint/session.md
+ M specs/06-no-bot-footprint/tasks.md
+ M src/content/main.ts
+ M src/instagram/media.ts
+ M src/instagram/selectors.ts
+ M src/player/overlay.ts
+ M src/player/settings.ts
+ M src/player/stage.ts
+ M src/player/style.ts
+ M store/listing.md
+```
 
 ### Recent commits
 ```
+670d554 doc [S06 #15]: close the learnings, fill the outcome, and park slow video start on the roadmap
+449c25d fix [S06 #13]: pause for an hour and say why media is paused
 dd352b5 fix [S06 #12]: load one older page per press or gesture, and drop reads nobody still wants
 544af1c feat [S06 #11]: keep the pause for six hours across reloads and tabs
 0daaecd fix [S06 #10]: load embeds without the session's cookies or the thread's address
-ed5e953 fix [S06 #09]: read an item's media only once it holds the screen, one read at a time
-d00a5b4 doc [S06]: add no burst, cookieless embeds and a stored pause before the release
 ```
