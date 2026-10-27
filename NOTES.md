@@ -106,14 +106,23 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 - **Load time** (2026-10-26, public fixtures, isolated tab): a cookieless `fetch` of an embed page
   takes 0.4–0.5 s and a fresh mp4 ~1.6 s to its first frame. `contextJSON.video_url` showed up for
   one `/tv/` of four; `/reel/` embeds carry `GraphVideo` with no URL, so the iframe stays for reels.
-  Its own time on current reels is unmeasured (the old fixtures never played). Never test this with
-  faked browser headers from a shell: that is the bot footprint principle 3 forbids.
+  On current reels (2026-10-27, one thread, the owner's account) the iframe gives a `<video>` src in
+  ~0.4–0.7 s and the first frame follows in 30–180 ms. Never test this with faked browser headers
+  from a shell: that is the bot footprint principle 3 forbids.
 - **Some public reels never play in an embed** (2026-10-27, one playable and one not, same thread,
   credentialless iframe): the unplayable one shows a `.WatchOnInstagram` cover with a play sprite at
   ~0.6 s and never gets a `<video>`; its `contextJSON` is `GraphVideo`/`clips` with no `video_url`
   (why Instagram withholds it is unknown; licensed music is a guess). The playable one has `.EmbedVideo` and a `<video>` with a src at ~1 s, and no cover. The player shows
   the card as soon as the cover appears instead of waiting out the 6 s timeout. v0.1.0 played these
-  through the private API; that is the price of dropping it.
+  through the private API; that is the price of dropping it. A second kind never plays either: an
+  embed page showing only `.EmbedBrokenMedia` (with `EmbedLogo`, `EmbedVisitInstagram`, `Sprite`),
+  present within ~1 s and never seen on a playable one (5 of 5, 2026-10-27); it fails the same way.
+- **Where a reel's start time goes** (2026-10-27, measured before and after S07): the 300 ms settle,
+  the read, then the first frame. The preload follows the direction of travel and the filter, and an
+  item it already read skips the settle (its own preload still waits it, so a held key reads
+  nothing): a preloaded reel shows in 0–1 ms both ways, where v0.1.1 took 299 ms newer and a full
+  ~1 s read older. A read nobody wants any more stops at the next 50 ms check, freeing the lane; the
+  request already went out. Taps more than 300 ms apart still read each item tapped through.
 - A carousel's slides come from a plain `fetch` of `/p/<code>/embed/`: its last inline script holds
   `"contextJSON":"<JSON string>"`, escaped once, so it is parsed twice. `gql_data.shortcode_media`
   of `__typename` `GraphSidecar` lists `edge_sidecar_to_children.edges[].node`: `display_url` for
