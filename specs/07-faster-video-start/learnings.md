@@ -21,6 +21,13 @@
   ms to the first frame (746, 1222 ms); an unplayable one 712 ms; an item read before still takes
   exactly the 300 ms settle, photos too. The probe's steps now cover older and newer on unseen
   items (a tab reload between).
+- **2026-10-27 — baseline, v0.1.1, one thread with 100+ reels (no pushback).** Older, fresh reels:
+  median 1001 ms (n=7; 930–2034) = 300 settle + ~600 read + 30–180 to the first frame; reads end on
+  200 ms poll ticks (601–605 ms, one 804). Newer, preloaded: 299 ms (n=6), which is the settle alone.
+  Unplayable with the cover: 700–930 ms. Four reads ran into the 6 s timeout (no cover, no video):
+  6.3 s to the card, and moving older the preload then re-read the reel just left (the timeout's null
+  is not cached), holding the lane for 6 s more. The newer leg had 8 reels, not 10: a reload loads
+  14 items. The probe now records what a timed-out frame holds.
 
 ## Concepts learned
 

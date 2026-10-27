@@ -31,8 +31,8 @@ Part A — moving older, on items not seen yet:
 Part B — moving newer, on items not seen yet:
 7. Reload the tab (this clears what the player remembers). Wait 5 s, open the player again, run
    INSTALL again, click an empty dark area of the overlay.
-8. In DM Slide's strip of thumbnails, click the oldest thumbnail you can see (the end W moved
-   toward). Wait 6 s.
+8. If the header doesn't already show X equal to N (the oldest loaded), click the oldest thumbnail
+   in DM Slide's strip (the end W moved toward). Wait 6 s.
 9. Press S fifteen times, waiting 6 s after each press; stop early if the player no longer moves.
 10. Run the REPORT snippet; keep its output as PROBE-B.
 
@@ -90,11 +90,29 @@ Part B — moving newer, on items not seen yet:
     if (reel.classList.contains('loading')) return;
     done([...reel.querySelectorAll('video')].some((v) => !v.hidden && v.getAttribute('src')) ? 'video' : 'photo');
   });
+  // Passive look inside each live embed frame (booleans, counts and Instagram's PascalCase class names only), to tell why a read times out.
+  const diag = setInterval(() => {
+    for (const [n, f] of P.frames) {
+      if (f.end != null) continue;
+      try {
+        const d = n.contentDocument;
+        if (!d) continue;
+        const v = d.querySelector('video');
+        const classes = [...new Set([...d.querySelectorAll('[class]')].flatMap((e) => [...e.classList]).filter((c) => /^[A-Z][A-Za-z]+$/.test(c)))].sort().slice(0, 30);
+        f.diag = { video: !!v, src: !!(v && (v.currentSrc || v.src)), imgs: d.querySelectorAll('img').length, classes };
+      } catch {
+        f.diag = { blocked: true };
+      }
+    }
+  }, 500);
   const posObs = new MutationObserver(start);
   bodyObs.observe(document.body, { childList: true });
   reelObs.observe(reel, { attributes: true, attributeFilter: ['class'] });
   posObs.observe(pos, { childList: true, characterData: true, subtree: true });
-  P.stop = () => [bodyObs, reelObs, posObs].forEach((o) => o.disconnect());
+  P.stop = () => {
+    clearInterval(diag);
+    [bodyObs, reelObs, posObs].forEach((o) => o.disconnect());
+  };
   window.__dmsProbe = P;
   start();
   return 'probe on';
@@ -124,7 +142,8 @@ Part B — moving newer, on items not seen yet:
   const groups = {};
   for (const r of rows) if (r.kind === 'video') (groups[`${r.dir}/${r.ownReads ? 'read' : 'cached'}`] ??= []).push(r.totalMs);
   const medianTotalMs = Object.fromEntries(Object.entries(groups).map(([k, a]) => [k, { n: a.length, median: median(a) }]));
-  return JSON.stringify({ rows, medianTotalMs });
+  const timeouts = [...P.frames.values()].filter((f) => f.end != null && f.end - f.start >= 5900).map((f) => f.diag ?? null);
+  return JSON.stringify({ rows, medianTotalMs, timeouts });
 })();
 ```
 
