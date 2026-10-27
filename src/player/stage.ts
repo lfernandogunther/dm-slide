@@ -269,10 +269,14 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   function play(shown: Item, url: string): void {
     blank();
     // The spare already loaded this video: swap it in instead of loading again.
-    if (spare.src === url && current.src !== url) [current, spare] = [spare, current];
+    if (spare.src === url && current.src !== url) {
+      [current, spare] = [spare, current];
+      // The spare now holds the video swapped out, not the preloaded item.
+      ready = null;
+    }
     if (current.src !== url) current.src = url;
     // Read before the seek below, which can drop a preloaded spare's readyState for a moment.
-    const ready = current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+    const loaded = current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
     // A swapped-in spare may be a video watched earlier, paused midway: every video starts over.
     current.currentTime = 0;
     current.hidden = false;
@@ -283,7 +287,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     const ticket = showing;
     // Once swapped out, this element becomes the spare: its errors are no longer this item's.
     current.onerror = () => video === current && unavailable(shown, `video error ${video.error?.code} ${video.error?.message ?? ''}`);
-    if (ready) uncover(ticket);
+    if (loaded) uncover(ticket);
     else for (const type of ['loadeddata', 'canplay']) video.addEventListener(type, () => video === current && uncover(ticket), { once: true });
     // Without a recent click or key, the browser may refuse sound; the ▶ mark then shows paused.
     current.play().catch(() => el.classList.add('paused'));
@@ -339,10 +343,10 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     const media = next && (await adapter.media(next, () => ticket === showing || target === next).catch(() => null));
     const first = media && (media.type === 'slides' ? media.slides[0] : media);
     if (!first) return;
-    ready = next;
     if (first.type === 'video') {
       if (spare.src !== first.url) spare.src = first.url;
     } else new Image().src = first.url;
+    ready = next;
   }
 
   media.append(current, spare, photo, cover, status);
