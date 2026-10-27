@@ -18,15 +18,23 @@ Goal: time how long each item takes to show after a key press. You need JavaScri
   those; paste it as is.
 
 ## Steps
+Part A — moving older, on items not seen yet:
 1. If the player is not open, press "▶ DM Slide" in the conversation's header. Wait 5 s.
 2. Run the INSTALL snippet below in the top frame. It must return `"probe on"`; anything else, stop
    and report it.
 3. Click an empty dark area of the overlay so it has focus.
-4. Press W five times, waiting 6 s after each press. (If a "Loading older" pill shows, keep going.)
-5. Press S five times, waiting 6 s after each press.
-6. Press S ten more times, waiting 6 s after each press.
-7. Press S three times as fast as you can, then wait 6 s.
-8. Run the REPORT snippet and keep its output.
+4. Press W three times as fast as you can, then wait 6 s.
+5. Press W twelve more times, waiting 6 s after each press. A "Loading older" pill is fine; stop
+   early if "Start of the chat" shows.
+6. Run the REPORT snippet; keep its output as PROBE-A.
+
+Part B — moving newer, on items not seen yet:
+7. Reload the tab (this clears what the player remembers). Wait 5 s, open the player again, run
+   INSTALL again, click an empty dark area of the overlay.
+8. In DM Slide's strip of thumbnails, click the oldest thumbnail you can see (the end W moved
+   toward). Wait 6 s.
+9. Press S fifteen times, waiting 6 s after each press; stop early if the player no longer moves.
+10. Run the REPORT snippet; keep its output as PROBE-B.
 
 ## INSTALL
 ```js
@@ -121,6 +129,7 @@ Goal: time how long each item takes to show after a key press. You need JavaScri
 ```
 
 ## Report (paste-ready, nothing else)
-PROBE: <the REPORT output>
+PROBE-A: <part A's REPORT output>
+PROBE-B: <part B's REPORT output>
 Plus one line if anything looked off (an item that never showed, a pill, a card), without names or
 content.
