@@ -1,6 +1,6 @@
 // The player: a full-window overlay in its own shadow root, with the strip on the left, the video
 // alone in the middle and a panel on the right. It talks only to the ThreadAdapter.
-import { CantRead, engaged, QUICK_REACTIONS, type Box, type Item, type ThreadAdapter } from '../instagram/adapter';
+import { CantRead, engaged, QUICK_REACTIONS, type Box, type Item, type Post, type ThreadAdapter } from '../instagram/adapter';
 import { createPill, keyCard, stateCard } from './cards';
 import { bindKeys } from './keys';
 import { animate, finishAll, reduceMotion } from './motion';
@@ -32,6 +32,8 @@ const LAYER_POLL_MS = 250;
 // The sender and the reactions rise into place as a new item comes in.
 const PANEL_RISE = [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }];
 const PANEL_MS = 200;
+// Below this the post card would show a line of caption to scroll through: it gives the room back instead.
+const POST_MIN_PX = 72;
 // A reaction: the button pops, the emoji bursts over the video, a copy flies to the tile, the badge pops.
 const POP = [{ transform: 'scale(1)' }, { transform: 'scale(1.35)', offset: 0.4 }, { transform: 'scale(1)' }];
 const POP_MS = 320;
@@ -99,6 +101,7 @@ const LAYOUT = `
         </div>
       </div>
       <aside class="p-side">
+        <div class="p-post" data-post hidden></div>
         <div class="p-panel">
           <div class="p-who" data-who><div class="p-av" data-av></div><div><b data-sender></b><div class="p-date" data-sent></div></div></div>
           <div class="p-talk" data-talk>
@@ -160,6 +163,40 @@ function keyMark(key: string): HTMLElement {
 
 // The browser's own language decides the date's format.
 const SENT_AT = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+// A post's date is only right to the day, so it never shows a time.
+const POSTED_AT = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
+const POSTED_AT_YEAR = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+const COUNT = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
+/** A shared post's card as text nodes only: what Instagram's page holds is never read as HTML. */
+function postParts({ author, verified, caption, postedMs, likes, comments, views, music }: Post): HTMLElement[] {
+  const el = (tag: string, className: string, text = '') => Object.assign(document.createElement(tag), { className, textContent: text });
+  const parts: HTMLElement[] = [];
+  const by = el('div', 'p-by');
+  if (author) {
+    const name = el('b', '', author);
+    if (verified) name.append(el('span', 'p-ver', '✓'));
+    by.append(name);
+  }
+  if (postedMs !== null) {
+    const thisYear = new Date(postedMs).getFullYear() === new Date().getFullYear();
+    by.append(el('div', 'p-date', `Posted ${(thisYear ? POSTED_AT : POSTED_AT_YEAR).format(postedMs)}`));
+  }
+  if (by.childElementCount) parts.push(by);
+  if (caption) parts.push(el('p', 'p-cap', caption));
+  // Only a reel has views; one without a named song plays its own sound.
+  if (music) parts.push(el('div', 'p-music', `🎵 ${music.artist} — ${music.song}`));
+  else if (views !== null) parts.push(el('div', 'p-music', '🎵 Original audio'));
+  const counts = (
+    [
+      ['❤️', likes],
+      ['💬', comments],
+      ['▶', views],
+    ] as const
+  ).flatMap(([mark, n]) => (n === null ? [] : [`${mark} ${COUNT.format(n)}`]));
+  if (counts.length) parts.push(el('div', 'p-nums', counts.join(' · ')));
+  return parts;
+}
 
 export interface Player {
   close(): void;
@@ -243,7 +280,10 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const body = root.querySelector<HTMLElement>('.p-body')!;
   const video = root.querySelector<HTMLElement>('.p-video')!;
   const reel = $('data-reel');
-  const chrome = [head, $('data-strip'), root.querySelector<HTMLElement>('.p-side')!];
+  const side = root.querySelector<HTMLElement>('.p-side')!;
+  const panel = root.querySelector<HTMLElement>('.p-panel')!;
+  const postCard = $('data-post');
+  const chrome = [head, $('data-strip'), side];
   const reply = $<HTMLInputElement>('data-reply');
   const stage = createStage(reel, adapter, renderNav, [
     { key: 'I', label: 'Instagram view', act: () => void instagramView() },
@@ -404,6 +444,25 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     bubble.append(st);
   }
 
+  /** The shared post's card above the panel, or none; `post` comes once the item's media read settled. */
+  function renderPost(post: Post | null): void {
+    postCard.replaceChildren(...(post ? postParts(post) : []));
+    postCard.scrollTop = 0;
+    const was = postCard.hidden;
+    fitPost();
+    if (was && !postCard.hidden) animate(postCard, PANEL_RISE, { duration: PANEL_MS });
+  }
+
+  /** The card takes only what room the panel leaves above it, and none when that is too little to read. */
+  function fitPost(): void {
+    const room = side.clientHeight - panel.offsetHeight - parseFloat(getComputedStyle(side).rowGap || '0');
+    postCard.hidden = postCard.childElementCount === 0 || room < POST_MIN_PX;
+  }
+  // The panel grows with bubbles and the column with the window.
+  const fit = new ResizeObserver(fitPost);
+  fit.observe(side);
+  fit.observe(panel);
+
   let failTimer = 0;
   /** Says on the control that its action didn't land: it shakes red-ringed, and a line says which key tries again. */
   function showFailure(control: HTMLElement, line: (string | Node)[], e: unknown): void {
@@ -443,7 +502,10 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (dir) for (const el of [$('data-who'), $('data-quick')]) animate(el, PANEL_RISE, { duration: PANEL_MS });
     // The preload reads what the next press the same way would show; a jump guesses the way reacting moves.
     const ahead = neighbour(current, dir < 0 || (!dir && afterReactDir === 'older') ? -1 : 1);
-    stage.show(items[current], items[ahead], dir);
+    const shows = items[current];
+    renderPost(null);
+    // The read that brings the media brings the post's words too; a later move drops this answer.
+    void stage.show(shows, items[ahead], dir).then((still) => still && !closed && items[current] === shows && renderPost(adapter.post(shows)));
     // Scrolling now would pull the row from under a reaction under way; the chat follows once they're done.
     if (!reacting) revealCurrent();
   }
@@ -845,6 +907,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     clearTimeout(awayTimer);
     unbindKeys();
     unbindPause();
+    fit.disconnect();
     finishAll();
     const to = adapter.rectOf(items[current].id);
     host.style.pointerEvents = 'none';

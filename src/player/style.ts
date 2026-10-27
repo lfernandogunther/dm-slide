@@ -130,8 +130,18 @@ export const STYLE = `
   .reel-dots div { display: flex; }
 
   /* The panel is as tall as what it holds, its foot level with the video's; it grows upward. */
-  .p-side { width: var(--side-w); flex-shrink: 0; align-self: center; height: var(--video-h); display: flex; flex-direction: column; justify-content: flex-end; }
-  .p-panel { background: #121212; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 0; max-height: 100%; }
+  .p-side { width: var(--side-w); flex-shrink: 0; align-self: center; height: var(--video-h); display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; }
+  /* The shared post's card takes what room the panel leaves above it, and scrolls inside. */
+  .p-post {
+    flex: 0 1 auto; min-height: 0; overflow-y: auto; background: #121212; border-radius: 14px; padding: 14px;
+    display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #3a3a3a transparent;
+  }
+  .p-by b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .p-ver { margin-left: 4px; color: #0095f6; }
+  .p-cap { margin: 0; font-size: 12.5px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; color: #e0e0e0; }
+  .p-music { font-size: 11.5px; color: #e0e0e0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .p-nums { font-size: 11px; color: #a8a8a8; }
+  .p-panel { flex-shrink: 0; background: #121212; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 0; max-height: 100%; }
   .p-who { display: flex; gap: 10px; align-items: center; min-width: 0; }
   .p-who > div { min-width: 0; }
   .p-who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

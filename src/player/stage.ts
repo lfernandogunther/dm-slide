@@ -7,8 +7,8 @@ import { animate, finishAll } from './motion';
 import { loadSettings, saveSettings } from './settings';
 
 export interface Stage {
-  /** `dir` slides the new item in from below (1) or above (-1); 0 just shows it. */
-  show(item: Item, next: Item | undefined, dir?: -1 | 0 | 1): void;
+  /** `dir` slides the new item in from below (1) or above (-1); 0 just shows it. True once its media read settled while it was still the one shown. */
+  show(item: Item, next: Item | undefined, dir?: -1 | 0 | 1): Promise<boolean>;
   slide(delta: -1 | 1): boolean; // false when there is no slide that way
   canSlide(delta: -1 | 1): boolean;
   togglePause(): void;
@@ -379,9 +379,9 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       coverOn(shown.thumb);
       const settled = new Promise((done) => setTimeout(done, SETTLE_MS));
       if (shown !== ready) await settled;
-      if (ticket !== showing) return;
+      if (ticket !== showing) return false;
       const media = await adapter.media(shown, () => ticket === showing).catch(() => null);
-      if (ticket !== showing) return;
+      if (ticket !== showing) return false;
       item = shown;
       if (!media) unavailable(shown, paused ? 'media paused' : 'no media found', paused ? PAUSED : CANT_PLAY);
       else {
@@ -390,9 +390,10 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
         else unavailable(shown, 'no slides');
       }
       // A preloaded item skips the settle, but its own preload doesn't, so a held key still reads nothing.
-      await settled;
-      if (ticket !== showing) return;
-      void preload(next, ticket);
+      void settled.then(() => {
+        if (ticket === showing) void preload(next, ticket);
+      });
+      return true;
     },
     slide: slideBy,
     canSlide,

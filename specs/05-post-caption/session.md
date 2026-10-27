@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-27 · brought back on the embed page as its source
 
 ## Next
-03 — player: the post card above the reactions.
+04 — demo: invented post data; screenshot 01 retaken.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -12,7 +12,7 @@
 - None.
 
 ## Tasks status
-2 of 7. See tasks.md.
+3 of 7. See tasks.md.
 
 ## What was done
 - 2026-10-22: the owner asked to fill the right column's empty space with the post's caption and,
@@ -25,6 +25,9 @@
 - 2026-10-27: 02 done. Both embed reads keep the post's facts from `contextJSON`, even with no
   video; `post(item)` adds the date from the shortcode and asks nothing. The field paths come from
   the live shape report and were not yet read against a real page: the owner's check (06) does that.
+- 2026-10-27: 03 done. `.p-post` above the panel; `Stage.show` now says when the item's media read
+  settled, and only then the overlay asks `post(item)`; a later move drops the answer. The card
+  hides when the panel leaves under 72 px above it (hidden from a 370 px tall window in the demo).
 
 ## Inputs ingested
 
