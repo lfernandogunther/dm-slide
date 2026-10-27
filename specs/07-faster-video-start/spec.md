@@ -94,7 +94,7 @@ item that stays).
 | 1 | Baseline (v0.1.1) | Older fresh reels 1001 ms (n=7); newer preloaded 299 ms (n=6), the settle alone; 6 s timeouts. 8 newer reels, not 10: each was the flat 300 ms settle |
 | 2 | Preload follows direction + filter | Moving older, preloaded reels show in 0–1 ms (n=5); v0.1.1 had none |
 | 3 | Median drops, a number per cut | Videos: older 1001 → 1 ms, newer 299 → 1 ms. Per cut: direction 1001 → 0–1 (older); no settle when preloaded 299 → 1 (newer); abandoned read stops: next reel 2034 → 978 ms; 50 ms poll: no median of its own, reads end 39–187 ms sooner than the 200 ms ticks would allow (derived, kept); broken embed fails in ~1 s, not 6.3 s (owner's eye) |
-| 4 | No more reads, none when held, no new request | Held key: dozens of items passed, 0 reads. ≤ 1 read + 1 preload per item. Same embed iframe only. Taps > 300 ms apart read each item, as before |
+| 4 | No more reads, none when held, no new request | Held key: dozens of items passed, 0 reads. ≤ 1 read + 1 preload per item. Same embed iframe only. Taps > 300 ms apart read each item, as before. An abandoned read with no URL yet is not cached, so coming back loads that embed again: the price of freeing the lane, accepted |
 | 5 | typecheck + build, hand check | Pass; owner's hand check 2026-10-27 |
 
 Open question 1 (target): a preloaded reel is ~0 ms; a fresh one stays ~1 s (settle + read), set by Instagram's page, not ours.
