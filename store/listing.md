@@ -3,6 +3,11 @@
 Everything the Developer Dashboard asks for, ready to paste. Keep it in step with
 [PRIVACY.md](../PRIVACY.md) and `manifest.json`: the review compares them.
 
+**Pending in the dashboard since v0.1.2:** the Description and the host permission justification
+below (they now name the post's caption, author and counts). Before the next `npm run release`,
+paste both and press Save draft, not Submit: the release's own submission then carries them into
+one review. The Data usage boxes need no change.
+
 ## Store listing tab
 
 **Name** (from the manifest): DM Slide
