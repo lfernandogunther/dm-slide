@@ -28,6 +28,18 @@
   6.3 s to the card, and moving older the preload then re-read the reel just left (the timeout's null
   is not cached), holding the lane for 6 s more. The newer leg had 8 reels, not 10: a reload loads
   14 items. The probe now records what a timed-out frame holds.
+- **2026-10-27 — after the cuts, same thread, same probe text as the baseline (no pushback).** The
+  build is the new one: newer, preloaded items show in 0–1 ms where v0.1.1 showed a flat 299 ms, and
+  only the settle skip can do that. Moving older, preloaded reels show in 0–1 ms (n=5); v0.1.1 had
+  no preload hits moving older. Videos overall: older median 1001 → 1, newer 299 → 1. Fresh reads
+  are unchanged (1001, 978 vs 1001), as expected, since nothing preloaded them. A timed-out read
+  being left now ends within one poll (5751 ms, twice), and the next reel showed in 978 ms where
+  v0.1.1 needed 2034 behind the same kind of read. The 50 ms poll gives no median of its own: the
+  reads no longer end on 200 ms ticks (6 of 6, 362–650 ms); rounded up to the old ticks, they would
+  have ended 39–187 ms later (median ~150). That is a derived figure, not a measured one. 6 s
+  timeouts still happen (one in each part). The timeout diagnostics weren't captured, because the
+  run used the earlier probe text. An item's "ownReads 2" is its read plus its own preload when the
+  preload starts before the first frame, not a second read for it.
 
 ## Concepts learned
 
