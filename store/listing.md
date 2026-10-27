@@ -16,6 +16,7 @@ Friends send you reels faster than you can watch them. DM Slide plays everything
 
 • Plays reels, posts, carousels, stories and photos in the order they were sent
 • Starts at the first one you haven't reacted to or answered
+• Shows each shared post's caption, author, date, music and public counts beside it
 • React with ❤️ or any quick reaction in one key, and move on to the next
 • Reply on the same screen, quoting the item or not
 • Every action has a keyboard shortcut: W/S to move, A/D through a carousel, F to like, R to reply, ? to show every key
@@ -58,17 +59,19 @@ Keeps the player's own settings on the user's device: whether reacting moves to 
 
 **Permission justification — host permission (`https://www.instagram.com/*`):**
 ```
-The extension's only purpose is to play the media in the user's open Instagram DM conversation. It reads that conversation in the page and loads each item's media from its public embed page on Instagram's own servers and content network, without the user's session cookies: only the item on screen and the next one, never Instagram's private API, and it stops for an hour at Instagram's first refusal. Older messages load one page at a time, only when the user asks; nothing else is contacted. Instagram is a single-page app, so the content script must load on its pages to be present when the user navigates to a conversation; it acts only on /direct/t/ pages.
+The extension's only purpose is to play the media in the user's open Instagram DM conversation. It reads that conversation in the page and loads each item's media from its public embed page on Instagram's own servers and content network, without the user's session cookies; the post's caption, author and public counts shown beside it come from that same page, with no further request: only the item on screen and the next one, never Instagram's private API, and it stops for an hour at Instagram's first refusal. Older messages load one page at a time, only when the user asks; nothing else is contacted. Instagram is a single-page app, so the content script must load on its pages to be present when the user navigates to a conversation; it acts only on /direct/t/ pages.
 ```
 
 **Remote code:** No, I am not using remote code.
 
 **Data usage — what the extension handles** (local only, never transmitted; disclosed because the
 store counts local handling too):
-- [x] Personally identifiable information — the sender's display name, shown next to the item
+- [x] Personally identifiable information — the sender's display name and the shared post's
+  author's username, shown next to the item
 - [x] Personal communications — the conversation's messages, read to find the items and the notes
   sent with them
-- [x] Website content — the media of each item, loaded to play it
+- [x] Website content — the media of each item, loaded to play it, and the shared post's caption,
+  author's username and public counts from the same embed page, shown beside it
 - [ ] Health information · Financial and payment information · Authentication information ·
   Location · Web history · User activity — not handled
 

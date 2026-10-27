@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-27 · brought back on the embed page as its source
 
 ## Next
-05 — PRIVACY.md and store/listing.md.
+06 — owner: hand check on the real Instagram.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** none (solo)
@@ -12,7 +12,7 @@
 - None.
 
 ## Tasks status
-4 of 7. See tasks.md.
+5 of 7. See tasks.md.
 
 ## What was done
 - 2026-10-22: the owner asked to fill the right column's empty space with the post's caption and,
@@ -32,6 +32,8 @@
   a carousel, a verified reel with music). Checked in the demo by a subagent: each card's text, line
   breaks, no card on the rest, quick moves never show another item's card, no console errors.
   Screenshot 01 retaken on the reel with its card.
+- 2026-10-27: 05 done. PRIVACY.md names the caption, author, counts and music read from the embed
+  page; the listing adds them to its description, host justification and data usage.
 
 ## Inputs ingested
 
