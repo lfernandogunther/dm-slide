@@ -441,7 +441,9 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     current = index;
     renderChrome(dir ? 'glide' : true);
     if (dir) for (const el of [$('data-who'), $('data-quick')]) animate(el, PANEL_RISE, { duration: PANEL_MS });
-    stage.show(items[current], items[current + 1], dir);
+    // The preload reads what the next press the same way would show; a jump guesses the way reacting moves.
+    const ahead = neighbour(current, dir < 0 || (!dir && afterReactDir === 'older') ? -1 : 1);
+    stage.show(items[current], items[ahead], dir);
     // Scrolling now would pull the row from under a reaction under way; the chat follows once they're done.
     if (!reacting) revealCurrent();
   }
