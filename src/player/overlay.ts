@@ -2,7 +2,7 @@
 // alone in the middle and a panel on the right. It talks only to the ThreadAdapter.
 import { CantRead, engaged, QUICK_REACTIONS, type Box, type Item, type Post, type ThreadAdapter } from '../instagram/adapter';
 import { createPill, keyCard, stateCard } from './cards';
-import { bindKeys } from './keys';
+import { bindKeys, type FrameKey } from './keys';
 import { animate, finishAll, reduceMotion } from './motion';
 import { loadSettings, saveSettings, type Settings } from './settings';
 import { createStage } from './stage';
@@ -136,7 +136,18 @@ const LAYOUT = `
     </div>
     <div class="p-dim"></div>
   </div>
-  <button class="p-back" data-back tabindex="-1" hidden>Back to DM Slide <b>I</b> or <b>Esc</b></button>
+  <div class="p-back" data-back hidden>
+    <span class="grip" data-grip>⋮⋮</span>
+    <button type="button" data-frame="w" tabindex="-1" title="Older (W)">‹ <b>W</b></button>
+    <span data-frame-pos></span>
+    <button type="button" data-frame="s" tabindex="-1" title="Newer (S)"><b>S</b> ›</button>
+    <span class="sep"></span>
+    <button type="button" data-frame="f" tabindex="-1" title="React ❤️ to the DM (F)">❤️ <b>F</b></button>
+    <span class="sep"></span>
+    <button type="button" data-frame="r" tabindex="-1" title="Reply in the DM (R)">Reply <b>R</b></button>
+    <span class="sep"></span>
+    <button type="button" data-frame-back tabindex="-1" title="Back to DM Slide (I or Esc)">Back <b>I</b></button>
+  </div>
 `;
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
@@ -310,6 +321,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const unplayable = new Set<string>();
   const autoOpened = new Set<string>();
   let autoTimer: ReturnType<typeof setTimeout> | undefined;
+  // What a key or click on the bar left for the player to do once Instagram's view has closed.
+  let afterBack: (() => void) | null = null;
   const path = location.pathname;
   const back = $('data-back');
   // Reactions wait here and are told to Instagram one at a time, while the player moves on.
@@ -794,6 +807,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     toggleTips,
     dismissKeyCard,
     instagramView: () => void instagramView(),
+    frame,
     away: () => away,
   });
 
@@ -859,13 +873,30 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   /** Back, paused, on the same item; unless the view led to another conversation, which closes the player. */
   function comeBack(): void {
     setAway(false);
+    const then = afterBack;
+    afterBack = null;
     if (location.pathname !== path) return close();
     (document.activeElement as HTMLElement | null)?.blur();
     player.focus();
+    then?.();
+  }
+
+  /** A key or click on the bar: the view closes, and the player does the rest once it is back. */
+  function frame(key: FrameKey): void {
+    if (afterBack) return;
+    afterBack = { w: () => item(-1), s: () => item(1), f: () => react(0), r: () => reply.focus() }[key];
+    adapter.closeLayer();
+  }
+
+  /** Where the item sits among those the filter leaves, counted from the newest, as the strip shows them. */
+  function renderFramePos(): void {
+    const at = items.map((_, i) => i).filter(shown);
+    $('data-frame-pos').textContent = `${at.length - at.indexOf(current)} / ${at.length}`;
   }
 
   function setAway(on: boolean): void {
     away = on;
+    if (on) renderFramePos();
     player.hidden = on;
     back.hidden = !on;
     // Only the Back chip stays clickable; the rest of the page is Instagram's.
@@ -966,7 +997,10 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   $('data-next').addEventListener('click', () => item(1));
   $('data-filter').addEventListener('click', toggleFilter);
   $('data-ig').addEventListener('click', () => void instagramView());
-  back.addEventListener('click', () => adapter.closeLayer());
+  $('data-frame-back').addEventListener('click', () => adapter.closeLayer());
+  back.querySelectorAll<HTMLElement>('[data-frame]').forEach((b) => b.addEventListener('click', () => frame(b.dataset.frame as FrameKey)));
+  // A click on the bar leaves the focus in Instagram's view, where A, D and the arrows still work.
+  back.addEventListener('mousedown', (e) => e.preventDefault());
   tipsButton.addEventListener('click', toggleTips);
   coach.addEventListener('click', dismissKeyCard);
   $('data-strip').addEventListener('click', (e) => {

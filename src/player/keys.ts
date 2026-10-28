@@ -16,10 +16,15 @@ export interface KeyActions {
   toggleTips(): void;
   dismissKeyCard(): boolean; // true when the key card was showing
   instagramView(): void; // opens Instagram's own view of the item, or closes it while away
+  frame(key: FrameKey): void; // W, S, F or R pressed over Instagram's view
   away(): boolean; // the player stepped aside for Instagram's view
 }
 
+export type FrameKey = 'w' | 's' | 'f' | 'r';
+
 const KEY_EVENTS = ['keydown', 'keyup', 'keypress'] as const;
+// The only keys taken over Instagram's view: A, D, the arrows and Esc stay its own.
+const FRAME_KEYS = new Set(['w', 's', 'f', 'r', 'i']);
 // Pressed on the way to another key (Shift for ?), so they never count as the key that dismisses the card.
 const MODIFIERS = new Set(['Shift', 'CapsLock']);
 
@@ -33,12 +38,16 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
   const onKey = (e: KeyboardEvent) => {
     // Keys the extension itself dispatches (Enter in Instagram's composer, to send) go through.
     if (!e.isTrusted) return;
-    // Over Instagram's view every key is Instagram's (its Esc closes it), but I outside a text box.
+    // Over Instagram's view every other key is Instagram's (its Esc closes it), and so is any key typed in a text box.
     if (actions.away()) {
-      if (e.type !== 'keydown' || e.key.toLowerCase() !== 'i' || e.metaKey || e.ctrlKey || e.altKey || editable(e)) return;
+      const key = e.key.toLowerCase();
+      if (e.type !== 'keydown' || !FRAME_KEYS.has(key) || e.metaKey || e.ctrlKey || e.altKey || editable(e)) return;
       e.stopPropagation();
       e.preventDefault();
-      actions.instagramView();
+      // Each of these closes the view: a held key would close the next one too.
+      if (e.repeat) return;
+      if (key === 'i') actions.instagramView();
+      else actions.frame(key as FrameKey);
       return;
     }
     if (e.key === 'Alt') {

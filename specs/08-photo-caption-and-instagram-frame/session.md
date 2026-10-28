@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-28 · planned from labs 03 and 04; the owner approved running it to the end
 
 ## Next
-Task 05: the Back chip becomes the bar, with W/S/F/R/I taken in Instagram's view.
+Task 06: W/S from the frame reopen the view only for an item known not to play.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** not opened yet (solo repo, commits on main)
@@ -12,7 +12,7 @@ Task 05: the Back chip becomes the bar, with W/S/F/R/I taken in Instagram's view
 - R over Instagram's view: our box or back to the player (spec, open question 2), settled by the hand check.
 
 ## Tasks status
-4 of 12; see tasks.md.
+5 of 12; see tasks.md.
 
 ## What was done
 - 2026-10-28: planned from labs 03 and 04, with three assumptions the owner confirmed:
