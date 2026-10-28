@@ -4,7 +4,8 @@ Everything the Developer Dashboard asks for, ready to paste. Keep it in step wit
 [PRIVACY.md](../PRIVACY.md) and `manifest.json`: the review compares them.
 
 **Pending in the dashboard since v0.1.2:** the Description and the host permission justification
-below (they now name the post's caption, author and counts). Before the next `npm run release`,
+below (they now name the post's caption, author and counts, and the one read a one-photo post
+makes for its caption). Before the next `npm run release`,
 paste both and press Save draft, not Submit: the release's own submission then carries them into
 one review. The Data usage boxes need no change.
 
@@ -64,7 +65,7 @@ Keeps the player's own settings on the user's device: whether reacting moves to 
 
 **Permission justification — host permission (`https://www.instagram.com/*`):**
 ```
-The extension's only purpose is to play the media in the user's open Instagram DM conversation. It reads that conversation in the page and loads each item's media from its public embed page on Instagram's own servers and content network, without the user's session cookies; the post's caption, author and public counts shown beside it come from that same page, with no further request: only the item on screen and the next one, never Instagram's private API, and it stops for an hour at Instagram's first refusal. Older messages load one page at a time, only when the user asks; nothing else is contacted. Instagram is a single-page app, so the content script must load on its pages to be present when the user navigates to a conversation; it acts only on /direct/t/ pages.
+The extension's only purpose is to play the media in the user's open Instagram DM conversation. It reads that conversation in the page and loads each item's media from its public embed page on Instagram's own servers and content network, without the user's session cookies; the post's caption, author and public counts shown beside it come from that same page or, for a one-photo post whose photo arrives with the conversation, from one read of its public captioned embed page made the same way: only the item on screen and the next one, never Instagram's private API, and it stops for an hour at Instagram's first refusal. Older messages load one page at a time, only when the user asks; nothing else is contacted. Instagram is a single-page app, so the content script must load on its pages to be present when the user navigates to a conversation; it acts only on /direct/t/ pages.
 ```
 
 **Remote code:** No, I am not using remote code.
@@ -76,7 +77,7 @@ store counts local handling too):
 - [x] Personal communications — the conversation's messages, read to find the items and the notes
   sent with them
 - [x] Website content — the media of each item, loaded to play it, and the shared post's caption,
-  author's username and public counts from the same embed page, shown beside it
+  author's username and public counts from its public embed page, shown beside it
 - [ ] Health information · Financial and payment information · Authentication information ·
   Location · Web history · User activity — not handled
 

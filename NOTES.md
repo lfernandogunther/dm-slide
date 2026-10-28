@@ -137,9 +137,17 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   carousels alike, `embed/` or `embed/captioned/`) holds the caption, `owner.{username,
   is_verified}`, like and comment counts and, on reels, `video_view_count` and
   `clips_music_attribution_info.{artist_name, song_name, uses_original_audio}`. It has no comment
-  bodies, post time, location or tagged users. One-photo posts carry none (`contextJSON: null`).
+  bodies, post time, location or tagged users. One-photo posts carry none (`contextJSON: null`),
+  except a collab post's.
   Paths must be bare: a `/<user>/` prefix gives 404 on `captioned` and a page without data on
   `embed/`. Read live 2026-10-27; the owner's check on the real Instagram confirmed the paths.
+- **A one-photo post's words are HTML, only on `embed/captioned/`.** Plain `embed/` has no caption.
+  `.Caption` holds `a.CaptionUsername` (the author), the text with `<br>` line breaks and plain
+  links for hashtags and mentions, then `div.CaptionComments` ("View all N comments"): strip both
+  ends and turn `<br>` into `\n`. No caption means no `.Caption`; the author is then the
+  `.UsernameText`. A collab post has two `.UsernameText` (the first not always the author) and
+  non-null `contextJSON`, which is read instead. Sampled on 8 public posts, 2026-10-28: 200, ~0.3–0.5
+  s, ~200–260 KB each; no video or carousel in the sample.
 - **A post's date comes from its shortcode:** base64url gives the media id (matched 3 of 3), and
   `(id >> 23) + 1314220021721` gives ms. Against `taken_at` it ran 7–17 s early on a carousel and a
   photo and 2.4 h early on a reel (the id is likely given at upload), so the card shows a date,
