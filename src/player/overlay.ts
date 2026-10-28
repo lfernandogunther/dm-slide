@@ -124,6 +124,9 @@ const LAYOUT = `
             <label><input type="checkbox" data-next-after tabindex="-1" checked>Next after reacting</label>
             <button type="button" class="p-dir" data-after-dir tabindex="-1" title="Which way reacting moves">↓ newer</button>
           </div>
+          <div class="p-setting">
+            <label title="Opens it 2 s after “Can't play this here”, once per item"><input type="checkbox" data-open-in tabindex="-1" checked>Open in Instagram when it can't play here</label>
+          </div>
         </div>
       </aside>
       <span class="kt w">W ↑</span>
@@ -315,10 +318,12 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let nextAfterReact = true;
   let afterReactDir: Settings['afterReactDir'] = 'newer';
   let onlyNotReacted = false;
+  let openInInstagram = true;
   let tipsHeld = false;
   let tipsPinned = false;
   const nextAfter = $<HTMLInputElement>('data-next-after');
   const afterDir = $<HTMLButtonElement>('data-after-dir');
+  const openIn = $<HTMLInputElement>('data-open-in');
   const quote = $<HTMLInputElement>('data-quote');
   const send = $<HTMLButtonElement>('data-send');
   void loadSettings().then((s) => {
@@ -326,6 +331,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     afterReactDir = s.afterReactDir;
     renderAfterDir();
     quote.checked = s.quoteReply;
+    openIn.checked = openInInstagram = s.openInInstagram;
     onlyNotReacted = s.onlyNotReacted;
     renderChrome(true);
     if (s.seenKeys || closed) return;
@@ -960,6 +966,11 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     afterReactDir = afterReactDir === 'newer' ? 'older' : 'newer';
     saveSettings({ afterReactDir });
     renderAfterDir();
+    player.focus();
+  });
+  openIn.addEventListener('change', () => {
+    openInInstagram = openIn.checked;
+    saveSettings({ openInInstagram });
     player.focus();
   });
   $('data-reply-form').addEventListener('submit', (e) => {

@@ -3,10 +3,10 @@
 Everything the Developer Dashboard asks for, ready to paste. Keep it in step with
 [PRIVACY.md](../PRIVACY.md) and `manifest.json`: the review compares them.
 
-**Pending in the dashboard since v0.1.2:** the Description and the host permission justification
-below (they now name the post's caption, author and counts, and the one read a one-photo post
-makes for its caption). Before the next `npm run release`,
-paste both and press Save draft, not Submit: the release's own submission then carries them into
+**Pending in the dashboard since v0.1.2:** the Description, the host permission justification and
+the `storage` justification below (they now name the post's caption, author and counts, the one
+read a one-photo post makes for its caption, and the setting that opens an item in Instagram's own
+view). Before the next `npm run release`, paste all three and press Save draft, not Submit: the release's own submission then carries them into
 one review. The Data usage boxes need no change.
 
 ## Store listing tab
@@ -60,7 +60,7 @@ DM Slide plays the media sent in the Instagram direct-message conversation the u
 
 **Permission justification — `storage`:**
 ```
-Keeps the player's own settings on the user's device: whether reacting moves to the next newer or older item, whether replies quote the item, the "not reacted" filter, the volume level, and whether the first-time key card was shown; and, only after Instagram refuses a load, the time media loading may resume. No message content is stored.
+Keeps the player's own settings on the user's device: whether reacting moves to the next newer or older item, whether replies quote the item, the "not reacted" filter, the volume level, whether the first-time key card was shown, and whether an item that can't play opens in Instagram's own view by itself; and, only after Instagram refuses a load, the time media loading may resume. No message content is stored.
 ```
 
 **Permission justification — host permission (`https://www.instagram.com/*`):**

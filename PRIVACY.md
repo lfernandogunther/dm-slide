@@ -47,6 +47,7 @@ extension storage (`chrome.storage.local`), on your device:
 | `onlyNotReacted` | whether the "Not reacted" filter is on |
 | `volume` | the sound level, from 0 to 1 |
 | `seenKeys` | whether the first-time key card was already shown |
+| `openInInstagram` | whether an item that can't play here opens in Instagram's own view by itself |
 | `pausedUntil` | when media loading may resume, set only if Instagram refused a load |
 
 No message, name, username, id or media is ever stored. Removing the extension removes these
@@ -54,7 +55,9 @@ settings.
 
 ## What it does on your behalf
 DM Slide reacts or replies only when you press the key or button for it, in the conversation you are
-watching. It never acts on its own.
+watching. The one thing it does by itself is open an item it cannot play in Instagram's own view,
+2 seconds after saying so, once per item: the same as clicking that item in the chat. The "Open in
+Instagram when it can't play here" setting turns that off.
 
 ## What it does not do
 - No analytics, tracking, advertising or telemetry.
