@@ -348,6 +348,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let afterReactDir: Settings['afterReactDir'] = 'newer';
   let onlyNotReacted = false;
   let openInInstagram = true;
+  let barSpot: Settings['barSpot'] = null;
   let tipsHeld = false;
   let tipsPinned = false;
   const nextAfter = $<HTMLInputElement>('data-next-after');
@@ -361,6 +362,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     renderAfterDir();
     quote.checked = s.quoteReply;
     openIn.checked = openInInstagram = s.openInInstagram;
+    barSpot = s.barSpot;
     onlyNotReacted = s.onlyNotReacted;
     renderChrome(true);
     if (s.seenKeys || closed) return;
@@ -978,9 +980,53 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (on) renderFramePos();
     player.hidden = on;
     back.hidden = !on;
-    if (!on) showFrameReply(false);
+    if (on) placeBar();
+    else showFrameReply(false);
     // Only the bar and its reply box stay clickable; the rest of the page is Instagram's.
     host.style.pointerEvents = on ? 'none' : '';
+  }
+
+  /** Puts the bar at `barSpot`, kept whole inside the window, with the reply box on the side that has room. */
+  function placeBar(): void {
+    const bar = $('data-bar').getBoundingClientRect();
+    const spot = barSpot && {
+      x: Math.min(Math.max(barSpot.x, bar.width / 2), innerWidth - bar.width / 2),
+      y: Math.min(Math.max(barSpot.y, 0), innerHeight - bar.height),
+    };
+    back.style.left = spot ? `${spot.x}px` : '';
+    back.style.top = spot ? `${spot.y}px` : '';
+    back.classList.toggle('up', !!spot && spot.y > innerHeight / 2);
+  }
+
+  /** The grip drags the bar; where it is let go is kept for the next time, and a double-click puts it back on top. */
+  function bindGrip(grip: HTMLElement): void {
+    let from: { x: number; y: number } | null = null;
+    grip.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      const bar = $('data-bar').getBoundingClientRect();
+      from = { x: e.clientX - (bar.left + bar.width / 2), y: e.clientY - bar.top };
+      grip.setPointerCapture(e.pointerId);
+      e.stopPropagation();
+    });
+    grip.addEventListener('pointermove', (e) => {
+      if (!from) return;
+      barSpot = { x: e.clientX - from.x, y: e.clientY - from.y };
+      placeBar();
+    });
+    const drop = () => {
+      if (!from) return;
+      from = null;
+      const bar = $('data-bar').getBoundingClientRect();
+      barSpot = { x: Math.round(bar.left + bar.width / 2), y: Math.round(bar.top) };
+      saveSettings({ barSpot });
+    };
+    grip.addEventListener('pointerup', drop);
+    grip.addEventListener('pointercancel', drop);
+    grip.addEventListener('dblclick', () => {
+      barSpot = null;
+      placeBar();
+      saveSettings({ barSpot });
+    });
   }
 
   /** `?` shows the key card with the tips, or hides whichever is showing. */
@@ -1056,6 +1102,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     closed = true;
     clearTimeout(awayTimer);
     stopAutoOpen();
+    window.removeEventListener('resize', onResize);
     unbindKeys();
     unbindPause();
     fit.disconnect();
@@ -1081,6 +1128,9 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   back.querySelectorAll<HTMLElement>('[data-frame]').forEach((b) => b.addEventListener('click', () => frame(b.dataset.frame as FrameKey)));
   // A click on the bar leaves the focus in Instagram's view, where A, D and the arrows still work.
   $('data-bar').addEventListener('mousedown', (e) => e.preventDefault());
+  bindGrip($('data-grip'));
+  const onResize = () => away && placeBar();
+  window.addEventListener('resize', onResize);
   frameReply.addEventListener('submit', (e) => {
     e.preventDefault();
     frameSend();

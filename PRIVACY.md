@@ -48,6 +48,7 @@ extension storage (`chrome.storage.local`), on your device:
 | `volume` | the sound level, from 0 to 1 |
 | `seenKeys` | whether the first-time key card was already shown |
 | `openInInstagram` | whether an item that can't play here opens in Instagram's own view by itself |
+| `barSpot` | where the bar over Instagram's view was dragged to, as two pixel numbers |
 | `pausedUntil` | when media loading may resume, set only if Instagram refused a load |
 
 No message, name, username, id or media is ever stored. Removing the extension removes these

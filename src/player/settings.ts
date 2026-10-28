@@ -8,9 +8,10 @@ export interface Settings {
   volume: number; // 0–1, the level sound comes back at
   seenKeys: boolean; // the key card was shown once
   openInInstagram: boolean; // an item that can't play here opens in Instagram's view by itself
+  barSpot: { x: number; y: number } | null; // the bar's centre and top over Instagram's view, in px; null is top centre
 }
 
-const DEFAULTS: Settings = { nextAfterReact: true, afterReactDir: 'newer', quoteReply: true, onlyNotReacted: false, volume: 1, seenKeys: false, openInInstagram: true };
+const DEFAULTS: Settings = { nextAfterReact: true, afterReactDir: 'newer', quoteReply: true, onlyNotReacted: false, volume: 1, seenKeys: false, openInInstagram: true, barSpot: null };
 
 // Absent when the script runs outside the extension (injected by hand for a check).
 const storage = () => (typeof chrome === 'undefined' ? undefined : chrome.storage?.local);

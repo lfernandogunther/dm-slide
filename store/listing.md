@@ -60,7 +60,7 @@ DM Slide plays the media sent in the Instagram direct-message conversation the u
 
 **Permission justification — `storage`:**
 ```
-Keeps the player's own settings on the user's device: whether reacting moves to the next newer or older item, whether replies quote the item, the "not reacted" filter, the volume level, whether the first-time key card was shown, and whether an item that can't play opens in Instagram's own view by itself; and, only after Instagram refuses a load, the time media loading may resume. No message content is stored.
+Keeps the player's own settings on the user's device: whether reacting moves to the next newer or older item, whether replies quote the item, the "not reacted" filter, the volume level, whether the first-time key card was shown, whether an item that can't play opens in Instagram's own view by itself, and where its bar over that view was dragged to; and, only after Instagram refuses a load, the time media loading may resume. No message content is stored.
 ```
 
 **Permission justification — host permission (`https://www.instagram.com/*`):**
