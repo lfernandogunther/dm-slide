@@ -30,6 +30,11 @@
   other buttons over the photo are two photo-sized ones, and none in the comments counts.
 
 ## Concepts learned
+- **Shown area vs. layout box:** `getBoundingClientRect()` ignores an ancestor's `overflow` clip, so
+  a carousel's off-screen slides report full size. Intersecting the box with every ancestor whose
+  overflow is not `visible` gives what is actually on screen.
+- **DOMParser:** turns an HTML string into a document without running its scripts or loading its
+  images, so a fetched page can be read as text only.
 
 ## Promoted
 - `embed/captioned/` sample → NOTES (Playback, "A one-photo post's words are HTML"), already there.
