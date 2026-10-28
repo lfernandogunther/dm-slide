@@ -29,6 +29,8 @@ const SENT_MS = 3000;
 const CANT_READ = "Can't read this conversation · nothing was done";
 // How often the player, stepped aside, checks whether Instagram's view of the item is still up.
 const LAYER_POLL_MS = 250;
+// How long the won't-play card shows before Instagram's view opens by itself.
+const AUTO_OPEN_MS = 2000;
 // The sender and the reactions rise into place as a new item comes in.
 const PANEL_RISE = [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }];
 const PANEL_MS = 200;
@@ -290,7 +292,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const stage = createStage(reel, adapter, renderNav, [
     { key: 'I', label: 'Instagram view', act: () => void instagramView() },
     { key: 'S', label: 'Next', act: () => next() },
-  ]);
+  ], cantPlay);
   const pill = createPill(video);
   let caughtShows = '';
   const strip = createStrip($('data-strip'));
@@ -304,6 +306,10 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let away = false;
   let opening = false;
   let awayTimer: ReturnType<typeof setTimeout> | undefined;
+  // Ids of the items that can't play here, and of those whose view already opened once.
+  const unplayable = new Set<string>();
+  const autoOpened = new Set<string>();
+  let autoTimer: ReturnType<typeof setTimeout> | undefined;
   const path = location.pathname;
   const back = $('data-back');
   // Reactions wait here and are told to Instagram one at a time, while the player moves on.
@@ -499,6 +505,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   function go(index: number): void {
     if (index < 0 || index >= items.length) return;
+    stopAutoOpen();
     // A click doesn't pass through the keys; the strip must be measured settled, not mid-glide.
     finishAll();
     const dir = Math.sign(index - current) as -1 | 0 | 1;
@@ -780,6 +787,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     focusReply: () => reply.focus(),
     blurReply: () => player.focus(),
     holdTips: (held) => {
+      if (held) stopAutoOpen();
       tipsHeld = held;
       renderTips();
     },
@@ -799,6 +807,9 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (closed || opening || reacting || sending || loading) return;
     finishAll();
     stage.pause();
+    // Opened by hand or by itself, it opens by itself no more: coming back must not reopen it.
+    stopAutoOpen();
+    autoOpened.add(items[current].id);
     opening = true;
     try {
       await adapter.openLayer(items[current].id);
@@ -813,6 +824,28 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (closed) return void adapter.closeLayer();
     setAway(true);
     watchLayer();
+  }
+
+  function cantPlay(it: Item): void {
+    unplayable.add(it.id);
+    if (items[current]?.id === it.id) armAutoOpen(AUTO_OPEN_MS);
+  }
+
+  function armAutoOpen(ms: number): void {
+    const id = items[current].id;
+    if (!openInInstagram || autoTimer || autoOpened.has(id)) return;
+    autoTimer = setTimeout(() => {
+      autoTimer = undefined;
+      if (closed || away || !openInInstagram || items[current]?.id !== id) return;
+      // An action under way would refuse the view: wait for it instead of dropping the open.
+      if (opening || reacting || sending || loading) return armAutoOpen(BUSY_POLL_MS);
+      void instagramView();
+    }, ms);
+  }
+
+  function stopAutoOpen(): void {
+    clearTimeout(autoTimer);
+    autoTimer = undefined;
   }
 
   function watchLayer(): void {
@@ -848,6 +881,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   }
 
   function showKeyCard(on: boolean): void {
+    if (on) stopAutoOpen();
     if (on && coach.hidden) animate(coach, [HIDE, SHOW], { duration: BACKDROP_IN_MS });
     coach.hidden = !on;
   }
@@ -910,6 +944,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (closed) return;
     closed = true;
     clearTimeout(awayTimer);
+    stopAutoOpen();
     unbindKeys();
     unbindPause();
     fit.disconnect();
@@ -978,6 +1013,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     void sendReply();
   });
   reply.addEventListener('input', renderSend);
+  reply.addEventListener('focus', stopAutoOpen);
   quote.addEventListener('change', () => {
     saveSettings({ quoteReply: quote.checked });
     player.focus();

@@ -38,8 +38,8 @@ function createVideo(): HTMLVideoElement {
   return video;
 }
 
-/** `onSlides` runs when the slides that A/D can reach change; `cantPlay` are the keys on the won't-play card. */
-export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: () => void, cantPlay: KeyAct[]): Stage {
+/** `onSlides` runs when the slides that A/D can reach change; `cantPlay` are the keys on the won't-play card; `onUnplayable` names an item shown or preloaded that can't play. */
+export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: () => void, cantPlay: KeyAct[], onUnplayable: (item: Item) => void): Stage {
   const status = document.createElement('div');
   status.className = 'reel-status';
   let paused = false;
@@ -264,6 +264,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     current.removeAttribute('src');
     setSlides([]);
     setStatus(stateCard({ ...card, keys: cantPlay }));
+    onUnplayable(shown);
   }
 
   function play(shown: Item, url: string): void {
@@ -340,9 +341,13 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
 
   async function preload(next: Item | undefined, ticket: number): Promise<void> {
     // Moving onto the item being preloaded keeps its read: it is now the one asked for.
-    const media = next && (await adapter.media(next, () => ticket === showing || target === next).catch(() => null));
+    const wanted = () => ticket === showing || target === next;
+    const media = next && (await adapter.media(next, wanted).catch(() => null));
     const first = media && (media.type === 'slides' ? media.slides[0] : media);
-    if (!first) return;
+    if (!first) {
+      if (next && wanted()) onUnplayable(next);
+      return;
+    }
     if (first.type === 'video') {
       if (spare.src !== first.url) spare.src = first.url;
     } else new Image().src = first.url;
