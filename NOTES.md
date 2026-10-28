@@ -70,6 +70,18 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   itself with a `popstate` back to the thread, ~20 ms; the player is back on the same item ~200 ms
   later. Our own `history.back()` once landed on another thread instead (cause unconfirmed), so it
   is kept only for a page with no dialog (a story, unverified).
+- **The bar over Instagram's view** is the only part of the overlay that takes the mouse there (the
+  host is `pointer-events: none`), and a mousedown on it is prevented so the focus stays in
+  Instagram's view, where A, D and the arrows still work. Only W/S/F/R/I are ours, on keydown,
+  outside text boxes, with no modifier, and a held key acts once: each closes the view. F and a reply
+  close Instagram's view first and act through the usual path (the picker and composer sit under
+  it), then open it again only if the item now on screen is one that can't play. Keys typed in our
+  reply box over the view are stopped at `window`, so Instagram's dialog never sees them; Esc only
+  hides the box. Unchecked live: whether Instagram's dialog pulls the focus out of that box.
+- **Auto-open** fires 2 s after the stage reports an item it can't play, once per item, also during
+  the refusal pause; it waits out an action under way rather than dropping. The bar's dragged spot
+  is the `barSpot` setting, kept whole inside the window and flipping the reply box above it in the
+  lower half.
 - The header button's anchor is found from the message scroller, not from labels or
   `data-pagelet`; a `MutationObserver` with a 400 ms debounce puts it back when React drops it.
 
@@ -208,6 +220,9 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
 - `?` shows the key card over the tips; a tips-only screenshot needs Option held down.
 - A browser subagent for the demo opens a new tab: the shared browser may be sitting on a real DM
   thread.
+- Two neighbouring items ("the live set", "summit at sunrise") can't play, for auto-open and the bar;
+  the overlay only appears ~6 s after load, once the clips are generated. The bar's kept spot needs
+  `chrome.storage`, so it resets there.
 
 ## Release and the store
 - `npm run release <v>` refuses unless `main` is clean and even with `origin/main` and the tag is

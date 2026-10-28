@@ -37,3 +37,10 @@ Spec: `specs/07-faster-video-start/`.
 Beside each shared post: its author, date, caption, a reel's music and its public like, comment and
 view counts, all from the embed page its media already comes from, with no further request.
 Spec: `specs/05-post-caption/`.
+
+## 09 · Photo captions and Instagram's view (done)
+A one-photo post's caption and author now come from one read of its public captioned embed page,
+the only read such a post makes. An item that can't play here opens in Instagram's own view, by `I`
+or by itself 2 s later, with a draggable bar on top that keeps W/S, F and R: stepping stays in that
+view for items that can't play, and reacting or replying closes it, acts, and opens it again.
+Spec: `specs/08-photo-caption-and-instagram-frame/`.

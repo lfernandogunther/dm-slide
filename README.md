@@ -52,7 +52,7 @@ to see each control's key next to it.
 | **2** – **6** | React 😂 · 😮 · 😢 · 😡 · 👍 |
 | **R** | Reply: Enter sends, Esc leaves the box |
 | **U** | Show only what you haven't reacted to |
-| **I** | Open the item in Instagram's own view; Esc, ✕ or I brings the player back |
+| **I** | Open the item in Instagram's own view, with DM Slide's bar on top; Esc, ✕ or I brings the player back |
 | **?** | Show or hide the key tips and the key card |
 | **Option** (Alt), held | Show the key tips while held |
 | **Esc** | Close the player |
@@ -61,6 +61,13 @@ Pressing your current reaction again removes it. With **Next after reacting** on
 reacting moves to the next newer item at once; the **↓ newer** button beside it switches that to
 **↑ older**, which stops at the oldest loaded item rather than loading more. Every key has a button too; the mouse is never required
 and never in the way.
+
+An item that can't play in the player opens in Instagram's own view by itself 2 s later, once per
+item (turn it off with **Open in Instagram when it can't play here**). Over that view a yellow bar
+keeps the player's keys: **W** / **S** step to the older or newer item, staying in Instagram's view
+when that one can't play either; **F** reacts ❤️; **R** opens a reply box beside the bar, a reply in
+the DM, never a comment on the post. A, D and the arrows stay Instagram's. Drag the bar by **⋮⋮** to
+see what is under it; it stays where you leave it, and a double-click puts it back on top.
 
 ![A carousel, with its ‹ › slide arrows around the dots](docs/screenshots/02-carousel.png)
 

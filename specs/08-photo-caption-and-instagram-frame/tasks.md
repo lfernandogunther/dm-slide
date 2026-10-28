@@ -12,7 +12,7 @@
 - [x] **08 — drag the bar by its grip, spot kept in `chrome.storage.local`, double-click resets, clamped to the window**
 - [x] **09 — the demo: an unplayable item, auto-open, the bar, W/S/F/R and the drag; checked in a subagent**
 - [ ] **10 — owner: hand check on the real Instagram (captions, auto-open, keys in Instagram's modal, F/R after the close, the drag)**
-- [ ] **11 — ROADMAP, README and NOTES updated where the behaviour changed**
+- [x] **11 — ROADMAP, README and NOTES updated where the behaviour changed**
 - [ ] **12 — self-review, close learnings.md and promote**
 
 ---
