@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-28 · planned from labs 03 and 04; the owner approved running it to the end
 
 ## Next
-Task 09: the demo (unplayable item, auto-open, bar, W/S/F/R, drag), checked in a subagent.
+Task 10: the owner's hand check on the real Instagram (task 11 docs are written meanwhile).
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** not opened yet (solo repo, commits on main)
@@ -12,7 +12,7 @@ Task 09: the demo (unplayable item, auto-open, bar, W/S/F/R, drag), checked in a
 - R over Instagram's view: our box or back to the player (spec, open question 2), settled by the hand check.
 
 ## Tasks status
-8 of 12; see tasks.md.
+9 of 12; see tasks.md.
 
 ## What was done
 - 2026-10-28: planned from labs 03 and 04, with three assumptions the owner confirmed:

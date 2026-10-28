@@ -17,6 +17,7 @@ interface Share {
   replies?: string[];
   reaction?: string;
   post?: Partial<Post>; // what the shared post says about itself; a one-photo post has its date only
+  unplayable?: boolean; // its media read comes back empty, as when Instagram won't serve it
 }
 
 const DAY = 864e5;
@@ -73,6 +74,8 @@ const SHARES: Share[] = [
   },
   { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🐱', caption: 'cat vs cucumber', hue: 95 }], notes: ['watch till the end'] },
   { kind: 'story', sender: 'Sam', scenes: [{ emoji: '☕', caption: 'monday mood', hue: 28 }] },
+  { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🎤', caption: 'the live set, front row', hue: 5 }], unplayable: true },
+  { kind: 'post', sender: 'Sam', scenes: [{ emoji: '🏔️', caption: 'summit at sunrise', hue: 250 }], unplayable: true },
   { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🛹', caption: 'how is this even possible', hue: 330 }] },
   { kind: 'gallery', sender: 'Sam', scenes: [{ emoji: '🎂', caption: 'the cake survived', hue: 340 }] },
   { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🌊', caption: 'biggest wave of the year', hue: 210 }] },
@@ -213,7 +216,8 @@ const adapter: ThreadAdapter = {
   media: (item) =>
     log('media', async (): Promise<Media | null> => {
       await sleep(DELAY * 3);
-      const scenes = shareOf.get(item.id)!.scenes;
+      const { scenes, unplayable } = shareOf.get(item.id)!;
+      if (unplayable) return null;
       const video = clips.get(item.id);
       if (video) return { type: 'video', url: video };
       const slides: Slide[] = scenes.map((s) => ({ type: 'photo', url: still(s, 540, 675) }));
