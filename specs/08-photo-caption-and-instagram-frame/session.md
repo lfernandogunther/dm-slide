@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-28 · planned from labs 03 and 04; the owner approved running it to the end
 
 ## Next
-Task 06: W/S from the frame reopen the view only for an item known not to play.
+Task 07: F/R from the frame, with our reply box beside the bar.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** not opened yet (solo repo, commits on main)
@@ -12,7 +12,7 @@ Task 06: W/S from the frame reopen the view only for an item known not to play.
 - R over Instagram's view: our box or back to the player (spec, open question 2), settled by the hand check.
 
 ## Tasks status
-5 of 12; see tasks.md.
+6 of 12; see tasks.md.
 
 ## What was done
 - 2026-10-28: planned from labs 03 and 04, with three assumptions the owner confirmed:

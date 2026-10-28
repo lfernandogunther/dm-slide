@@ -323,6 +323,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let autoTimer: ReturnType<typeof setTimeout> | undefined;
   // What a key or click on the bar left for the player to do once Instagram's view has closed.
   let afterBack: (() => void) | null = null;
+  // The item W/S moves to over Instagram's view, since it can't play here either.
+  let stepTo: string | null = null;
   const path = location.pathname;
   const back = $('data-back');
   // Reactions wait here and are told to Instagram one at a time, while the player moves on.
@@ -817,8 +819,18 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       adapter.closeLayer();
       return;
     }
-    // The view could cover a picker or composer the extension is driving, or a thread a load is scrolling.
-    if (closed || opening || reacting || sending || loading) return;
+    if (busy()) return;
+    // Hidden only once open, so a view that never opens leaves the player where it was instead of blinking away.
+    if (!(await openView())) return;
+    setAway(true);
+    watchLayer();
+  }
+
+  // The view could cover a picker or composer the extension is driving, or a thread a load is scrolling.
+  const busy = () => closed || opening || reacting || sending || loading !== null;
+
+  /** Opens Instagram's view of the item on screen; false when it didn't open. */
+  async function openView(): Promise<boolean> {
     finishAll();
     stage.pause();
     // Opened by hand or by itself, it opens by itself no more: coming back must not reopen it.
@@ -830,14 +842,12 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     } catch (e) {
       console.warn('[dm-slide]', e);
       pill.show(e instanceof CantRead ? CANT_READ : "Instagram view didn't open · I to try again", FAIL_MS, true);
-      return;
+      return false;
     } finally {
       opening = false;
     }
-    // Hidden only now, so a view that never opens leaves the player where it was instead of blinking away.
-    if (closed) return void adapter.closeLayer();
-    setAway(true);
-    watchLayer();
+    if (closed) adapter.closeLayer();
+    return !closed;
   }
 
   function cantPlay(it: Item): void {
@@ -852,7 +862,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       autoTimer = undefined;
       if (closed || away || !openInInstagram || items[current]?.id !== id) return;
       // An action under way would refuse the view: wait for it instead of dropping the open.
-      if (opening || reacting || sending || loading) return armAutoOpen(BUSY_POLL_MS);
+      if (busy()) return armAutoOpen(BUSY_POLL_MS);
       void instagramView();
     }, ms);
   }
@@ -866,6 +876,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     awayTimer = setTimeout(() => {
       if (closed) return;
       if (adapter.layerOpen()) watchLayer();
+      else if (stepTo) void stepAcross();
       else comeBack();
     }, LAYER_POLL_MS);
   }
@@ -883,9 +894,30 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   /** A key or click on the bar: the view closes, and the player does the rest once it is back. */
   function frame(key: FrameKey): void {
-    if (afterBack) return;
-    afterBack = { w: () => item(-1), s: () => item(1), f: () => react(0), r: () => reply.focus() }[key];
+    if (afterBack || stepTo || opening) return;
+    if (key === 'w' || key === 's') return frameStep(key === 'w' ? -1 : 1);
+    afterBack = { f: () => react(0), r: () => reply.focus() }[key];
     adapter.closeLayer();
+  }
+
+  /** Stays in Instagram's view only for an item known not to play; any other, or none yet, is the player's. */
+  function frameStep(delta: -1 | 1): void {
+    const to = neighbour(current, delta);
+    if (to >= 0 && unplayable.has(items[to].id)) stepTo = items[to].id;
+    else afterBack = () => item(delta);
+    adapter.closeLayer();
+  }
+
+  /** The view closed for W/S: moves on with the player still hidden, then opens the view of that item. */
+  async function stepAcross(): Promise<void> {
+    const to = items.findIndex((r) => r.id === stepTo);
+    stepTo = null;
+    if (location.pathname !== path || to < 0) return comeBack();
+    go(to);
+    // Busy, the player comes back and its 2 s rule opens the view once the action is done.
+    if (busy() || !(await openView())) return closed ? undefined : comeBack();
+    renderFramePos();
+    watchLayer();
   }
 
   /** Where the item sits among those the filter leaves, counted from the newest, as the strip shows them. */
