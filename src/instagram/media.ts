@@ -1,6 +1,7 @@
 // Resolves what an item shows. Shares come from their public embed page only: a reel's in a hidden
 // iframe, read off its <video>; a carousel's from the slide data in its HTML. Gallery items, stories
-// and one-photo posts carry their own media in the record, so they ask the network nothing.
+// and one-photo posts carry their own media in the record; a one-photo post's words come from its
+// captioned embed page.
 import type { Item, Media, Post, Slide } from './adapter';
 import * as S from './selectors';
 
@@ -184,6 +185,41 @@ async function fromEmbedData(path: string): Promise<Media | null> {
   }
 }
 
+/** The author and caption as the captioned embed's HTML renders them; parsed, never run or shown. */
+function htmlFacts(html: string): PostFacts | null {
+  const page = new DOMParser().parseFromString(html, 'text/html');
+  const box = page.querySelector(S.EMBED_CAPTION);
+  const author = textOf(box?.querySelector(S.EMBED_CAPTION_AUTHOR)?.textContent ?? page.querySelector(S.EMBED_USERNAME)?.textContent);
+  let caption: string | null = null;
+  if (box) {
+    box.querySelectorAll(S.EMBED_CAPTION_NOT_TEXT).forEach((el) => el.remove());
+    box.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
+    caption = textOf(box.textContent?.replace(/\n{3,}/g, '\n\n'));
+  }
+  if (!author && !caption) return null;
+  return { author, verified: false, caption, likes: null, comments: null, views: null, music: null, originalAudio: false };
+}
+
+/** A one-photo post's words from its captioned embed page; the photo stays the record's own. */
+async function fromEmbedCaptioned(path: string, own: Media): Promise<Media | null> {
+  try {
+    const res = await fetch(S.embedCaptionedUrl(path), { credentials: 'omit', referrerPolicy: 'no-referrer' });
+    if (pushedBack(res.status, res.url) || !res.ok) return null;
+    const html = await res.text();
+    // A collab post's page carries the post's data as JSON, which says more than its HTML.
+    const media = shortcodeMedia(html.match(S.EMBED_CONTEXT_JSON)?.[1]);
+    if (media) keepFacts(path, media);
+    else {
+      const found = htmlFacts(html);
+      if (found) facts.set(path, found);
+    }
+    // Found, so this post is asked once, with or without words.
+    return own;
+  } catch {
+    return null;
+  }
+}
+
 /** A share's media from its embed page. A found one is asked once; a miss is asked again only when the item shows again. */
 function fetchShare(
   shortcode: string,
@@ -224,5 +260,6 @@ export async function mediaOf(item: Item, wanted: () => boolean = () => true): P
   }
   // The record holds a carousel's first slide only; the rest come from the embed page.
   if (item.kind === 'carousel') return (await fetchShare(shortcode, path, fromEmbedData, wanted)) ?? own;
+  if (item.kind === 'post' && own) return (await fetchShare(shortcode, path, (p) => fromEmbedCaptioned(p, own), wanted)) ?? own;
   return own;
 }

@@ -54,13 +54,15 @@ export const HEADER_ICON_COUNT = { min: 2, max: 4 };
 // which our own <video> plays with sound. No video within the timeout = unavailable (the embed
 // shows "link may be broken" for some reels). `path` is the share's own, ending in a slash.
 export const embedUrl = (path: string) => `https://www.instagram.com${path}embed/`;
+// Only this variant carries a one-photo post's caption, as server-rendered HTML; its contextJSON is null except on a collab post.
+export const embedCaptionedUrl = (path: string) => `https://www.instagram.com${path}embed/captioned/`;
 export const EMBED_TIMEOUT_MS = 6000;
 // A page of older messages took ~2 s in the spike.
 export const LOAD_OLDER_TIMEOUT_MS = 8000;
 export const LOAD_OLDER_POLL_MS = 250;
 // Instagram saying "slow down": one of these statuses, or a page other than the embed asked for.
 export const REFUSED_STATUS = [401, 403, 429];
-export const EMBED_PATH = /\/embed\/?$/;
+export const EMBED_PATH = /\/embed(\/captioned)?\/?$/;
 // A check reads the frame's own DOM and asks the network nothing, so checking often costs only a query.
 export const EMBED_POLL_MS = 50;
 // An embed that will serve no video shows a "Watch on Instagram" cover or a broken-media page within ~1 s; no playable one had either.
@@ -69,6 +71,13 @@ export const EMBED_NO_VIDEO = '.WatchOnInstagram, .EmbedBrokenMedia';
 // its rendered iframe fills only the first two. One-photo posts have `null` there.
 export const EMBED_CONTEXT_JSON = /"contextJSON":"((?:[^"\\]|\\.)*)"/;
 export const EMBED_CAROUSEL_TYPE = 'GraphSidecar';
+// A one-photo post's captioned embed renders its words as HTML: the author's link, the caption with <br>
+// for its line breaks, then a "View all N comments" link. The header's username is the fallback when
+// there is no caption; a collab post has two of those, the first not always the author.
+export const EMBED_CAPTION = '.Caption';
+export const EMBED_CAPTION_AUTHOR = '.CaptionUsername';
+export const EMBED_CAPTION_NOT_TEXT = '.CaptionUsername, .CaptionComments';
+export const EMBED_USERNAME = '.UsernameText';
 // A shortcode is the media id in base64url, and the id's bits above the 23rd count ms from Instagram's
 // own epoch. The id is given at upload, so it can run hours before the post went out.
 export const SHORTCODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';

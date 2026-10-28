@@ -1,8 +1,8 @@
 # Tasks — S08
 
-**0 of 12 done · next: 01 — sample the captioned embed and read it for one-photo posts**
+**1 of 12 done · next: 02 — PRIVACY.md, store/listing.md and NOTES describe the captioned read**
 
-- [ ] **01 — sample `embed/captioned/` on several public one-photo posts (a subagent in a new tab, numbers and structure only), then `fromEmbedCaptioned`: one cookieless read of `/p/<code>/embed/captioned/` in the lane, parsed as text, author and caption into the card**
+- [x] **01 — sample `embed/captioned/` on several public one-photo posts (a subagent in a new tab, numbers and structure only), then `fromEmbedCaptioned`: one cookieless read of `/p/<code>/embed/captioned/` in the lane, parsed as text, author and caption into the card**
 - [ ] **02 — PRIVACY.md, store/listing.md and NOTES describe the captioned read**
 - [ ] **03 — the setting "Open in Instagram when it can't play here", on by default; PRIVACY and the listing list it**
 - [ ] **04 — the stage reports items that can't play (shown or preloaded), and auto-open fires 2 s after the card, once per item, cancelled by moving, typing, help or close**
