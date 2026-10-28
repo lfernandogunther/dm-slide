@@ -2,6 +2,7 @@ import {
   requestCloseLayer,
   requestComposerEmpty,
   requestLayerOpen,
+  requestLayerSlide,
   requestLoadOlder,
   requestOpenLayer,
   requestOpenPicker,
@@ -84,6 +85,7 @@ export interface ThreadAdapter {
   openLayer(id: string): Promise<void>; // Instagram's own view of that message, open once this resolves
   layerOpen(): boolean; // Instagram's view of an item is up: its layer over the chat, or a page of its own
   closeLayer(): boolean; // false when that view has no close key of ours to press
+  layerSlide(delta: -1 | 1): boolean; // the carousel in that view, one photo that way; false when it has none there
 }
 
 /** The thread can't be read at all (Instagram's page changed, or this is no thread): nothing was done. */
@@ -256,5 +258,6 @@ export function createThreadAdapter(): ThreadAdapter {
     openLayer,
     layerOpen,
     closeLayer,
+    layerSlide: (delta) => requestLayerSlide(delta).ok,
   };
 }

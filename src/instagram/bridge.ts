@@ -80,7 +80,8 @@ export type Request =
   | { op: 'rect'; messageId: string }
   | { op: 'openLayer'; messageId: string }
   | { op: 'layerOpen' }
-  | { op: 'closeLayer' };
+  | { op: 'closeLayer' }
+  | { op: 'layerSlide'; delta: -1 | 1 };
 
 /** Isolated side: ask the page script. dispatchEvent runs its listener synchronously. */
 function call<T extends { ok: boolean }>(request: Request, on: EventTarget = document): T | { ok: false; reason: string } {
@@ -125,3 +126,4 @@ export const requestOpenLayer = (messageId: string): OpResult => call<OpResult>(
 export const requestLayerOpen = (): OpResult => call<OpResult>({ op: 'layerOpen' });
 
 export const requestCloseLayer = (): OpResult => call<OpResult>({ op: 'closeLayer' });
+export const requestLayerSlide = (delta: -1 | 1): OpResult => call<OpResult>({ op: 'layerSlide', delta });

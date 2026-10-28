@@ -62,7 +62,8 @@ export const LOAD_OLDER_TIMEOUT_MS = 8000;
 export const LOAD_OLDER_POLL_MS = 250;
 // Instagram saying "slow down": one of these statuses, or a page other than the embed asked for.
 export const REFUSED_STATUS = [401, 403, 429];
-export const EMBED_PATH = /\/embed(\/captioned)?\/?$/;
+export const EMBED_PATH = /\/embed\/?$/;
+export const CAPTIONED_PATH = /\/embed\/captioned\/?$/;
 // A check reads the frame's own DOM and asks the network nothing, so checking often costs only a query.
 export const EMBED_POLL_MS = 50;
 // An embed that will serve no video shows a "Watch on Instagram" cover or a broken-media page within ~1 s; no playable one had either.
@@ -124,3 +125,7 @@ export const MAX_CARD_FIBER_DEPTH = 32;
 // a story opens as a page of its own instead, so any page but a thread counts as that view.
 export const LAYER = '[role=dialog]';
 export const LAYER_MIN_MEDIA_PX = 200;
+// Its carousel arrows: small buttons over the left and right edge of its media, mid-height. Found by
+// place, not by label: the labels are localized.
+export const LAYER_ARROW_MAX_PX = 72; // measured live: 46×62
+export const LAYER_ARROW_EDGE_PX = 80;

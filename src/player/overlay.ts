@@ -31,6 +31,8 @@ const CANT_READ = "Can't read this conversation · nothing was done";
 const LAYER_POLL_MS = 250;
 // How long the won't-play card shows before Instagram's view opens by itself.
 const AUTO_OPEN_MS = 2000;
+// The reply box's width in style.ts, wider than the bar it hangs from.
+const REPLY_BOX_PX = 340;
 // The sender and the reactions rise into place as a new item comes in.
 const PANEL_RISE = [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }];
 const PANEL_MS = 200;
@@ -307,9 +309,10 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const chrome = [head, $('data-strip'), side];
   const reply = $<HTMLInputElement>('data-reply');
   const stage = createStage(reel, adapter, renderNav, [
+    { key: 'W', label: 'Previous', act: () => item(-1) },
+    { key: 'S', label: 'Next', act: () => item(1) },
     { key: 'I', label: 'Instagram view', act: () => void instagramView() },
-    { key: 'S', label: 'Next', act: () => next() },
-  ], cantPlay);
+  ], playable);
   const pill = createPill(video);
   let caughtShows = '';
   const strip = createStrip($('data-strip'));
@@ -327,6 +330,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   const unplayable = new Set<string>();
   const autoOpened = new Set<string>();
   let autoTimer: ReturnType<typeof setTimeout> | undefined;
+  let countdownTimer: ReturnType<typeof setInterval> | undefined;
   // What a key or click on the bar left for the player to do once Instagram's view has closed.
   let afterBack: (() => void) | null = null;
   // The item W/S moves to over Instagram's view, since it can't play here either.
@@ -534,6 +538,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     // A click doesn't pass through the keys; the strip must be measured settled, not mid-glide.
     finishAll();
     const dir = Math.sign(index - current) as -1 | 0 | 1;
+    // Only coming back from the view keeps an item from reopening; leaving it lets the next visit open it again.
+    if (items[index].id !== items[current]?.id) autoOpened.clear();
     current = index;
     renderChrome(dir ? 'glide' : true);
     if (dir) for (const el of [$('data-who'), $('data-quick')]) animate(el, PANEL_RISE, { duration: PANEL_MS });
@@ -628,6 +634,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   function react(slot: number): void {
     const emoji = QUICK_REACTIONS[slot];
     if (!emoji) return;
+    stopAutoOpen();
     const item = items[current];
     const removing = item.myReaction === emoji;
     clearFailure();
@@ -833,10 +840,16 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       return;
     }
     if (busy()) return;
+    await enterAway();
+  }
+
+  /** Opens the view, then hides the player behind it until it closes; false when it didn't open. */
+  async function enterAway(): Promise<boolean> {
     // Hidden only once open, so a view that never opens leaves the player where it was instead of blinking away.
-    if (!(await openView())) return;
+    if (!(await openView())) return false;
     setAway(true);
     watchLayer();
+    return true;
   }
 
   // The view could cover a picker or composer the extension is driving, or a thread a load is scrolling.
@@ -863,16 +876,21 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     return !closed;
   }
 
-  function cantPlay(it: Item): void {
+  /** The stage's word on an item it showed or preloaded; a miss can be transient, so a later read that works clears it. */
+  function playable(it: Item, can: boolean): void {
+    if (can) return void unplayable.delete(it.id);
     unplayable.add(it.id);
     if (items[current]?.id === it.id) armAutoOpen(AUTO_OPEN_MS);
   }
 
   function armAutoOpen(ms: number): void {
     const id = items[current].id;
-    if (!openInInstagram || autoTimer || autoOpened.has(id)) return;
+    if (!openInInstagram || autoTimer || autoOpened.has(id) || !coach.hidden) return;
+    let left = Math.ceil(ms / 1000);
+    stage.countdown(left);
+    countdownTimer = setInterval(() => stage.countdown(Math.max(--left, 1)), 1000);
     autoTimer = setTimeout(() => {
-      autoTimer = undefined;
+      stopAutoOpen();
       if (closed || away || !openInInstagram || items[current]?.id !== id) return;
       // An action under way would refuse the view: wait for it instead of dropping the open.
       if (busy()) return armAutoOpen(BUSY_POLL_MS);
@@ -882,7 +900,9 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
 
   function stopAutoOpen(): void {
     clearTimeout(autoTimer);
-    autoTimer = undefined;
+    clearInterval(countdownTimer);
+    autoTimer = countdownTimer = undefined;
+    stage.countdown(null);
   }
 
   function watchLayer(): void {
@@ -911,12 +931,17 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (key === 'r') return showFrameReply(true);
     showFrameReply(false);
     if (key === 'w' || key === 's') return frameStep(key === 'w' ? -1 : 1);
+    // A and D turn the carousel in Instagram's view; past its ends, or with none, they step like W and S.
+    if (key === 'a' || key === 'd') {
+      const delta = key === 'a' ? -1 : 1;
+      return void (adapter.layerSlide(delta) || frameStep(delta));
+    }
     afterBack = () => {
       react(0);
       // Where the react moved, or the item itself: reopened only if it can't play here.
       void reopen(items[current].id);
     };
-    adapter.closeLayer();
+    if (!adapter.closeLayer()) afterBack = null;
   }
 
   function showFrameReply(on: boolean): void {
@@ -937,16 +962,14 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     afterBack = async () => {
       if (await sendReply(text)) await reopen(id);
     };
-    adapter.closeLayer();
+    if (!adapter.closeLayer()) afterBack = null;
   }
 
   /** Back in Instagram's view once our action is done, if the item on screen is `id` and can't play here. */
   async function reopen(id: string): Promise<void> {
     while (reacting || sending) await sleep(BUSY_POLL_MS);
     if (away || busy() || items[current]?.id !== id || !unplayable.has(id)) return;
-    if (!(await openView())) return;
-    setAway(true);
-    watchLayer();
+    await enterAway();
   }
 
   /** Stays in Instagram's view only for an item known not to play; any other, or none yet, is the player's. */
@@ -954,7 +977,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     const to = neighbour(current, delta);
     if (to >= 0 && unplayable.has(items[to].id)) stepTo = items[to].id;
     else afterBack = () => item(delta);
-    adapter.closeLayer();
+    // No close key of ours: the view stays, and the bar must not wait on a close that never comes.
+    if (!adapter.closeLayer()) afterBack = stepTo = null;
   }
 
   /** The view closed for W/S: moves on with the player still hidden, then opens the view of that item. */
@@ -964,9 +988,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (location.pathname !== path || to < 0) return comeBack();
     go(to);
     // Busy, the player comes back and its 2 s rule opens the view once the action is done.
-    if (busy() || !(await openView())) return closed ? undefined : comeBack();
-    renderFramePos();
-    watchLayer();
+    if (busy() || !(await enterAway())) return closed ? undefined : comeBack();
   }
 
   /** Where the item sits among those the filter leaves, counted from the newest, as the strip shows them. */
@@ -996,6 +1018,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     back.style.left = spot ? `${spot.x}px` : '';
     back.style.top = spot ? `${spot.y}px` : '';
     back.classList.toggle('up', !!spot && spot.y > innerHeight / 2);
+    // Near the right edge the reply box hangs from the bar's right end instead, so it stays on screen.
+    back.classList.toggle('end', !!spot && spot.x - bar.width / 2 + REPLY_BOX_PX > innerWidth);
   }
 
   /** The grip drags the bar; where it is let go is kept for the next time, and a double-click puts it back on top. */
@@ -1041,6 +1065,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (on) stopAutoOpen();
     if (on && coach.hidden) animate(coach, [HIDE, SHOW], { duration: BACKDROP_IN_MS });
     coach.hidden = !on;
+    // The card held back an open that was due for an item that can't play.
+    if (!on && unplayable.has(items[current].id)) armAutoOpen(AUTO_OPEN_MS);
   }
 
   function dismissKeyCard(): boolean {

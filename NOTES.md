@@ -72,14 +72,18 @@ Decisions and gotchas that outlive a single spec. The full record per task is in
   is kept only for a page with no dialog (a story, unverified).
 - **The bar over Instagram's view** is the only part of the overlay that takes the mouse there (the
   host is `pointer-events: none`), and a mousedown on it is prevented so the focus stays in
-  Instagram's view, where A, D and the arrows still work. Only W/S/F/R/I are ours, on keydown,
-  outside text boxes, with no modifier, and a held key acts once: each closes the view. F and a reply
+  Instagram's view. Instagram has no key there for its carousel (A, D and the arrows did nothing,
+  even with the focus on its close button), so W/S/A/D/F/R/I and the arrows are ours, on keydown,
+  outside text boxes, with no modifier, and a held key acts once. A/D click the carousel's own ‹ ›,
+  found by place, since labels are localized: a button at most 72 px, over the photo, near its
+  edge, mid-height (live, 2026-10-28: the › is 46×62, 23 px in from the right edge; the only other
+  buttons over the photo are photo-sized). None there means step like W/S, which closes the view. F and a reply
   close Instagram's view first and act through the usual path (the picker and composer sit under
   it), then open it again only if the item now on screen is one that can't play. Keys typed in our
   reply box over the view are stopped at `window`, so Instagram's dialog never sees them; Esc only
-  hides the box. Unchecked live: whether Instagram's dialog pulls the focus out of that box.
-- **Auto-open** fires 2 s after the stage reports an item it can't play, once per item, also during
-  the refusal pause; it waits out an action under way rather than dropping. The bar's dragged spot
+  hides the box. Live, 2026-10-28: Instagram's dialog leaves the focus in that box.
+- **Auto-open** fires 2 s after the stage reports an item it can't play, once per visit to it, also
+  during the refusal pause; it waits out an action under way rather than dropping. The bar's dragged spot
   is the `barSpot` setting, kept whole inside the window and flipping the reply box above it in the
   lower half.
 - The header button's anchor is found from the message scroller, not from labels or

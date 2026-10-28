@@ -75,7 +75,16 @@ const SHARES: Share[] = [
   { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🐱', caption: 'cat vs cucumber', hue: 95 }], notes: ['watch till the end'] },
   { kind: 'story', sender: 'Sam', scenes: [{ emoji: '☕', caption: 'monday mood', hue: 28 }] },
   { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🎤', caption: 'the live set, front row', hue: 5 }], unplayable: true },
-  { kind: 'post', sender: 'Sam', scenes: [{ emoji: '🏔️', caption: 'summit at sunrise', hue: 250 }], unplayable: true },
+  {
+    kind: 'post',
+    sender: 'Sam',
+    scenes: [
+      { emoji: '🏔️', caption: 'summit at sunrise', hue: 250 },
+      { emoji: '⛺', caption: 'camp the night before', hue: 150 },
+      { emoji: '🥾', caption: 'the boots that made it', hue: 30 },
+    ],
+    unplayable: true,
+  },
   { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🛹', caption: 'how is this even possible', hue: 330 }] },
   { kind: 'gallery', sender: 'Sam', scenes: [{ emoji: '🎂', caption: 'the cake survived', hue: 340 }] },
   { kind: 'reel', sender: 'Alex', scenes: [{ emoji: '🌊', caption: 'biggest wave of the year', hue: 210 }] },
@@ -245,9 +254,15 @@ const adapter: ThreadAdapter = {
   async openLayer(id) {
     await sleep(DELAY);
     if (q.get('layer') === '0') throw new Error('demo: layer set to fail');
-    const layer = document.getElementById('layer')!;
-    layer.querySelector('p')!.textContent = `Instagram's own view of “${shareOf.get(id)!.scenes[0].caption}” opens here.`;
-    layer.hidden = false;
+    layerScenes = shareOf.get(id)!.scenes;
+    showLayerScene(0);
+    document.getElementById('layer')!.hidden = false;
+  },
+  layerSlide(delta) {
+    const to = layerScene + delta;
+    if (document.getElementById('layer')!.hidden || to < 0 || to >= layerScenes.length) return false;
+    showLayerScene(to);
+    return true;
   },
   layerOpen: () => !document.getElementById('layer')!.hidden,
   closeLayer() {
@@ -257,6 +272,16 @@ const adapter: ThreadAdapter = {
     return open;
   },
 };
+
+// The fake view's carousel: which item's scenes it shows, and which one.
+let layerScenes: Share['scenes'] = [];
+let layerScene = 0;
+
+function showLayerScene(at: number): void {
+  layerScene = at;
+  const count = layerScenes.length > 1 ? ` (photo ${at + 1} of ${layerScenes.length})` : '';
+  document.querySelector('#layer p')!.textContent = `Instagram's own view of “${layerScenes[at].caption}”${count} opens here.`;
+}
 
 const card = (id: string) => document.querySelector<HTMLElement>(`[data-item="${id}"]`);
 const chat = document.getElementById('chat')!;

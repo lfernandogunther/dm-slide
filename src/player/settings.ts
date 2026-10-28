@@ -18,7 +18,10 @@ const storage = () => (typeof chrome === 'undefined' ? undefined : chrome.storag
 
 export async function loadSettings(): Promise<Settings> {
   try {
-    return { ...DEFAULTS, ...((await storage()?.get(DEFAULTS)) as Partial<Settings> | undefined) };
+    const s: Settings = { ...DEFAULTS, ...((await storage()?.get(DEFAULTS)) as Partial<Settings> | undefined) };
+    const spot = s.barSpot as Partial<Record<'x' | 'y', unknown>> | null;
+    if (!spot || typeof spot !== 'object' || !Number.isFinite(spot.x) || !Number.isFinite(spot.y)) s.barSpot = null;
+    return s;
   } catch {
     return DEFAULTS;
   }

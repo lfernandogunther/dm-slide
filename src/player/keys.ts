@@ -16,15 +16,18 @@ export interface KeyActions {
   toggleTips(): void;
   dismissKeyCard(): boolean; // true when the key card was showing
   instagramView(): void; // opens Instagram's own view of the item, or closes it while away
-  frame(key: FrameKey): void; // W, S, F or R pressed over Instagram's view
+  frame(key: FrameKey): void; // W, S, A, D, F or R pressed over Instagram's view
   away(): boolean; // the player stepped aside for Instagram's view
 }
 
-export type FrameKey = 'w' | 's' | 'f' | 'r';
+export type FrameKey = 'w' | 's' | 'a' | 'd' | 'f' | 'r';
 
 const KEY_EVENTS = ['keydown', 'keyup', 'keypress'] as const;
-// The only keys taken over Instagram's view: A, D, the arrows and Esc stay its own.
-const FRAME_KEYS = new Set(['w', 's', 'f', 'r', 'i']);
+// The only keys taken over Instagram's view, the arrows as their letters; Esc stays its own.
+const FRAME_KEYS = new Map<string, FrameKey | 'i'>([
+  ['w', 'w'], ['arrowup', 'w'], ['s', 's'], ['arrowdown', 's'], ['a', 'a'], ['arrowleft', 'a'],
+  ['d', 'd'], ['arrowright', 'd'], ['f', 'f'], ['r', 'r'], ['i', 'i'],
+]);
 // Pressed on the way to another key (Shift for ?), so they never count as the key that dismisses the card.
 const MODIFIERS = new Set(['Shift', 'CapsLock']);
 
@@ -49,14 +52,15 @@ export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyAc
         }
         return;
       }
-      const key = e.key.toLowerCase();
-      if (e.type !== 'keydown' || !FRAME_KEYS.has(key) || e.metaKey || e.ctrlKey || e.altKey || editable(e)) return;
+      const key = FRAME_KEYS.get(e.key.toLowerCase());
+      // Shift too: Shift+W and the rest stay Instagram's over its view.
+      if (e.type !== 'keydown' || !key || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || editable(e)) return;
       e.stopPropagation();
       e.preventDefault();
       // Each of these closes the view: a held key would close the next one too.
       if (e.repeat) return;
       if (key === 'i') actions.instagramView();
-      else actions.frame(key as FrameKey);
+      else actions.frame(key);
       return;
     }
     if (e.key === 'Alt') {

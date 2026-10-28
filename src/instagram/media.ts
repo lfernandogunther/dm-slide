@@ -53,10 +53,10 @@ export function onRefusal(listener: (reason: string) => void): () => void {
 }
 
 /** True, and reads stop, when Instagram answered a read with anything but the embed page. */
-function pushedBack(status: number, url: string): boolean {
+function pushedBack(status: number, url: string, page = S.EMBED_PATH): boolean {
   const path = new URL(url, location.href).pathname;
   // The first segment only: a full path can name an account.
-  const why = S.REFUSED_STATUS.includes(status) ? `HTTP ${status}` : S.EMBED_PATH.test(path) ? null : `sent to /${path.split('/')[1]}/`;
+  const why = S.REFUSED_STATUS.includes(status) ? `HTTP ${status}` : page.test(path) ? null : `sent to /${path.split('/')[1]}/`;
   if (why) refuse(why);
   return why !== null;
 }
@@ -204,7 +204,7 @@ function htmlFacts(html: string): PostFacts | null {
 async function fromEmbedCaptioned(path: string, own: Media): Promise<Media | null> {
   try {
     const res = await fetch(S.embedCaptionedUrl(path), { credentials: 'omit', referrerPolicy: 'no-referrer' });
-    if (pushedBack(res.status, res.url) || !res.ok) return null;
+    if (pushedBack(res.status, res.url, S.CAPTIONED_PATH) || !res.ok) return null;
     const html = await res.text();
     // A collab post's page carries the post's data as JSON, which says more than its HTML.
     const media = shortcodeMedia(html.match(S.EMBED_CONTEXT_JSON)?.[1]);

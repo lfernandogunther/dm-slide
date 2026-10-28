@@ -14,6 +14,7 @@ export interface Stage {
   togglePause(): void;
   pause(): void;
   toggleMute(): void;
+  countdown(seconds: number | null): void; // the won't-play card counts down to Instagram's view; null puts its own text back
   destroy(): void;
 }
 
@@ -38,8 +39,8 @@ function createVideo(): HTMLVideoElement {
   return video;
 }
 
-/** `onSlides` runs when the slides that A/D can reach change; `cantPlay` are the keys on the won't-play card; `onUnplayable` names an item shown or preloaded that can't play. */
-export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: () => void, cantPlay: KeyAct[], onUnplayable: (item: Item) => void): Stage {
+/** `onSlides` runs when the slides that A/D can reach change; `cantPlay` are the keys on the won't-play card; `onPlayable` says whether an item shown or preloaded can play. */
+export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: () => void, cantPlay: KeyAct[], onPlayable: (item: Item, can: boolean) => void): Stage {
   const status = document.createElement('div');
   status.className = 'reel-status';
   let paused = false;
@@ -238,6 +239,7 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
   }
 
   function setStatus(content: Node | string | null): void {
+    cardText = null;
     status.replaceChildren(...(content === null ? [] : [content]));
     status.hidden = content === null;
   }
@@ -255,6 +257,9 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     el.classList.remove('paused');
   }
 
+  let cardText: HTMLElement | null = null;
+  let cardDefault = '';
+
   function unavailable(shown: Item, reason: string, card = CANT_PLAY): void {
     console.info('[dm-slide] item unavailable:', reason);
     blank();
@@ -263,8 +268,11 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     el.classList.replace('loading', 'unplayable');
     current.removeAttribute('src');
     setSlides([]);
-    setStatus(stateCard({ ...card, keys: cantPlay }));
-    onUnplayable(shown);
+    const node = stateCard({ ...card, keys: cantPlay });
+    setStatus(node);
+    cardText = node.querySelector('p');
+    cardDefault = card.text;
+    onPlayable(shown, false);
   }
 
   function play(shown: Item, url: string): void {
@@ -345,9 +353,10 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
     const media = next && (await adapter.media(next, wanted).catch(() => null));
     const first = media && (media.type === 'slides' ? media.slides[0] : media);
     if (!first) {
-      if (next && wanted()) onUnplayable(next);
+      if (next && wanted()) onPlayable(next, false);
       return;
     }
+    onPlayable(next, true);
     if (first.type === 'video') {
       if (spare.src !== first.url) spare.src = first.url;
     } else new Image().src = first.url;
@@ -391,8 +400,10 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       if (!media) unavailable(shown, paused ? 'media paused' : 'no media found', paused ? PAUSED : CANT_PLAY);
       else {
         setSlides(media.type === 'slides' ? media.slides : [media]);
-        if (slides.length) showSlide(shown);
-        else unavailable(shown, 'no slides');
+        if (slides.length) {
+          showSlide(shown);
+          onPlayable(shown, true);
+        } else unavailable(shown, 'no slides');
       }
       // A preloaded item skips the settle, but its own preload doesn't, so a held key still reads nothing.
       void settled.then(() => {
@@ -411,6 +422,9 @@ export function createStage(el: HTMLElement, adapter: ThreadAdapter, onSlides: (
       current.pause();
     },
     toggleMute,
+    countdown(seconds) {
+      if (cardText) cardText.textContent = seconds === null ? cardDefault : `Opening in Instagram's view in ${seconds}…`;
+    },
     destroy() {
       showing++;
       target = null;

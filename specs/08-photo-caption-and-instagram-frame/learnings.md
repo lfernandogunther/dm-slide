@@ -21,7 +21,19 @@
   playable item; R's box took the focus, a typed W did not step, Esc hid only the box, Enter sent and
   the view reopened on the same item; the drag moved the bar, flipped the box above it in the lower
   half, and a double-click reset it. The kept spot needs `chrome.storage`, so it resets in the demo.
+- 2026-10-28 — A/D over Instagram's view: Instagram itself has no key there for its carousel (A, D
+  and the arrows did nothing, even with the focus on its close button). Ours now click its ‹ ›,
+  found by place. The demo check passed every step (photo by photo both ways, stepping past either
+  end, ↑/↓ as W/S, no console errors). Live, the first try missed the ‹ › and stepped to the next
+  post instead. Measured with a numbers-only console snippet: the › is a 46×62 button, 23 px in from
+  the photo's right edge at its exact mid-height, over the 48 px cap; the cap is now 72. The only
+  other buttons over the photo are two photo-sized ones, and none in the comments counts.
 
 ## Concepts learned
 
 ## Promoted
+- `embed/captioned/` sample → NOTES (Playback, "A one-photo post's words are HTML"), already there.
+- Plan part 3 dropped → stays here; the spec's edge case already says what replaced it.
+- Demo check → stays here: the record of what the demo showed.
+- A/D over Instagram's view → NOTES (Driving Instagram, "The bar over Instagram's view"), with the
+  measured size and the focus answer.

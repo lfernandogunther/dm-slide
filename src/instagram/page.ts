@@ -374,6 +374,51 @@ function layerOpen(): OpResult {
   return openLayerDialog() ? { ok: true } : { ok: false, reason: 'no dialog showing media' };
 }
 
+/** The part of an element its clipping ancestors leave on screen: a carousel's other slides get none. */
+function shownBox(el: Element): { left: number; right: number; top: number; bottom: number } {
+  const { left, right, top, bottom } = el.getBoundingClientRect();
+  const box = { left, right, top, bottom };
+  for (let up = el.parentElement; up; up = up.parentElement) {
+    if (getComputedStyle(up).overflowX === 'visible') continue;
+    const clip = up.getBoundingClientRect();
+    box.left = Math.max(box.left, clip.left);
+    box.right = Math.min(box.right, clip.right);
+    box.top = Math.max(box.top, clip.top);
+    box.bottom = Math.min(box.bottom, clip.bottom);
+  }
+  return box;
+}
+
+/** Clicks the carousel arrow of Instagram's view on that side; none showing (no carousel, or its end) is not ok. */
+function layerSlide(delta: -1 | 1): OpResult {
+  const dialog = openLayerDialog();
+  if (!dialog) return { ok: false, reason: 'no dialog showing media' };
+  const shown = (el: Element) => {
+    const box = shownBox(el);
+    return { ...box, area: Math.max(0, box.right - box.left) * Math.max(0, box.bottom - box.top) };
+  };
+  const media = [...dialog.querySelectorAll('img, video')].map(shown).sort((a, b) => b.area - a.area)[0];
+  const edge = delta > 0 ? media.right : media.left;
+  const middle = (media.top + media.bottom) / 2;
+  const arrow = [...dialog.querySelectorAll<HTMLElement>('button, [role=button]')].find((b) => {
+    const box = b.getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const y = box.top + box.height / 2;
+    return (
+      box.width > 0 &&
+      Math.max(box.width, box.height) <= S.LAYER_ARROW_MAX_PX &&
+      // Over the photo, so nothing in the comments beside it counts.
+      x > media.left && x < media.right &&
+      Math.abs(x - edge) <= S.LAYER_ARROW_EDGE_PX &&
+      // The middle third: the sound and tag buttons sit in the corners.
+      Math.abs(y - middle) <= (media.bottom - media.top) / 6
+    );
+  });
+  if (!arrow) return { ok: false, reason: `no carousel arrow on the ${delta > 0 ? 'right' : 'left'}` };
+  arrow.click();
+  return { ok: true };
+}
+
 /** Presses Esc in Instagram's view, as its own close key. */
 function closeLayer(): OpResult {
   // Off the thread the view is the page's own dialog, which may show no media while it loads.
@@ -413,6 +458,7 @@ function handle(request: Request, target: EventTarget | null): ScanResult | OpRe
   if (request.op === 'openLayer') return openLayer(request.messageId);
   if (request.op === 'layerOpen') return layerOpen();
   if (request.op === 'closeLayer') return closeLayer();
+  if (request.op === 'layerSlide') return layerSlide(request.delta);
   return { ok: false, reason: `unknown op ${(request as { op: string }).op}` };
 }
 

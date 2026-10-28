@@ -27,11 +27,12 @@ Two gaps, found by the owner on the real Instagram:
    no further request.
 3. **A setting:** "Open in Instagram when it can't play here", on by default.
 4. **Auto-open.** With the setting on, an item showing "Can't play this here" (or "Paused…", during
-   the refusal pause) opens Instagram's view after 2 s, once per item. Moving on within the 2 s
-   opens nothing.
+   the refusal pause) opens Instagram's view after 2 s, once per visit. Moving on within the 2 s
+   opens nothing. Meanwhile the card counts down ("Opening in Instagram's view in 2…"), and its keys
+   are the bar's: W Previous · S Next · I Instagram view.
 5. **The frame.** While Instagram's view is open, the yellow "Back to DM Slide" chip becomes the
    approved bar: `⋮⋮  ‹ W  n / N  S ›  |  ❤️ F  |  Reply R  |  Back I`.
-   - Its keys are W, S, F, R and I.
+   - Its keys are W, S, F, R and I, plus A/D and the arrows (see 9).
    - Each part is also clickable.
    - n/N counts what the "Not reacted" filter leaves.
 6. **W/S from the frame.** Close Instagram's view, then step:
@@ -44,26 +45,30 @@ Two gaps, found by the owner on the real Instagram:
      Sending closes the view, sends through today's path, then reopens.
 8. **The grip.** Drag the bar anywhere. Its spot is kept in `chrome.storage.local`, and a
    double-click on the grip puts it back at the top.
+9. **A/D and the arrows from the frame.** Instagram's view has no keys of its own for these.
+   - A/← and D/→ click the carousel's own ‹ ›; with no carousel, or past its ends, they step like
+     W/S.
+   - ↑/↓ are W/S.
 
 ## Acceptance criteria
-- [ ] A shared one-photo post shows its author and caption in the card, from one cookieless read of
+- [x] A shared one-photo post shows its author and caption in the card, from one cookieless read of
       its `embed/captioned/` page. That read is made for the item on screen and the next only, and
       never during the refusal pause. Reels and carousels make no new read.
 - [ ] A redirect off the embed page, or a 401/403/429, starts the refusal pause, as for every read.
-- [ ] PRIVACY.md and store/listing.md describe that read, and the new settings.
-- [ ] With the setting on, an unplayable item opens Instagram's view 2 s after its card shows:
-      - once per item;
+- [x] PRIVACY.md and store/listing.md describe that read, and the new settings.
+- [x] With the setting on, an unplayable item opens Instagram's view 2 s after its card shows:
+      - once per visit (leaving the item and coming back opens it again);
       - never after the user moved, typed, or closed the player;
       - also during the refusal pause.
       With the setting off, nothing opens by itself.
-- [ ] In Instagram's view, the bar shows the position, and W, S, F, R and I work, from the keys or
-      by click. A, D, the arrow keys and Esc stay Instagram's.
-- [ ] W/S reopen Instagram's view only for an item known not to play; otherwise the player comes
+- [x] In Instagram's view, the bar shows the position, and W, S, F, R and I work, from the keys or
+      by click. A/D and ←/→ turn its carousel, else step; ↑/↓ are W/S. Esc stays Instagram's.
+- [x] W/S reopen Instagram's view only for an item known not to play; otherwise the player comes
       back. At the oldest item, W loads older messages as the player does.
-- [ ] F reacts and R replies to the DM, with Instagram's view closed while our action runs. Nothing
-      is typed into, clicked on or focused in Instagram's modal.
-- [ ] The bar drags by its grip, its spot survives a reload, and a double-click resets it.
-- [ ] `npm run typecheck` and `npm run build` pass; the demo shows the flow; the owner's hand check
+- [x] F reacts and R replies to the DM, with Instagram's view closed while our action runs. Nothing
+      is typed into or focused in Instagram's modal; the only click there is A/D on its own ‹ ›.
+- [x] The bar drags by its grip, its spot survives a reload, and a double-click resets it.
+- [x] `npm run typecheck` and `npm run build` pass; the demo shows the flow; the owner's hand check
       passes on the real Instagram.
 
 ## Approach
@@ -81,8 +86,8 @@ Two parts, in plan.md:
   only. The read is still cached, so it is not repeated.
 - **The caption's text** includes the username link and a trailing "view all comments" style
   footer. Only the caption text is kept.
-- **The pause starts while the frame is up:** W/S treat every share as unplayable, so the frame
-  stays.
+- **The pause starts while the frame is up:** items read before the pause keep playing; an unread
+  one goes back to the player, where the 2 s rule opens it.
 - **Own media during the pause:** a photo sent from the gallery plays and never auto-opens.
 - **Instagram's view is a page of its own** (a story): `closeLayer` already goes back once, and the
   step happens after the thread is back.
@@ -105,13 +110,14 @@ Two parts, in plan.md:
 1. **Auto-open during the refusal pause vs principle 3.** The owner chose yes in the lab. Why it
    fits:
    - It makes no read of ours.
-   - It happens once per item the user lands on and stays on for 2 s.
-   - It never happens for an item passed through, and never twice for the same item.
+   - It happens once per visit to an item the user lands on and stays on for 2 s.
+   - It never happens for an item passed through, and never twice in one visit.
 
    It is still a click on Instagram's card the user did not make. The setting turns it off.
 2. **R over Instagram's view.** If Instagram's modal pulls focus back from our box, R closes the
    view and replies from the player instead, then reopens after sending. That departs from the
-   drawing; the hand check decides.
+   drawing; the hand check decides. **Settled 2026-10-28:** the hand check typed and sent from our
+   box; the modal did not take the focus, so the box stays as drawn.
 3. **F and R close the view while they run** (~1 s blink), where the drawing shows the frame
    staying. The reason: today's react and reply drive the thread's toolbar and composer, which sit
    under Instagram's modal. The emoji picker is found by the same `[role=dialog]` selector as the
@@ -121,14 +127,14 @@ Two parts, in plan.md:
 
 | # | Criterion | Result |
 |---|---|---|
-| 1 | Caption for one-photo posts | |
-| 2 | Pushback on the new read | |
-| 3 | PRIVACY + listing | |
-| 4 | Auto-open | |
-| 5 | Bar and its keys | |
-| 6 | W/S reopen rule | |
-| 7 | F/R without touching the modal | |
-| 8 | Drag, kept, reset | |
-| 9 | Checks + hand check | |
+| 1 | Caption for one-photo posts | Pass, hand check. The no-read-during-the-pause half is code only |
+| 2 | Pushback on the new read | Not checked live: it needs Instagram to refuse. Same check as every read |
+| 3 | PRIVACY + listing | Pass, read against the code in the self-review |
+| 4 | Auto-open | Pass, hand check: 2 s with a countdown, again on a later visit, not after I/Esc |
+| 5 | Bar and its keys | Pass, hand check. A/D needed the ‹ › size cap raised (46×62 measured) |
+| 6 | W/S reopen rule | Pass, hand check and demo. Loading older from the oldest item: demo only |
+| 7 | F/R without touching the modal | Pass, hand check: F reacts, R types and sends from our box |
+| 8 | Drag, kept, reset | Pass, hand check |
+| 9 | Checks + hand check | Pass: typecheck, build, demo check, owner's hand check |
 
 ---

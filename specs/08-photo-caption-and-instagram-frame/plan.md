@@ -77,8 +77,9 @@
 - **Reopen after S only for an item known not to play.** Reopening for every item would click
   Instagram's card for items the player can show; going back to the player and letting the 2 s
   rule decide clicks nothing extra.
-- **Instagram keeps A, D, the arrows and Esc in its view.** A carousel in its modal needs A/D or
-  the arrows, and Esc is its own close, which our poll already follows.
+- **Instagram keeps Esc in its view**, its own close, which our poll already follows. A, D and the
+  arrows were left to it too, until the hand check showed they do nothing there: they are ours now,
+  turning its carousel through its ‹ › buttons (task 16).
 - **One auto-open per item.** Without the Set, coming back with I would reopen the same item 2 s
   later, a loop.
 

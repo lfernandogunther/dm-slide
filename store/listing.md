@@ -6,8 +6,8 @@ Everything the Developer Dashboard asks for, ready to paste. Keep it in step wit
 **Pending in the dashboard since v0.1.2:** the Description, the host permission justification and
 the `storage` justification below (they now name the post's caption, author and counts, the one
 read a one-photo post makes for its caption, and the setting that opens an item in Instagram's own
-view). Before the next `npm run release`, paste all three and press Save draft, not Submit: the release's own submission then carries them into
-one review. The Data usage boxes need no change.
+view). Before the next `npm run release`, paste all three and press Save draft, not Submit: the
+release's own submission then carries them into one review. The Data usage boxes need no change.
 
 ## Store listing tab
 

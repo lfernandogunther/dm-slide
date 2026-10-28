@@ -256,6 +256,7 @@ export const STYLE = `
   .p-back [data-frame-pos] { font-variant-numeric: tabular-nums; padding: 0 2px; }
   .p-frame-reply { position: absolute; left: 0; right: 0; top: calc(100% + 6px); pointer-events: auto; display: flex; flex-direction: column; gap: 4px; width: 340px; padding: 8px 10px; background: rgba(20, 20, 22, 0.96); border: 1px solid #ffd60a; border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6); }
   .p-frame.up .p-frame-reply { top: auto; bottom: calc(100% + 6px); }
+  .p-frame.end .p-frame-reply { left: auto; right: 0; }
   .p-frame-reply small { color: #ffd60a; font-size: 11px; font-weight: 600; }
   .p-frame-reply input { border: 0; outline: 0; background: #000; color: #f5f5f5; font: inherit; font-size: 13px; padding: 7px 10px; border-radius: 6px; }
 `;
