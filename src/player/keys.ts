@@ -33,13 +33,22 @@ function editable(e: KeyboardEvent): boolean {
   return target instanceof HTMLElement && (target.isContentEditable || target.matches('input, textarea, select'));
 }
 
-/** Binds the shortcuts; `isTyping` says whether an event comes from the reply box. Returns the unbind. */
+/** Binds the shortcuts; `isTyping` says whether an event comes from one of our reply boxes. Returns the unbind. */
 export function bindKeys(isTyping: (e: KeyboardEvent) => boolean, actions: KeyActions): () => void {
   const onKey = (e: KeyboardEvent) => {
     // Keys the extension itself dispatches (Enter in Instagram's composer, to send) go through.
     if (!e.isTrusted) return;
     // Over Instagram's view every other key is Instagram's (its Esc closes it), and so is any key typed in a text box.
     if (actions.away()) {
+      // Our reply box over the view: the keys typed there are its own, never Instagram's.
+      if (isTyping(e)) {
+        e.stopPropagation();
+        if (e.type === 'keydown' && e.key === 'Escape') {
+          e.preventDefault();
+          actions.blurReply();
+        }
+        return;
+      }
       const key = e.key.toLowerCase();
       if (e.type !== 'keydown' || !FRAME_KEYS.has(key) || e.metaKey || e.ctrlKey || e.altKey || editable(e)) return;
       e.stopPropagation();

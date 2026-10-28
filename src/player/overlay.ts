@@ -136,7 +136,8 @@ const LAYOUT = `
     </div>
     <div class="p-dim"></div>
   </div>
-  <div class="p-back" data-back hidden>
+  <div class="p-frame" data-back hidden>
+   <div class="p-back" data-bar>
     <span class="grip" data-grip>⋮⋮</span>
     <button type="button" data-frame="w" tabindex="-1" title="Older (W)">‹ <b>W</b></button>
     <span data-frame-pos></span>
@@ -147,6 +148,11 @@ const LAYOUT = `
     <button type="button" data-frame="r" tabindex="-1" title="Reply in the DM (R)">Reply <b>R</b></button>
     <span class="sep"></span>
     <button type="button" data-frame-back tabindex="-1" title="Back to DM Slide (I or Esc)">Back <b>I</b></button>
+   </div>
+   <form class="p-frame-reply" data-frame-reply hidden>
+    <small>Reply in the DM — not a comment on the post</small>
+    <input type="text" data-frame-text autocomplete="off" placeholder="Reply…">
+   </form>
   </div>
 `;
 
@@ -327,6 +333,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   let stepTo: string | null = null;
   const path = location.pathname;
   const back = $('data-back');
+  const frameReply = $('data-frame-reply');
+  const frameText = $<HTMLInputElement>('data-frame-text');
   // Reactions wait here and are told to Instagram one at a time, while the player moves on.
   const reactions: ReactJob[] = [];
   let reacting = false;
@@ -743,10 +751,10 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     send.disabled = sending || reply.value.trim() === '';
   }
 
-  /** Sends the box's text about the current item as a bubble at once; a failed one puts the text back in the box. */
-  async function sendReply(): Promise<void> {
-    const text = reply.value.trim();
-    if (!text || sending) return;
+  /** Sends the box's text, or `typed`, about the current item as a bubble at once; a failed one lands in the box. True once sent. */
+  async function sendReply(typed?: string): Promise<boolean> {
+    const text = (typed ?? reply.value).trim();
+    if (!text || sending) return false;
     const item = items[current];
     const quoted = quote.checked;
     clearFailure();
@@ -754,9 +762,10 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     sending = true;
     const sent: Pending = { id: item.id, text, quoted, state: 'sending' };
     pending = sent;
-    reply.value = '';
+    if (typed === undefined) reply.value = '';
     renderSend();
     renderChrome(false);
+    let ok = false;
     try {
       // A reaction under way is driving Instagram's picker; the composer waits for the queue to empty.
       while (reacting) await sleep(BUSY_POLL_MS);
@@ -764,6 +773,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
       await told(() => adapter.reply(item.id, text, quoted));
       if (quoted) item.myReplies.push(text);
       sent.state = 'sent';
+      ok = true;
       const shown = sent;
       sentTimer = window.setTimeout(() => {
         if (pending !== shown) return;
@@ -782,6 +792,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     renderChrome(false);
     // Instagram's composer took the focus to type; the player takes it back.
     player.focus();
+    return ok;
   }
 
   const tipsButton = $('data-tips');
@@ -791,7 +802,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     tipsButton.setAttribute('aria-pressed', String(tipsPinned));
   }
 
-  const unbindKeys = bindKeys((e) => e.composedPath()[0] === reply, {
+  const unbindKeys = bindKeys((e) => [reply, frameText].includes(e.composedPath()[0] as HTMLInputElement), {
     item,
     step,
     close,
@@ -800,7 +811,7 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     toggleFilter,
     react,
     focusReply: () => reply.focus(),
-    blurReply: () => player.focus(),
+    blurReply: () => (away ? showFrameReply(false) : player.focus()),
     holdTips: (held) => {
       if (held) stopAutoOpen();
       tipsHeld = held;
@@ -895,9 +906,45 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   /** A key or click on the bar: the view closes, and the player does the rest once it is back. */
   function frame(key: FrameKey): void {
     if (afterBack || stepTo || opening) return;
+    if (key === 'r') return showFrameReply(true);
+    showFrameReply(false);
     if (key === 'w' || key === 's') return frameStep(key === 'w' ? -1 : 1);
-    afterBack = { f: () => react(0), r: () => reply.focus() }[key];
+    afterBack = () => {
+      react(0);
+      // Where the react moved, or the item itself: reopened only if it can't play here.
+      void reopen(items[current].id);
+    };
     adapter.closeLayer();
+  }
+
+  function showFrameReply(on: boolean): void {
+    frameReply.hidden = !on;
+    if (!on) return;
+    const name = items[current].senderName;
+    frameText.placeholder = name ? `Reply to ${name}…` : 'Reply…';
+    frameText.focus();
+  }
+
+  /** Sends what was typed over the view the way the player does, with Instagram's view closed meanwhile. */
+  function frameSend(): void {
+    const text = frameText.value.trim();
+    if (!text || sending || afterBack || stepTo || opening) return;
+    frameText.value = '';
+    showFrameReply(false);
+    const id = items[current].id;
+    afterBack = async () => {
+      if (await sendReply(text)) await reopen(id);
+    };
+    adapter.closeLayer();
+  }
+
+  /** Back in Instagram's view once our action is done, if the item on screen is `id` and can't play here. */
+  async function reopen(id: string): Promise<void> {
+    while (reacting || sending) await sleep(BUSY_POLL_MS);
+    if (away || busy() || items[current]?.id !== id || !unplayable.has(id)) return;
+    if (!(await openView())) return;
+    setAway(true);
+    watchLayer();
   }
 
   /** Stays in Instagram's view only for an item known not to play; any other, or none yet, is the player's. */
@@ -931,7 +978,8 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
     if (on) renderFramePos();
     player.hidden = on;
     back.hidden = !on;
-    // Only the Back chip stays clickable; the rest of the page is Instagram's.
+    if (!on) showFrameReply(false);
+    // Only the bar and its reply box stay clickable; the rest of the page is Instagram's.
     host.style.pointerEvents = on ? 'none' : '';
   }
 
@@ -1032,7 +1080,11 @@ export function openPlayer(adapter: ThreadAdapter, loaded: Item[], start: number
   $('data-frame-back').addEventListener('click', () => adapter.closeLayer());
   back.querySelectorAll<HTMLElement>('[data-frame]').forEach((b) => b.addEventListener('click', () => frame(b.dataset.frame as FrameKey)));
   // A click on the bar leaves the focus in Instagram's view, where A, D and the arrows still work.
-  back.addEventListener('mousedown', (e) => e.preventDefault());
+  $('data-bar').addEventListener('mousedown', (e) => e.preventDefault());
+  frameReply.addEventListener('submit', (e) => {
+    e.preventDefault();
+    frameSend();
+  });
   tipsButton.addEventListener('click', toggleTips);
   coach.addEventListener('click', dismissKeyCard);
   $('data-strip').addEventListener('click', (e) => {

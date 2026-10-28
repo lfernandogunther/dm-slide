@@ -3,7 +3,7 @@
 ## Status: IN-PROGRESS · 2026-10-28 · planned from labs 03 and 04; the owner approved running it to the end
 
 ## Next
-Task 07: F/R from the frame, with our reply box beside the bar.
+Task 08: drag the bar by its grip, its spot kept in chrome.storage.local.
 
 **Source branch:** main · **Working branch:** main
 **Repo(s):** dm-slide · **PR:** not opened yet (solo repo, commits on main)
@@ -12,7 +12,7 @@ Task 07: F/R from the frame, with our reply box beside the bar.
 - R over Instagram's view: our box or back to the player (spec, open question 2), settled by the hand check.
 
 ## Tasks status
-6 of 12; see tasks.md.
+7 of 12; see tasks.md.
 
 ## What was done
 - 2026-10-28: planned from labs 03 and 04, with three assumptions the owner confirmed:
