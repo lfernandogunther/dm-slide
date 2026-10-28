@@ -3,11 +3,9 @@
 Everything the Developer Dashboard asks for, ready to paste. Keep it in step with
 [PRIVACY.md](../PRIVACY.md) and `manifest.json`: the review compares them.
 
-**Pending in the dashboard since v0.1.2:** the Description, the host permission justification and
-the `storage` justification below (they now name the post's caption, author and counts, the one
-read a one-photo post makes for its caption, and the setting that opens an item in Instagram's own
-view). Before the next `npm run release`, paste all three and press Save draft, not Submit: the
-release's own submission then carries them into one review. The Data usage boxes need no change.
+**In the dashboard as a draft since 2026-10-28** (pasted before v0.2.0): the Description, and the
+host permission and `storage` justifications below. The release's own submission carries them into
+its review.
 
 ## Store listing tab
 
@@ -27,7 +25,7 @@ Friends send you reels faster than you can watch them. DM Slide plays everything
 • Reply on the same screen, quoting the item or not
 • Every action has a keyboard shortcut: W/S to move, A/D through a carousel, F to like, R to reply, ? to show every key
 • Filter to what you haven't reacted to yet
-• Open the item in Instagram's own view with I, and come back where you were
+• Open the item in Instagram's own view with I (by itself when it can't play here), keep W/S, A/D, F and R there from a small bar, and come back where you were
 
 How to use it: open a conversation on instagram.com/direct and press the "▶ DM Slide" button in its header, or click any shared reel in the chat.
 
